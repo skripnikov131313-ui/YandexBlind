@@ -6,10 +6,12 @@ on:
     paths:
       - "native-shell/**"
       - ".github/workflows/native-shell.yml"
+      - ".gitattributes"
   pull_request:
     paths:
       - "native-shell/**"
       - ".github/workflows/native-shell.yml"
+      - ".gitattributes"
   workflow_dispatch:
     inputs:
       run_full_build:
