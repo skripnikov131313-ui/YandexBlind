@@ -1,4 +1,4 @@
-name: Build Yandex Blind for Windows
+name: Build Sk/Ai for Windows
 
 on:
   workflow_dispatch:
@@ -102,7 +102,7 @@ jobs:
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: YandexBlind-Windows11-x64
+          name: SkAi-Windows11-x64
           path: dist/YandexBlind-Setup.exe
           if-no-files-found: error
           retention-days: 14
