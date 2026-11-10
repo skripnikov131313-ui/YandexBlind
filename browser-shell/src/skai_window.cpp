@@ -432,6 +432,9 @@ void SkAiNotifyTabState(int tab_id, const std::wstring& title,
     tab->second.is_loading = loading;
     if (effective_title.empty()) effective_title = tab->second.title;
     if (effective_url.empty()) effective_url = tab->second.url;
+    if (effective_title == L"Новая вкладка" && !effective_url.empty()) {
+      effective_title = effective_url;
+    }
   }
 
   if (!g_ui_client || !g_ui_client->GetBrowser()) {
