@@ -2,14 +2,14 @@
 AppId={{D84B52E7-29A7-47CB-9C37-5C73E8F4C1B2}
 AppName=Sk/Ai
 AppVersion=0.2.0
-AppPublisher=Yandex Blind Project
-DefaultDirName={localappdata}\Programs\YandexBlind
+AppPublisher=Sk/Ai Project
+DefaultDirName={localappdata}\Programs\SkAi
 DefaultGroupName=Sk/Ai
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
 OutputDir=..\dist
-OutputBaseFilename=YandexBlind-Setup
+OutputBaseFilename=SkAi-Windows11-x64-Setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
