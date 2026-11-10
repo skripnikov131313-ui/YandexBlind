@@ -2,7 +2,7 @@ diff --git a/chrome/app/theme/chromium/BRANDING b/chrome/app/theme/chromium/BRAN
 index f8363d5b294fe210ebfdd18374e95b54d6ff5c17..0000000000000000000000000000000000000000 100644
 --- a/chrome/app/theme/chromium/BRANDING
 +++ b/chrome/app/theme/chromium/BRANDING
-@@ -1,8 +1,8 @@
+@@ -1,10 +1,10 @@
 -COMPANY_FULLNAME=The Chromium Authors
 -COMPANY_SHORTNAME=The Chromium Authors
 -PRODUCT_FULLNAME=Chromium
@@ -19,3 +19,5 @@ index f8363d5b294fe210ebfdd18374e95b54d6ff5c17..00000000000000000000000000000000
 +PRODUCT_INSTALLER_SHORTNAME=Sk/Ai Installer
 +COPYRIGHT=Copyright @LASTCHANGE_YEAR@ Sk/Ai Project. All rights reserved.
 +MAC_BUNDLE_ID=ai.sk.SkAi
+ MAC_CREATOR_CODE=Cr24
+ MAC_TEAM_ID=
