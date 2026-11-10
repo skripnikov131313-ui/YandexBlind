@@ -52,6 +52,19 @@ struct DownloadRecord {
 };
 std::map<std::uint32_t, DownloadRecord> g_downloads;
 
+struct PendingPermission {
+  std::wstring origin;
+  std::wstring description;
+  std::uint32_t requested_permissions = 0;
+  bool media_request = false;
+  std::uint64_t cef_prompt_id = 0;
+  CefRefPtr<CefPermissionPromptCallback> prompt_callback;
+  CefRefPtr<CefMediaAccessCallback> media_callback;
+};
+std::map<std::uint64_t, PendingPermission> g_pending_permissions;
+std::map<std::uint64_t, std::uint64_t> g_cef_prompt_to_request;
+std::uint64_t g_next_permission_id = (1ULL << 52);
+
 std::wstring UiFile(const wchar_t* file) {
   wchar_t exe[MAX_PATH]{};
   GetModuleFileNameW(nullptr, exe, MAX_PATH);
@@ -113,6 +126,84 @@ bool ResolveManagedDownloadPath(const std::wstring& raw_path,
 
   resolved_path = candidate;
   return true;
+}
+
+std::wstring DescribePermissionRequest(std::uint32_t permissions,
+                                            bool media_request) {
+  std::vector<std::wstring> labels;
+  const auto add = [&labels](std::uint32_t bit, const wchar_t* label) {
+    if ((permissions & bit) != 0) labels.emplace_back(label);
+  };
+
+  if (media_request) {
+    add(CEF_MEDIA_PERMISSION_DEVICE_AUDIO_CAPTURE, L"микрофон");
+    add(CEF_MEDIA_PERMISSION_DEVICE_VIDEO_CAPTURE, L"камера");
+    add(CEF_MEDIA_PERMISSION_DESKTOP_AUDIO_CAPTURE, L"звук рабочего стола");
+    add(CEF_MEDIA_PERMISSION_DESKTOP_VIDEO_CAPTURE, L"запись экрана");
+  } else {
+    add(CEF_PERMISSION_TYPE_GEOLOCATION, L"геолокация");
+    add(CEF_PERMISSION_TYPE_NOTIFICATIONS, L"уведомления");
+    add(CEF_PERMISSION_TYPE_CLIPBOARD, L"буфер обмена");
+    add(CEF_PERMISSION_TYPE_CAMERA_STREAM, L"камера");
+    add(CEF_PERMISSION_TYPE_MIC_STREAM, L"микрофон");
+    add(CEF_PERMISSION_TYPE_MIDI_SYSEX, L"MIDI-устройства");
+    add(CEF_PERMISSION_TYPE_MULTIPLE_DOWNLOADS, L"несколько загрузок");
+    add(CEF_PERMISSION_TYPE_LOCAL_FONTS, L"системные шрифты");
+    add(CEF_PERMISSION_TYPE_STORAGE_ACCESS, L"доступ к хранилищу сайта");
+    add(CEF_PERMISSION_TYPE_FILE_SYSTEM_ACCESS, L"файловая система");
+    add(CEF_PERMISSION_TYPE_WINDOW_MANAGEMENT, L"управление окнами");
+    add(CEF_PERMISSION_TYPE_IDLE_DETECTION, L"состояние активности");
+    add(CEF_PERMISSION_TYPE_LOCAL_NETWORK, L"локальная сеть");
+    add(CEF_PERMISSION_TYPE_LOOPBACK_NETWORK, L"локальные подключения");
+    add(CEF_PERMISSION_TYPE_CAMERA_PAN_TILT_ZOOM, L"управление камерой");
+  }
+
+  if (labels.empty()) {
+    return L"доступ к функции сайта";
+  }
+
+  std::wstring result;
+  for (std::size_t i = 0; i < labels.size(); ++i) {
+    if (i != 0) result += L", ";
+    result += labels[i];
+  }
+  return result;
+}
+
+void NotifyPermissionRequested(std::uint64_t request_id,
+                               const PendingPermission& request) {
+  if (!g_ui_client || !g_ui_client->GetBrowser()) {
+    return;
+  }
+
+  auto dictionary = CefDictionaryValue::Create();
+  dictionary->SetString("id", std::to_wstring(request_id));
+  dictionary->SetString("origin", request.origin);
+  dictionary->SetString("description", request.description);
+  dictionary->SetBool("media", request.media_request);
+
+  auto value = CefValue::Create();
+  value->SetDictionary(dictionary);
+  const auto json = CefWriteJSON(value, JSON_WRITER_DEFAULT).ToWString();
+
+  const auto browser = g_ui_client->GetBrowser();
+  const auto frame = browser->GetMainFrame();
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.permissionRequested&&window.skaiNative.permissionRequested(" +
+          json + L");",
+      frame->GetURL(), 0);
+}
+
+void NotifyPermissionDismissed(std::uint64_t request_id) {
+  if (!g_ui_client || !g_ui_client->GetBrowser()) {
+    return;
+  }
+  const auto browser = g_ui_client->GetBrowser();
+  const auto frame = browser->GetMainFrame();
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.permissionDismissed&&window.skaiNative.permissionDismissed(" +
+          std::to_wstring(request_id) + L");",
+      frame->GetURL(), 0);
 }
 
 void MaybeFinishClose() {
@@ -200,6 +291,7 @@ void SendTabSnapshot() {
 }
 
 void BeginApplicationClose(HWND window) {
+  SkAiCancelAllPermissions();
   if (g_close_requested) {
     return;
   }
@@ -295,6 +387,8 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wparam,
       if (hwnd == g_window) {
         g_tabs.clear();
         g_downloads.clear();
+        g_pending_permissions.clear();
+        g_cef_prompt_to_request.clear();
         g_ui_client = nullptr;
         g_assistant_client = nullptr;
         g_window = nullptr;
@@ -544,6 +638,91 @@ void SkAiNotifyNavigationState(int tab_id, bool can_go_back,
           (can_go_forward ? L"true" : L"false") + L"," +
           (is_loading ? L"true" : L"false") + L");",
       frame->GetURL(), 0);
+}
+
+std::uint64_t SkAiRequestSitePermission(
+    const std::wstring& requesting_origin,
+    std::uint32_t requested_permissions,
+    bool media_request,
+    CefRefPtr<CefPermissionPromptCallback> prompt_callback,
+    CefRefPtr<CefMediaAccessCallback> media_callback,
+    std::uint64_t cef_prompt_id) {
+  if (g_close_requested || !g_ui_client || !g_ui_client->GetBrowser()) {
+    return 0;
+  }
+  if ((media_request && !media_callback) ||
+      (!media_request && !prompt_callback)) {
+    return 0;
+  }
+
+  const std::uint64_t request_id = g_next_permission_id++;
+  PendingPermission request;
+  request.origin = requesting_origin;
+  request.description =
+      DescribePermissionRequest(requested_permissions, media_request);
+  request.requested_permissions = requested_permissions;
+  request.media_request = media_request;
+  request.cef_prompt_id = cef_prompt_id;
+  request.prompt_callback = prompt_callback;
+  request.media_callback = media_callback;
+  g_pending_permissions.emplace(request_id, request);
+
+  if (!media_request && cef_prompt_id != 0) {
+    g_cef_prompt_to_request[cef_prompt_id] = request_id;
+  }
+
+  NotifyPermissionRequested(request_id, request);
+  return request_id;
+}
+
+void SkAiResolvePermission(std::uint64_t request_id, bool allow) {
+  const auto it = g_pending_permissions.find(request_id);
+  if (it == g_pending_permissions.end()) {
+    return;
+  }
+
+  PendingPermission request = it->second;
+  g_pending_permissions.erase(it);
+  if (request.cef_prompt_id != 0) {
+    g_cef_prompt_to_request.erase(request.cef_prompt_id);
+  }
+
+  if (request.media_request) {
+    if (request.media_callback) {
+      if (allow) {
+        request.media_callback->Continue(request.requested_permissions);
+      } else {
+        request.media_callback->Cancel();
+      }
+    }
+  } else if (request.prompt_callback) {
+    request.prompt_callback->Continue(
+        allow ? CEF_PERMISSION_RESULT_ACCEPT : CEF_PERMISSION_RESULT_DENY);
+  }
+  NotifyPermissionDismissed(request_id);
+}
+
+void SkAiDismissPermission(std::uint64_t cef_prompt_id) {
+  const auto mapping = g_cef_prompt_to_request.find(cef_prompt_id);
+  if (mapping == g_cef_prompt_to_request.end()) {
+    return;
+  }
+  const std::uint64_t request_id = mapping->second;
+  g_cef_prompt_to_request.erase(mapping);
+  g_pending_permissions.erase(request_id);
+  NotifyPermissionDismissed(request_id);
+}
+
+void SkAiCancelAllPermissions() {
+  for (auto& [request_id, request] : g_pending_permissions) {
+    if (request.media_request) {
+      if (request.media_callback) request.media_callback->Cancel();
+    } else if (request.prompt_callback) {
+      request.prompt_callback->Continue(CEF_PERMISSION_RESULT_DENY);
+    }
+  }
+  g_pending_permissions.clear();
+  g_cef_prompt_to_request.clear();
 }
 
 void SkAiSetFloatingAssistantHandle(HWND hwnd) {
