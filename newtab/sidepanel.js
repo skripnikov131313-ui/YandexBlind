@@ -261,6 +261,19 @@
     }
   }
 
+  async function changeFloatingWindowState(state) {
+    try {
+      const current = await chrome.windows.getCurrent();
+      if (current.type !== "popup") {
+        toast("Управление окном доступно в плавающем режиме.");
+        return;
+      }
+      await chrome.windows.update(current.id, { state });
+    } catch (error) {
+      toast("Не удалось изменить состояние окна: " + error.message);
+    }
+  }
+
   async function toggleWindowMode() {
     const button = $("window-mode");
     if (busy) { toast("Дождись завершения ответа, затем меняй расположение панели."); return; }
@@ -325,6 +338,11 @@
   });
   $("new-chat").addEventListener("click", startNewChat);
   $("window-mode").addEventListener("click", toggleWindowMode);
+  $("window-minimize").addEventListener("click", () => changeFloatingWindowState("minimized"));
+  $("window-maximize").addEventListener("click", async () => {
+    const current = await chrome.windows.getCurrent();
+    changeFloatingWindowState(current.state === "maximized" ? "normal" : "maximized");
+  });
   document.querySelectorAll("[data-prompt]").forEach((button) => {
     button.addEventListener("click", () => { $("prompt").value = button.dataset.prompt; $("prompt").focus(); });
   });
