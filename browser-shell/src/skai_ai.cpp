@@ -130,7 +130,7 @@ bool LaunchWorker(Fn&& function) {
     ++g_active_workers;
   }
   try {
-    std::thread([task = std::forward<Fn>(function)]() mutable {
+    std::thread worker([task = std::forward<Fn>(function)]() mutable {
       struct Completion {
         ~Completion() {
           std::lock_guard<std::mutex> lock(g_worker_mutex);
@@ -143,7 +143,13 @@ bool LaunchWorker(Fn&& function) {
       } catch (...) {
         // Worker failures are reported at their operation boundary.
       }
-    }).detach();
+    });
+    try {
+      worker.detach();
+    } catch (...) {
+      if (worker.joinable()) worker.join();
+      throw;
+    }
     return true;
   } catch (...) {
     std::lock_guard<std::mutex> lock(g_worker_mutex);
@@ -289,7 +295,9 @@ bool DownloadModel(CefRefPtr<CefBrowser> browser) {
     NotifyStatus(browser, L"error", 0, L"Не удалось открыть HTTPS-соединение.");
     return false;
   }
-  WinHttpSetTimeouts(session, 10000, 15000, 30000, 30000);
+  // Short receive slices make shutdown responsive without imposing a
+  // minimum sustained download speed. A stalled connection is retried below.
+  WinHttpSetTimeouts(session, 10000, 5000, 10000, 1000);
 
   HINTERNET connection = WinHttpConnect(
       session, kModelUrlHost, INTERNET_DEFAULT_HTTPS_PORT, 0);
@@ -363,6 +371,7 @@ bool DownloadModel(CefRefPtr<CefBrowser> browser) {
     std::uint64_t total = 0;
     DWORD bytes_read = 0;
     int last_percent = -1;
+    ULONGLONG last_progress_at = GetTickCount64();
     do {
       if (g_shutting_down.load()) {
         NotifyStatus(browser, L"cancelled", 0, L"Загрузка остановлена.");
@@ -371,11 +380,22 @@ bool DownloadModel(CefRefPtr<CefBrowser> browser) {
       bytes_read = 0;
       if (!WinHttpReadData(request, buffer.data(),
                            static_cast<DWORD>(buffer.size()), &bytes_read)) {
-        NotifyStatus(browser, L"error", 0,
-                     L"Соединение прервалось во время загрузки модели.");
+        const DWORD read_error = GetLastError();
+        if (read_error == ERROR_WINHTTP_TIMEOUT &&
+            !g_shutting_down.load() &&
+            GetTickCount64() - last_progress_at < 60000) {
+          continue;
+        }
+        if (g_shutting_down.load()) {
+          NotifyStatus(browser, L"cancelled", 0, L"Загрузка остановлена.");
+        } else {
+          NotifyStatus(browser, L"error", 0,
+                       L"Загрузка остановлена: нет данных от сервера в течение минуты.");
+        }
         goto cleanup;
       }
       if (bytes_read == 0) break;
+      last_progress_at = GetTickCount64();
       if (total + bytes_read > kModelMaximumBytes) {
         NotifyStatus(browser, L"error", 0,
                      L"Размер модели превышает ожидаемый безопасный предел.");
