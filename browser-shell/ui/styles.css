@@ -29,3 +29,5 @@ body[data-scene=mist] .aurora-bg{opacity:.18}body[data-scene=space] .aurora-bg{o
 @media(max-width:1120px){.assistant-panel{width:330px}.shortcut-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:820px){.assistant-panel{width:300px}.brand-lockup{width:82px}.tab{min-width:110px}.toolbar{gap:6px;padding:0 9px}.rail{width:54px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+.icon-button:disabled{opacity:.35;cursor:default;pointer-events:none}.tab-favicon img{display:block;width:16px;height:16px;object-fit:contain;border-radius:3px}
