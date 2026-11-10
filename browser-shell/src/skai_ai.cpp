@@ -38,6 +38,7 @@ constexpr wchar_t kModelFileName[] = L"qwen3.5-2b-Q4_K_M.gguf";
 constexpr char kModelSha256[] =
     "9a3d0aa6c920f096441139b6a254542da855223fdad06855ea00c6c087fd713d";
 constexpr std::uint64_t kModelExpectedBytes = 1406600000ULL;
+constexpr std::uint64_t kModelMaximumBytes = 1500000000ULL;
 constexpr std::size_t kMaxRequestBytes = 256 * 1024;
 constexpr std::size_t kMaxResponseBytes = 2 * 1024 * 1024;
 constexpr int kServerReadyTimeoutMs = 90000;
@@ -375,6 +376,11 @@ bool DownloadModel(CefRefPtr<CefBrowser> browser) {
         goto cleanup;
       }
       if (bytes_read == 0) break;
+      if (total + bytes_read > kModelMaximumBytes) {
+        NotifyStatus(browser, L"error", 0,
+                     L"Размер модели превышает ожидаемый безопасный предел.");
+        goto cleanup;
+      }
 
       DWORD written = 0;
       if (!WriteFile(output, buffer.data(), bytes_read, &written, nullptr) ||
@@ -410,7 +416,11 @@ bool DownloadModel(CefRefPtr<CefBrowser> browser) {
     goto cleanup;
   }
 
-  FlushFileBuffers(output);
+  if (!FlushFileBuffers(output)) {
+    NotifyStatus(browser, L"error", 0,
+                 L"Не удалось завершить запись модели на диск.");
+    goto cleanup;
+  }
   CloseHandle(output);
   output = INVALID_HANDLE_VALUE;
   if (!MoveFileExW(temporary_path.c_str(), model_path.c_str(),
@@ -593,7 +603,7 @@ bool EnsureServer(unsigned short& port, std::wstring& api_key,
       L"\"" + server_executable.wstring() + L"\""
       L" --model \"" + model_path.wstring() + L"\""
       L" --host 127.0.0.1 --port " + std::to_wstring(port) +
-      L" --ctx-size 4096 --threads " + std::to_wstring(threads) +
+      L" --alias Qwen3.5-2B --ctx-size 4096 --threads " + std::to_wstring(threads) +
       L" --threads-batch " + std::to_wstring(threads) +
       L" --parallel 1 --n-gpu-layers 0 --no-webui --api-key \"" +
       api_key + L"\"";
