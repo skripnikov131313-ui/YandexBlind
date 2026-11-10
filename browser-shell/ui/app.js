@@ -217,7 +217,7 @@
     catch (_) { notify("Не удалось сохранить историю в профиле"); }
   }
   function addHistoryVisit(id, title, url) {
-    if (!/^https?:\\/\\//i.test(url)) return;
+    if (!/^https?:\/\//i.test(url)) return;
     const now = Date.now();
     const previous = historyItems[0];
     if (previous && previous.url === url && now - previous.visitedAt < 60000) {
@@ -236,7 +236,7 @@
     catch (_) { return ""; }
   }
   function openSavedUrl(url) {
-    if (!/^https?:\\/\\//i.test(url)) return;
+    if (!/^https?:\/\//i.test(url)) return;
     createTab(url);
     closeInternalView();
   }
@@ -319,7 +319,7 @@
   }
   function toggleBookmark() {
     const url = $("#addressInput")?.value || "";
-    if (!/^https?:\\/\\//i.test(url)) {
+    if (!/^https?:\/\//i.test(url)) return;
       notify("Сначала откройте веб-страницу");
       return;
     }
