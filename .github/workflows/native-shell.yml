@@ -1,0 +1,54 @@
+name: Sk/Ai Native Shell
+
+on:
+  push:
+    branches: [feature/sk-ai-native-shell]
+    paths:
+      - "native-shell/**"
+      - ".github/workflows/native-shell.yml"
+  pull_request:
+    paths:
+      - "native-shell/**"
+      - ".github/workflows/native-shell.yml"
+  workflow_dispatch:
+    inputs:
+      run_full_build:
+        description: "Run the pinned Chromium-Gost source build on a configured large self-hosted Windows runner"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate source-build tooling
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate PowerShell scripts and design tokens
+        shell: pwsh
+        run: ./native-shell/validate.ps1
+
+  baseline-build:
+    name: Compile Chromium-Gost source baseline
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_build }}
+    runs-on: [self-hosted, windows, x64, skai-chromium-large]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build pinned Chromium-Gost baseline
+        shell: pwsh
+        run: ./native-shell/build.ps1 -Workspace D:\SkAiBuild -ChromiumGostRef 156.0.8078.88 -InitializeChromiumCheckout -BaselineOnly
+
+      - name: Upload baseline artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SkAi-ChromiumGost-156.0.8078.88-BASELINE
+          path: native-shell/artifacts/*
+          if-no-files-found: error
+          retention-days: 7
