@@ -175,6 +175,27 @@ assert.match(
   /runtime\/llama\/llama-server\.exe/,
   "The Windows package must include llama-server.exe."
 );
+
+assert.match(
+  workflowSource,
+  /-DGGML_BACKEND_DL=ON/,
+  "The llama.cpp build must produce dynamic CPU backend libraries."
+);
+assert.match(
+  workflowSource,
+  /-DGGML_CPU_ALL_VARIANTS=ON/,
+  "The llama.cpp build must provide runtime-dispatched CPU variants."
+);
+assert.match(
+  workflowSource,
+  /ggml-cpu-x64\.dll/,
+  "The runtime package must include a portable x64 fallback backend."
+);
+assert.match(
+  workflowSource,
+  /ggml-cpu-haswell\.dll/,
+  "The runtime package must include an AVX2-capable CPU backend."
+);
 assert.match(
   source,
   /window\.skaiNative\.sendLocalAi\(requestId, JSON\.stringify\(payload\)\)/,
