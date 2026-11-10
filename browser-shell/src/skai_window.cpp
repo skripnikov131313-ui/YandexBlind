@@ -12,6 +12,8 @@
 #include <string>
 #include <vector>
 #include <shellapi.h>
+#include <shlobj.h>
+#include <knownfolders.h>
 
 namespace {
 constexpr wchar_t kClass[] = L"SkAi.NativeBrowserWindow";
@@ -55,6 +57,62 @@ std::wstring UiFile(const wchar_t* file) {
   GetModuleFileNameW(nullptr, exe, MAX_PATH);
   const auto path = std::filesystem::path(exe).parent_path() / L"ui" / file;
   return L"file:///" + path.generic_wstring();
+}
+
+std::filesystem::path GetManagedDownloadsDirectory() {
+  PWSTR downloads = nullptr;
+  if (FAILED(SHGetKnownFolderPath(FOLDERID_Downloads, KF_FLAG_CREATE,
+                                 nullptr, &downloads)) || !downloads) {
+    return {};
+  }
+
+  const auto directory = std::filesystem::path(downloads) / L"SkAi";
+  CoTaskMemFree(downloads);
+  return directory;
+}
+
+bool ResolveManagedDownloadPath(const std::wstring& raw_path,
+                                std::filesystem::path& resolved_path) {
+  if (raw_path.empty()) {
+    return false;
+  }
+
+  std::error_code error;
+  const auto root = std::filesystem::weakly_canonical(
+      GetManagedDownloadsDirectory(), error);
+  if (error || root.empty()) {
+    return false;
+  }
+
+  const auto candidate =
+      std::filesystem::weakly_canonical(std::filesystem::path(raw_path), error);
+  if (error || candidate.empty()) {
+    return false;
+  }
+
+  const std::wstring root_text = root.native();
+  const std::wstring candidate_text = candidate.native();
+  if (candidate_text.size() <= root_text.size() ||
+      CompareStringOrdinal(candidate_text.c_str(),
+                           static_cast<int>(root_text.size()),
+                           root_text.c_str(),
+                           static_cast<int>(root_text.size()), TRUE) !=
+          CSTR_EQUAL) {
+    return false;
+  }
+
+  const wchar_t boundary = candidate_text[root_text.size()];
+  if (boundary != L'\\' && boundary != L'/') {
+    return false;
+  }
+
+  error.clear();
+  if (!std::filesystem::is_regular_file(candidate, error) || error) {
+    return false;
+  }
+
+  resolved_path = candidate;
+  return true;
 }
 
 void MaybeFinishClose() {
@@ -599,6 +657,28 @@ void SkAiDownloadAction(std::uint32_t download_id, const std::wstring& action) {
                   SW_SHOWNORMAL);
   } else if (action == L"show") {
     const std::wstring arguments = L"/select,\"" + it->second.path + L"\"";
+    ShellExecuteW(nullptr, L"open", L"explorer.exe", arguments.c_str(), nullptr,
+                  SW_SHOWNORMAL);
+  }
+}
+
+void SkAiOpenDownloadedFile(const std::wstring& path,
+                            const std::wstring& action) {
+  if (action != L"open" && action != L"show") {
+    return;
+  }
+
+  std::filesystem::path validated_path;
+  if (!ResolveManagedDownloadPath(path, validated_path)) {
+    return;
+  }
+
+  if (action == L"open") {
+    ShellExecuteW(nullptr, L"open", validated_path.c_str(), nullptr, nullptr,
+                  SW_SHOWNORMAL);
+  } else {
+    const std::wstring arguments =
+        L"/select,\"" + validated_path.wstring() + L"\"";
     ShellExecuteW(nullptr, L"open", L"explorer.exe", arguments.c_str(), nullptr,
                   SW_SHOWNORMAL);
   }
