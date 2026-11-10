@@ -5,6 +5,7 @@
 
 #include <filesystem>
 #include <string>
+#include <windowsx.h>
 
 namespace {
 constexpr wchar_t kWindowClass[] = L"SkAi.NativeBrowserWindow";
