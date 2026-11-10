@@ -201,14 +201,26 @@
   $("#themeButton")?.addEventListener("click", cycleTheme);
   const bookmarkKey = "skai.bookmarks.v1";
   const historyKey = "skai.history.v1";
+  const downloadsKey = "skai.downloads.v1";
   let bookmarks = [];
   let historyItems = [];
   let downloads = [];
+  let lastDownloadPersistAt = 0;
   let internalViewType = "";
   try { bookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || "[]"); } catch (_) { bookmarks = []; }
   try { historyItems = JSON.parse(localStorage.getItem(historyKey) || "[]"); } catch (_) { historyItems = []; }
+  try { downloads = JSON.parse(localStorage.getItem(downloadsKey) || "[]"); } catch (_) { downloads = []; }
   if (!Array.isArray(bookmarks)) bookmarks = [];
   if (!Array.isArray(historyItems)) historyItems = [];
+  if (!Array.isArray(downloads)) downloads = [];
+  downloads = downloads.filter(item => item && typeof item.path === "string")
+    .slice(0, 200)
+    .map(item => ({
+      ...item,
+      id: null,
+      sessionActive: false,
+      state: ["active", "paused", "pending"].includes(item.state) ? "interrupted" : item.state
+    }));
 
   const pageSections = $$(".page-scroll > :not(#internalView)");
   function syncBookmarkButton() {
@@ -227,6 +239,20 @@
   function persistHistory() {
     try { localStorage.setItem(historyKey, JSON.stringify(historyItems)); }
     catch (_) { notify("Не удалось сохранить историю в профиле"); }
+  }
+  function persistDownloads() {
+    const stored = downloads.slice(0, 200).map(item => ({
+      ...item,
+      id: null,
+      sessionActive: false,
+      speedBytesPerSec: 0
+    }));
+    try {
+      localStorage.setItem(downloadsKey, JSON.stringify(stored));
+      lastDownloadPersistAt = Date.now();
+    } catch (_) {
+      notify("Не удалось сохранить историю загрузок в профиле");
+    }
   }
   function addHistoryVisit(id, title, url) {
     if (!/^https?:\/\//i.test(url)) return;
@@ -268,6 +294,14 @@
     return "Подготовка";
   }
   function runDownloadAction(item, action) {
+    if (action === "open" || action === "show") {
+      if (item.path) window.skaiNative?.openDownloadedFile(item.path, action);
+      return;
+    }
+    if (!item.sessionActive || !Number.isFinite(Number(item.id))) {
+      notify("Эта загрузка неактивна после перезапуска браузера");
+      return;
+    }
     window.skaiNative?.downloadAction(item.id, action);
   }
   function renderInternalView(type) {
@@ -402,7 +436,7 @@
     } else if (type === "downloads" && downloads.length) {
       const note = document.createElement("span");
       note.className = "downloads-note";
-      note.textContent = "Список активен до закрытия браузера; сами файлы остаются в папке загрузок.";
+      note.textContent = "История хранится локально; файлы находятся в папке Загрузки/SkAi. Незавершённые загрузки после перезапуска помечаются как прерванные.";
       footer.append(note);
     }
   }
@@ -591,10 +625,11 @@
   window.skaiNative.downloadUpdated = item => {
     if (!item || !Number.isFinite(Number(item.id))) return;
     const id = Number(item.id);
-    const existing = downloads.findIndex(entry => entry.id === id);
+    const existing = downloads.findIndex(entry => entry.sessionActive && entry.id === id);
     const normalized = {
       ...item,
       id,
+      sessionActive: true,
       percent: Number(item.percent),
       receivedBytes: Number(item.receivedBytes),
       totalBytes: Number(item.totalBytes),
@@ -603,6 +638,11 @@
     if (existing >= 0) downloads[existing] = normalized;
     else downloads.unshift(normalized);
     downloads = downloads.slice(0, 200);
+
+    const terminal = ["complete", "cancelled", "interrupted"].includes(normalized.state);
+    if (terminal || Date.now() - lastDownloadPersistAt > 1500) {
+      persistDownloads();
+    }
     if (internalViewType === "downloads") renderInternalView("downloads");
   };
   window.skaiNative.updateTab = (id, title, url, loading) => {
