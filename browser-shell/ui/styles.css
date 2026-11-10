@@ -62,3 +62,10 @@ body[data-theme=light] .library-open{color:#293758}
 .internal-view-search:focus{border-color:rgba(102,222,209,.65);box-shadow:0 0 0 3px rgba(72,198,185,.1)}
 .internal-view-search::placeholder{color:#9caacb}
 body[data-theme=light] .internal-view-search{background:rgba(255,255,255,.72);color:#273453;border-color:rgba(75,95,157,.18)}
+
+
+.download-actions{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:6px;flex-shrink:0}
+.download-actions .library-remove{padding:8px 10px}
+.library-open:disabled{opacity:.85;cursor:default}
+.downloads-note{font-size:10px;color:#9facca}
+body[data-theme=light] .downloads-note{color:#70809f}
