@@ -4,6 +4,7 @@
 #include "include/cef_parser.h"
 #include "include/cef_values.h"
 
+#include <exception>
 #include <sstream>
 #include <string>
 
