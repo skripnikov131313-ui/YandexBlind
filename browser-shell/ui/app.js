@@ -46,6 +46,8 @@
   let localAiState = "checking";
   let localAiDetail = "Проверяем локальную модель…";
   let localAiBusy = false;
+  let localAiPendingId = "";
+  let localAiSequence = 0;
 
   const systemTheme = window.matchMedia("(prefers-color-scheme: light)");
   function applyTheme() {
@@ -205,9 +207,12 @@
   function persistConversation() {
     try { localStorage.setItem(conversationKey, JSON.stringify(conversation)); } catch (_) {}
   }
-  function addMessage(kind, value, pending = false) {
+  function addMessage(kind, value, pending = false, requestId = "") {
     const entry = { role: kind, text: value };
-    if (pending) entry.pending = true;
+    if (pending) {
+      entry.pending = true;
+      entry.requestId = requestId;
+    }
     conversation.push(entry);
     conversation = conversation.slice(-200);
     persistConversation();
@@ -266,23 +271,20 @@
     renderLocalAiStatus();
   };
   window.skaiNative.localAiResult = (requestId, text, isError) => {
+    const id = String(requestId || "");
+    if (!id || id !== localAiPendingId) return;
     localAiBusy = false;
+    localAiPendingId = "";
     const sendButton = $("#sendPrompt");
     if (sendButton) sendButton.disabled = false;
-    let pendingIndex = -1;
-    for (let index = conversation.length - 1; index >= 0; index -= 1) {
-      if (conversation[index]?.role === "assistant" && conversation[index]?.pending) {
-        pendingIndex = index;
-        break;
-      }
-    }
+    const pendingIndex = conversation.findIndex(item =>
+      item?.role === "assistant" && item?.pending && item?.requestId === id
+    );
     const answer = String(text || (isError ? "Не удалось получить ответ локальной модели." : ""));
     if (pendingIndex >= 0) {
       conversation[pendingIndex].text = answer;
       delete conversation[pendingIndex].pending;
-    } else {
-      conversation.push({ role: "assistant", text: answer });
-      conversation = conversation.slice(-200);
+      delete conversation[pendingIndex].requestId;
     }
     persistConversation();
     renderConversation();
@@ -307,12 +309,14 @@
       .filter(item => item && !item.pending && ["user", "assistant"].includes(item.role))
       .slice(-20)
       .map(item => ({ role: item.role, content: String(item.text || "") }));
-    addMessage("assistant", "Обрабатываю запрос локально…", true);
+    const requestId = activeProfileName + "-" + Date.now() + "-" + (++localAiSequence);
+    localAiPendingId = requestId;
+    addMessage("assistant", "Обрабатываю запрос локально…", true, requestId);
     localAiBusy = true;
     const sendButton = $("#sendPrompt");
     if (sendButton) sendButton.disabled = true;
     if (!window.skaiNative?.sendLocalAi) {
-      window.skaiNative?.localAiResult?.(0, "Нативный модуль локального ИИ не подключён.", true);
+      window.skaiNative?.localAiResult?.(requestId, "Нативный модуль локального ИИ не подключён.", true);
       return;
     }
     const payload = {
@@ -322,7 +326,7 @@
       temperature: 0.7,
       max_tokens: 1024
     };
-    window.skaiNative.sendLocalAi(JSON.stringify(payload));
+    window.skaiNative.sendLocalAi(requestId, JSON.stringify(payload));
   }
   $("#sendPrompt")?.addEventListener("click", () => sendPrompt($("#promptInput").value));
   $("#promptInput")?.addEventListener("keydown", event => {
@@ -403,6 +407,8 @@
   function loadProfileData(name) {
     const normalized = /^[a-z0-9_-]{1,24}$/.test(String(name || ""))
       ? String(name) : "default";
+    localAiBusy = false;
+    localAiPendingId = "";
     activeProfileName = normalized;
     try { localStorage.setItem("skai.active.profile.v1", activeProfileName); } catch (_) {}
 
