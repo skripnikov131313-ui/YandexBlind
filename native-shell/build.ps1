@@ -39,7 +39,13 @@ finally {
 
 $patchDir = Join-Path $PSScriptRoot "patches"
 $patches = @(Get-ChildItem -Path $patchDir -Filter "*.patch" -File | Sort-Object Name)
-if ($patches.Count -gt 0) {
+if ($BaselineOnly) {
+    Write-Host "BaselineOnly: skipping all Sk/Ai patches to preserve an upstream Chromium-Gost baseline." -ForegroundColor Yellow
+}
+else {
+    if ($patches.Count -eq 0 -and -not $PrepareOnly) {
+        throw "No Sk/Ai native patches exist. Refusing to label an unmodified Chromium-Gost build as Sk/Ai."
+    }
     foreach ($patch in $patches) {
         Write-Host ("Checking {0}" -f $patch.Name) -ForegroundColor Cyan
         Push-Location $chromiumSrc
@@ -54,10 +60,6 @@ if ($patches.Count -gt 0) {
         }
     }
 }
-elseif (-not $BaselineOnly) {
-    throw "No Sk/Ai native patches exist yet. Use -BaselineOnly to compile upstream Chromium-Gost; the unmodified baseline is not a Sk/Ai native-shell release."
-}
-
 if ($PrepareOnly) {
     Write-Host "Source preparation complete. No compilation was requested." -ForegroundColor Green
     return
