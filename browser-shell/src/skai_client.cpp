@@ -30,6 +30,19 @@ bool TryParseDownloadId(const CefString& input, std::std::uint32_t& download_id)
   return true;
 }
 
+bool TryParsePermissionId(const CefString& input, std::uint64_t& permission_id) {
+  const std::wstring value = input.ToWString();
+  if (value.empty()) return false;
+  wchar_t* end = nullptr;
+  errno = 0;
+  const unsigned long long parsed = std::wcstoull(value.c_str(), &end, 10);
+  if (errno == ERANGE || end == value.c_str() || *end != L'\\0') {
+    return false;
+  }
+  permission_id = static_cast<std::uint64_t>(parsed);
+  return true;
+}
+
 bool TryParseTabId(const CefString& input, int& tab_id) {
   const std::wstring value = input.ToWString();
   if (value.empty()) {
@@ -185,6 +198,16 @@ bool SkAiClient::OnProcessMessageReceived(
                            action.ToWString());
     return true;
   }
+
+  if (category == "permission") {
+    if (args->GetSize() < 3) return true;
+    std::uint64_t request_id = 0;
+    if (TryParsePermissionId(args->GetString(2), request_id)) {
+      SkAiResolvePermission(request_id, action == "allow");
+    }
+    return true;
+  }
+
 
   if (category == "layout") {
     if (args->GetSize() < 2) return true;
