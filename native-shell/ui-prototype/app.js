@@ -168,7 +168,7 @@
     panel.classList.remove("is-visible");
   }
   $("#closeAssistant").addEventListener("click", closeAssistant);
-  $$("[data-page]").forEach(button => button.addEventListener("click", () => {
+  $(".rail [data-page]").forEach(button => button.addEventListener("click", () => {
     const page = button.dataset.page;
     if (page === "assistant") { openAssistant(); return; }
     showPage(page);
@@ -189,6 +189,11 @@
     }
   }
   workspaceContent.addEventListener("click", event => {
+    const pageButton = event.target.closest("[data-page]");
+    if (pageButton) {
+      showPage(pageButton.dataset.page);
+      return;
+    }
     const action = event.target.closest("[data-action]");
     if (action) handleAction(action.dataset.action);
   });
