@@ -19,7 +19,7 @@ endif()
 
 list(APPEND CMAKE_MODULE_PATH "${CEF_ROOT}/cmake")
 find_package(CEF REQUIRED)
-add_subdirectory("${CEF_ROOT}/libcef_dll_wrapper" libcef_dll_wrapper)
+add_subdirectory(${CEF_LIBCEF_DLL_WRAPPER_PATH} libcef_dll_wrapper)
 
 add_executable(SkAi WIN32
   src/main.cpp
@@ -32,7 +32,7 @@ add_executable(SkAi WIN32
 )
 
 target_include_directories(SkAi PRIVATE src)
-target_link_libraries(SkAi PRIVATE libcef_lib libcef_dll_wrapper)
+target_link_libraries(SkAi PRIVATE libcef_lib libcef_dll_wrapper ${CEF_STANDARD_LIBS})
 target_compile_definitions(SkAi PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
 target_compile_options(SkAi PRIVATE /W4 /permissive-)
 
