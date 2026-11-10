@@ -118,6 +118,14 @@ jobs:
           $runtime = Join-Path $PWD "build/skai/bin/Release/runtime/llama"
           New-Item -ItemType Directory -Force -Path $runtime | Out-Null
           Copy-Item -Path (Join-Path $server.DirectoryName "*") -Destination $runtime -Recurse -Force
+          Copy-Item -Path (Join-Path $llamaSource "LICENSE") -Destination (Join-Path $runtime "LICENSE-llama.cpp.txt") -Force
+          @(
+            "Runtime: llama.cpp v0.9.0",
+            "Commit: $llamaCommit",
+            "Backend: CPU only",
+            "GPU backends: disabled",
+            "Server bind: 127.0.0.1"
+          ) | Set-Content -Path (Join-Path $runtime "BUILD-INFO.txt") -Encoding utf8
 
           $packagedServer = Join-Path $runtime "llama-server.exe"
           if (!(Test-Path $packagedServer)) { throw "Could not package llama-server.exe." }
@@ -142,7 +150,9 @@ jobs:
             "ui/assistant.js",
             "chrome_100_percent.pak",
             "chrome_200_percent.pak",
-            "runtime/llama/llama-server.exe"
+            "runtime/llama/llama-server.exe",
+            "runtime/llama/LICENSE-llama.cpp.txt",
+            "runtime/llama/BUILD-INFO.txt"
           )
           foreach ($item in $required) {
             $path = Join-Path $bin $item
