@@ -46,6 +46,13 @@ class SkAiV8Bridge final : public CefV8Handler {
     } else if(name=="layoutAction") {
       if(a.empty()||!a[0]->IsString()){exception="Bounds required";return true;}
       p->SetString(0,"layout");p->SetString(1,a[0]->GetStringValue());
+    } else if(name=="aiAction") {
+      if(a.empty() || !a[0]->IsString()){exception="AI action required";return true;}
+      p->SetString(0,"ai");p->SetString(1,a[0]->GetStringValue());
+      if(a.size()>1) {
+        if(!a[1]->IsString()){exception="AI request must be a string";return true;}
+        p->SetString(2,a[1]->GetStringValue());
+      }
     } else if(name=="dragWindow") {
       p->SetString(0,"window");p->SetString(1,"drag");
     } else {return false;}
@@ -61,7 +68,7 @@ void SkAiApp::OnWebKitInitialized() {
     (function(){
       native function windowAction(); native function assistantAction();
       native function navigate(); native function browserAction();
-      native function tabAction(); native function downloadAction(); native function downloadPathAction(); native function permissionAction(); native function profileListAction(); native function profileCreateAction(); native function profileSwitchAction(); native function permissionListAction(); native function permissionRevokeAction(); native function layoutAction(); native function dragWindow();
+      native function tabAction(); native function downloadAction(); native function downloadPathAction(); native function permissionAction(); native function profileListAction(); native function profileCreateAction(); native function profileSwitchAction(); native function permissionListAction(); native function permissionRevokeAction(); native function layoutAction(); native function dragWindow(); native function aiAction();
       skaiNative.minimize=function(){windowAction("minimize")};
       skaiNative.toggleMaximize=function(){windowAction("toggleMaximize")};
       skaiNative.close=function(){windowAction("close")};
@@ -84,6 +91,9 @@ void SkAiApp::OnWebKitInitialized() {
       skaiNative.switchProfile=function(name){profileSwitchAction(String(name))};
       skaiNative.setContentBounds=function(x,y,w,h){layoutAction([x,y,w,h].join(","))};
       skaiNative.toggleFloatingAssistant=function(){assistantAction("toggle")};
+      skaiNative.aiStatus=function(){aiAction("status")};
+      skaiNative.installLocalModel=function(){aiAction("install")};
+      skaiNative.sendLocalAi=function(request){aiAction("send",String(request))};
     })();
   )",bridge);
 }
