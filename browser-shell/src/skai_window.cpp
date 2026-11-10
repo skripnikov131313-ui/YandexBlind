@@ -88,7 +88,10 @@ void SkAiCloseTab(int id){
  if(i->second.client&&i->second.client->GetBrowser())i->second.client->GetBrowser()->GetHost()->CloseBrowser(false);
 }
 void SkAiNavigateActive(const std::wstring&url){
- auto i=g_tabs.find(g_active);if(i!=g_tabs.end()&&i->second.client&&i->second.client->GetBrowser())i->second.client->GetBrowser()->GetMainFrame()->LoadURL(url);
+ if(g_active==0){SkAiCreateTab(url,true);return;}
+ auto i=g_tabs.find(g_active);
+ if(i!=g_tabs.end()&&i->second.client&&i->second.client->GetBrowser())
+  i->second.client->GetBrowser()->GetMainFrame()->LoadURL(url);
 }
 void SkAiBrowserAction(const std::wstring&a){
  auto i=g_tabs.find(g_active);if(i==g_tabs.end()||!i->second.client||!i->second.client->GetBrowser())return;
