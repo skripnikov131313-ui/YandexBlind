@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="ru" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Sk/Ai — Browser UI Prototype</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <svg class="icon-library" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></symbol>
+    <symbol id="i-sparkles" viewBox="0 0 24 24"><path d="m12 3 1.7 5.3L19 10l-5.3 1.7L12 17l-1.7-5.3L5 10l5.3-1.7zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8zM5 2l.7 2.3L8 5l-2.3.7L5 8l-.7-2.3L2 5l2.3-.7z"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 3v12m-5-5 5 5 5-5M4 20h16"/></symbol>
+    <symbol id="i-puzzle" viewBox="0 0 24 24"><path d="M9 4a2.5 2.5 0 1 1 5 0v2h4a1 1 0 0 1 1 1v4h-2a2 2 0 1 0 0 4h2v4a1 1 0 0 1-1 1h-5v-2a2 2 0 1 0-4 0v2H5a1 1 0 0 1-1-1v-5h2a2 2 0 1 0 0-4H4V7a1 1 0 0 1 1-1h4z"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="m19.4 15 .1.1 1.2 1-1.2 2.1-1.5-.5a8 8 0 0 1-1.7 1l-.3 1.6h-2.4l-.3-1.6a8 8 0 0 1-1.8-1l-1.4.5-1.2-2.1 1.2-1a7 7 0 0 1 0-2l-1.2-1 1.2-2.1 1.5.5a8 8 0 0 1 1.7-1l.3-1.6h2.4l.3 1.6a8 8 0 0 1 1.8 1l1.4-.5 1.2 2.1-1.2 1a7 7 0 0 1 0 2z"/></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.5 15.5A8.5 8.5 0 0 1 8.5 3.5 9 9 0 1 0 20.5 15.5z"/></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.9 4.9l1.4 1.4m11.4 11.4 1.4 1.4M2 12h2m16 0h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></symbol>
+    <symbol id="i-chevron" viewBox="0 0 24 24"><path d="m9 18 6-6-6-6"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-close" viewBox="0 0 24 24"><path d="m6 6 12 12M18 6 6 18"/></symbol>
+    <symbol id="i-back" viewBox="0 0 24 24"><path d="m14 5-7 7 7 7M7 12h14"/></symbol>
+    <symbol id="i-forward" viewBox="0 0 24 24"><path d="m10 5 7 7-7 7m7-7H3"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5"/><path d="M5.6 9A7 7 0 0 1 18 6l2 6M4 12l2 6a7 7 0 0 0 12.4-3"/></symbol>
+    <symbol id="i-lock" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="11" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3m-4 4v3"/></symbol>
+    <symbol id="i-star" viewBox="0 0 24 24"><path d="m12 3 2.8 5.7 6.2.9-4.5 4.4 1.1 6.2-5.6-3-5.6 3 1.1-6.2L3 9.6l6.2-.9z"/></symbol>
+    <symbol id="i-cloud" viewBox="0 0 24 24"><path d="M7 18h10a4 4 0 0 0 .4-8A6 6 0 0 0 6 9.5 4.3 4.3 0 0 0 7 18z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="M12 3 20 6v5c0 5-3.4 8.3-8 10-4.6-1.7-8-5-8-10V6z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></symbol>
+    <symbol id="i-palette" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1.2a1.8 1.8 0 0 0 1.2-3.1 1.6 1.6 0 0 1 1.1-2.8H17a4 4 0 0 0 4-4c0-4.5-4-8.1-9-8.1z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7.5" r="1"/><circle cx="15" cy="8" r="1"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="7.3"/><path d="m16.2 16.2 5 5"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h15m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-image" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9" r="1.5"/><path d="m21 15-5-5L5 20"/></symbol>
+    <symbol id="i-code" viewBox="0 0 24 24"><path d="m8 7-5 5 5 5m8-10 5 5-5 5m-2-13-4 16"/></symbol>
+    <symbol id="i-paperclip" viewBox="0 0 24 24"><path d="m8 12.5 6.8-6.8a3.5 3.5 0 0 1 5 5l-8.7 8.7a5 5 0 0 1-7-7l8.5-8.5"/></symbol>
+    <symbol id="i-trash" viewBox="0 0 24 24"><path d="M4 7h16m-10 0V4h4v3m4 0-1 14H7L6 7m3 3v7m6-7v7"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="8" r="3.5"/><path d="M5 20a7 7 0 0 1 14 0"/></symbol>
+  </svg>
+
+  <main class="desktop">
+    <div class="window-shell" id="windowShell">
+      <header class="window-top">
+        <div class="brand-chip" aria-label="Sk/Ai">
+          <span class="brand-mark"><i></i><i></i></span>
+          <span>Sk/Ai</span>
+        </div>
+        <div class="tabs" id="tabs">
+          <button class="tab active" data-tab="1">
+            <span class="tab-favicon">S</span><span class="tab-title">Новая вкладка</span>
+            <span class="tab-close" aria-label="Закрыть вкладку"><svg><use href="#i-close"/></svg></span>
+          </button>
+        </div>
+        <button class="icon-button new-tab" id="newTab" aria-label="Новая вкладка"><svg><use href="#i-plus"/></svg></button>
+        <div class="window-controls">
+          <button class="window-control" id="minimizeWindow" aria-label="Свернуть">−</button>
+          <button class="window-control" id="maximizeWindow" aria-label="Развернуть">▢</button>
+          <button class="window-control close-window" id="closeWindow" aria-label="Закрыть">×</button>
+        </div>
+      </header>
+
+      <div class="browser-toolbar">
+        <button class="icon-button nav-button" id="goBack" aria-label="Назад"><svg><use href="#i-back"/></svg></button>
+        <button class="icon-button nav-button muted" id="goForward" aria-label="Вперёд"><svg><use href="#i-forward"/></svg></button>
+        <button class="icon-button nav-button" id="reload" aria-label="Обновить"><svg><use href="#i-refresh"/></svg></button>
+        <form class="address-bar" id="addressForm">
+          <svg class="address-lock"><use href="#i-lock"/></svg>
+          <input id="addressInput" type="text" spellcheck="false" autocomplete="off" placeholder="Введите адрес или поисковый запрос" aria-label="Адрес или поисковый запрос">
+          <span class="address-hint">Enter ↵</span>
+        </form>
+        <button class="icon-button toolbar-action" id="bookmarkCurrent" aria-label="Добавить закладку"><svg><use href="#i-star"/></svg></button>
+        <button class="icon-button toolbar-action" id="downloads" aria-label="Загрузки"><svg><use href="#i-download"/></svg></button>
+        <button class="profile-button" id="profileButton" aria-label="Профиль"><svg><use href="#i-user"/></svg></button>
+        <button class="icon-button toolbar-action" id="browserMenu" aria-label="Меню"><svg><use href="#i-menu"/></svg></button>
+      </div>
+
+      <div class="browser-body">
+        <nav class="rail" aria-label="Основная навигация">
+          <div class="rail-main">
+            <button class="rail-button active" data-page="home" title="Главная"><svg><use href="#i-home"/></svg></button>
+            <button class="rail-button" data-page="assistant" title="ИИ-помощник"><svg><use href="#i-sparkles"/></svg></button>
+            <button class="rail-button" data-page="history" title="История"><svg><use href="#i-clock"/></svg></button>
+            <button class="rail-button" data-page="downloads" title="Загрузки"><svg><use href="#i-download"/></svg></button>
+            <button class="rail-button" data-page="extensions" title="Расширения"><svg><use href="#i-puzzle"/></svg></button>
+            <button class="rail-button" data-page="settings" title="Настройки"><svg><use href="#i-settings"/></svg></button>
+          </div>
+          <div class="rail-bottom">
+            <button class="rail-button theme-switch" id="themeToggle" title="Переключить тему"><svg><use href="#i-moon"/></svg></button>
+            <span class="theme-indicator"><i></i></span>
+          </div>
+        </nav>
+
+        <section class="workspace" id="workspace">
+          <div class="aurora aurora-one"></div><div class="aurora aurora-two"></div><div class="aurora aurora-three"></div>
+          <div class="workspace-content" id="workspaceContent">
+            <section class="hero">
+              <div class="hero-logo"><span>Sk</span><i></i><strong>Ai</strong></div>
+              <p>Умный браузер. Ваши правила.</p>
+              <span class="hero-underline"></span>
+            </section>
+
+            <form class="search-box" id="searchForm">
+              <svg><use href="#i-search"/></svg>
+              <input id="searchInput" type="text" placeholder="Найти что-то важное..." autocomplete="off" aria-label="Поиск">
+              <div class="search-divider"></div>
+              <select id="searchProvider" aria-label="Поисковая система">
+                <option>Яндекс</option><option>Google</option><option>Bing</option><option>DuckDuckGo</option><option>Brave Search</option><option>Startpage</option>
+              </select>
+              <button class="search-submit" type="submit" aria-label="Искать"><svg><use href="#i-arrow"/></svg></button>
+            </form>
+
+            <div class="quick-grid">
+              <button class="quick-card" data-page="bookmarks">
+                <span class="quick-icon cyan"><svg><use href="#i-grid"/></svg></span>
+                <span class="quick-title">Закладки</span><span class="quick-subtitle">Ваши ссылки</span><svg class="quick-arrow"><use href="#i-chevron"/></svg>
+              </button>
+              <button class="quick-card" data-page="privacy">
+                <span class="quick-icon mint"><svg><use href="#i-shield"/></svg></span>
+                <span class="quick-title">Приватность</span><span class="quick-subtitle">Полная защита</span><svg class="quick-arrow"><use href="#i-chevron"/></svg>
+              </button>
+              <button class="quick-card" data-page="extensions">
+                <span class="quick-icon violet"><svg><use href="#i-grid"/></svg></span>
+                <span class="quick-title">Расширения</span><span class="quick-subtitle">Больше возможностей</span><svg class="quick-arrow"><use href="#i-chevron"/></svg>
+              </button>
+              <button class="quick-card" data-page="themes">
+                <span class="quick-icon pink"><svg><use href="#i-palette"/></svg></span>
+                <span class="quick-title">Темы</span><span class="quick-subtitle">Оформление</span><svg class="quick-arrow"><use href="#i-chevron"/></svg>
+              </button>
+            </div>
+          </div>
+
+          <div class="status-bar">
+            <span class="status-left"><svg><use href="#i-shield"/></svg>Блокировка рекламы и трекеров включена</span>
+            <span class="status-wave"></span>
+            <span class="status-right"><svg><use href="#i-shield"/></svg>Sk/Ai UI Prototype <b>•</b> Защита включена</span>
+          </div>
+        </section>
+
+        <aside class="assistant-panel" id="assistantPanel">
+          <div class="assistant-header">
+            <span class="brand-mark assistant-mark"><i></i><i></i></span>
+            <strong>Sk/Ai Assistant</strong>
+            <span class="mode-badge local" id="modeBadge">LOCAL</span>
+            <button class="icon-button panel-tool" id="assistantSettings" aria-label="Настройки помощника"><svg><use href="#i-settings"/></svg></button>
+            <button class="icon-button panel-tool" id="closeAssistant" aria-label="Скрыть помощника"><svg><use href="#i-close"/></svg></button>
+          </div>
+          <div class="assistant-inner">
+            <div class="mode-switch" role="group" aria-label="Режим помощника">
+              <button class="mode-option selected" id="localMode"><span class="mode-spark">✧</span>Локальный ИИ</button>
+              <button class="mode-option" id="cloudMode"><svg><use href="#i-cloud"/></svg>Облако</button>
+            </div>
+            <button class="model-card" id="modelCard">
+              <span class="online-dot"></span><span class="model-copy"><b id="modelName">Qwen3.5 · 2B</b><small id="modelDescription">Работает на этом устройстве</small></span><svg><use href="#i-chevron"/></svg>
+            </button>
+            <button class="protection-card" id="protectionCard">
+              <svg class="protection-icon"><use href="#i-shield"/></svg>
+              <span class="protection-copy"><b>Интеллектуальная защита</b><small>Анализ подозрительных сайтов, угроз и вредоносных скриптов.</small></span>
+              <span class="active-pill">Активно</span><svg class="protection-arrow"><use href="#i-chevron"/></svg>
+            </button>
+            <div class="chat-stream" id="chatStream" aria-live="polite">
+              <div class="welcome-row">
+                <span class="assistant-avatar">✧</span>
+                <div class="message assistant-message">
+                  <b>Привет! Чем могу помочь?</b>
+                  <p>Задавайте вопросы, ищите информацию или попросите проанализировать страницу.</p>
+                </div>
+              </div>
+              <div class="prototype-note" id="prototypeNote">Интерфейс-предпросмотр. Подключение локальной модели будет выполнено на следующем этапе.</div>
+            </div>
+            <form class="composer" id="chatForm">
+              <div class="composer-tools">
+                <button type="button" class="icon-button composer-tool" id="attachButton" aria-label="Прикрепить файл"><svg><use href="#i-paperclip"/></svg></button>
+                <button type="button" class="icon-button composer-tool" id="imageButton" aria-label="Добавить изображение"><svg><use href="#i-image"/></svg></button>
+                <button type="button" class="icon-button composer-tool" id="codeButton" aria-label="Вставить код"><svg><use href="#i-code"/></svg></button>
+                <button type="button" class="icon-button composer-tool" id="clearChat" aria-label="Очистить чат"><svg><use href="#i-trash"/></svg></button>
+                <input type="file" id="fileInput" hidden>
+              </div>
+              <div class="composer-input">
+                <textarea id="chatInput" rows="1" placeholder="Спросите о чём угодно..." aria-label="Сообщение помощнику"></textarea>
+                <button class="send-button" type="submit" aria-label="Отправить"><svg><use href="#i-arrow"/></svg></button>
+              </div>
+            </form>
+          </div>
+        </aside>
+      </div>
+      <div class="toast" id="toast" role="status"></div>
+      <div class="minimized-overlay" id="minimizedOverlay"><span>Sk/Ai</span><button id="restoreWindow">Восстановить окно</button></div>
+    </div>
+  </main>
+  <script src="./app.js"></script>
+</body>
+</html>
