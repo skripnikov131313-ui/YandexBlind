@@ -22,16 +22,10 @@ bool SkAiClient::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
   }
   if (!browser) return true;
   if (category == "navigate") {
-    CefString url = action;
-    if (url.find(L"://") == std::wstring::npos &&
-        url.find(L"localhost") != 0 &&
-        url.find(L"127.0.0.1") != 0 &&
-        url.find(L".") == std::wstring::npos) {
-      url = L"https://www.google.com/search?q=" + CefURIEncode(url, false).ToWString();
-    } else if (url.find(L"://") == std::wstring::npos) {
-      url = L"https://" + url.ToWString();
-    }
-    browser->GetMainFrame()->LoadURL(url);
+    std::wstring target = action.ToWString();
+    if (target.find(L"://") == std::wstring::npos)
+      target = L"https://" + target;
+    browser->GetMainFrame()->LoadURL(target);
     return true;
   }
   if (category == "browser") {
@@ -53,20 +47,11 @@ void SkAiClient::OnBeforeClose(CefRefPtr<CefBrowser>) {
   browser_ = nullptr;
   if (IsWindow(host_window_)) PostMessageW(host_window_, WM_APP + 11, 0, 0);
 }
-void SkAiClient::OnAddressChange(CefRefPtr<CefBrowser> browser,
+void SkAiClient::OnAddressChange(CefRefPtr<CefBrowser>,
     CefRefPtr<CefFrame> frame, const CefString& url) {
   if (!frame->IsMain()) return;
-  const auto script = "window.skaiNative && window.skaiNative.addressChanged(" +
-      CefURIEncode(url, true).ToString() + ");";
-  // The renderer bridge receives the current URL through a safely quoted JS string.
-  const auto encoded = CefURIDecode(CefURIEncode(url, true), false, URIDECODE_NONE);
-  const auto value = encoded.ToString();
-  std::wstring escaped;
-  for (wchar_t ch : value) {
-    if (ch == L'\\' || ch == L'\"') escaped.push_back(L'\\');
-    if (ch == L'\r' || ch == L'\n') continue;
-    escaped.push_back(ch);
-  }
-  const auto js = L"window.skaiNative && window.skaiNative.addressChanged(\"" + escaped + L"\");";
-  frame->ExecuteJavaScript(js, frame->GetURL(), 0);
+  const CefString json = CefWriteJSON(CefV8Value::CreateString(url), JSON_WRITER_DEFAULT);
+  const std::wstring script = L"window.skaiNative && window.skaiNative.addressChanged(" +
+      json.ToWString() + L");";
+  frame->ExecuteJavaScript(script, frame->GetURL(), 0);
 }
