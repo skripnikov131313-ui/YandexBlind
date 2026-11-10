@@ -1,147 +1,45 @@
 <!doctype html>
 <html lang="ru">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="color-scheme" content="dark light">
-  <title>Sk/Ai — Native Shell Concept</title>
-  <link rel="stylesheet" href="styles.css">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light">
+<title>Sk/Ai Browser</title><link rel="stylesheet" href="styles.css">
 </head>
 <body data-theme="dark" data-scene="aurora">
-  <div class="desktop-glow glow-a"></div>
-  <div class="desktop-glow glow-b"></div>
-  <main class="browser-window" id="browserWindow">
-    <header class="titlebar">
-      <div class="brand-lockup" aria-label="Sk/Ai">
-        <span class="brand-mark">Sk<span>/</span><b>Ai</b></span>
-        <span class="brand-caption">BROWSER</span>
-      </div>
-      <div class="tabs" id="tabs" role="tablist" aria-label="Вкладки">
-        <button class="tab active" role="tab" aria-selected="true" data-title="Новая вкладка"><span class="tab-favicon home-favicon">✳</span><span class="tab-name">Новая вкладка</span><span class="tab-close">×</span></button>
-        <button class="tab" role="tab" aria-selected="false" data-title="Документация"><span class="tab-favicon">◈</span><span class="tab-name">Документация</span><span class="tab-close">×</span></button>
-      </div>
-      <button class="new-tab" id="newTab" aria-label="Новая вкладка">＋</button>
-      <div class="window-actions">
-        <button aria-label="Свернуть" title="Свернуть">—</button>
-        <button aria-label="Развернуть" title="Развернуть">▢</button>
-        <button class="close-window" aria-label="Закрыть" title="Закрыть">×</button>
-      </div>
-    </header>
-
-    <div class="toolbar">
-      <div class="nav-controls">
-        <button class="icon-button" aria-label="Назад" title="Назад">‹</button>
-        <button class="icon-button" aria-label="Вперёд" title="Вперёд">›</button>
-        <button class="icon-button" aria-label="Обновить" title="Обновить">↻</button>
-      </div>
-      <div class="omnibox">
-        <span class="secure-mark">⌑</span>
-        <input id="addressInput" value="skai://home" aria-label="Адрес или поисковый запрос" spellcheck="false">
-        <button class="omnibox-action" id="bookmarkButton" aria-label="Добавить закладку" title="Добавить закладку">☆</button>
-        <button class="search-engine" id="engineButton">Яндекс <span>⌄</span></button>
-      </div>
-      <button class="toolbar-icon" id="themeButton" title="Сменить оформление" aria-label="Сменить оформление">◐</button>
-      <button class="profile-button" title="Профиль">D</button>
-    </div>
-
-    <div class="browser-body">
-      <nav class="rail" aria-label="Основная навигация">
-        <button class="rail-item selected" title="Главная" aria-label="Главная">⌂</button>
-        <button class="rail-item" title="Закладки" aria-label="Закладки">☆</button>
-        <button class="rail-item" title="История" aria-label="История">◷</button>
-        <span class="rail-spacer"></span>
-        <button class="rail-item" title="Загрузки" aria-label="Загрузки">↓</button>
-        <button class="rail-item" title="Настройки" aria-label="Настройки">⚙</button>
-        <div class="rail-divider"></div>
-        <button class="rail-item assistant-rail" id="assistantRail" title="Sk/Ai Assistant" aria-label="Sk/Ai Assistant">✳</button>
-      </nav>
-
-      <section class="page-area" id="pageArea">
-        <div class="page-scroll">
-          <div class="welcome-row">
-            <div>
-              <div class="eyebrow"><span class="status-dot"></span> ВАШЕ ПРОСТРАНСТВО</div>
-              <h1>Добро пожаловать<br><span>в свой ритм.</span></h1>
-              <p class="welcome-subtitle">Всё нужное для работы, поиска и идей — в одном окне.</p>
-            </div>
-            <div class="date-chip"><span class="sun-symbol">✧</span><span id="dateLabel">СРЕДА · 11 НОЯБРЯ</span></div>
-          </div>
-
-          <div class="search-card">
-            <div class="search-symbol">⌕</div>
-            <input id="homeSearch" placeholder="Найти в интернете или ввести адрес..." aria-label="Поиск">
-            <kbd>ENTER ↵</kbd>
-            <div class="search-hint">Поиск через <b id="currentEngine">Яндекс</b></div>
-          </div>
-
-          <div class="section-heading"><div><span class="section-kicker">БЫСТРЫЙ ДОСТУП</span><h2>Ваши места</h2></div><button class="text-button" id="editShortcuts">Настроить <span>↗</span></button></div>
-          <div class="shortcut-grid">
-            <button class="shortcut-card" data-url="https://mail.google.com"><span class="shortcut-icon mail">✉</span><span><b>Почта</b><small>Личные сообщения</small></span><span class="shortcut-arrow">↗</span></button>
-            <button class="shortcut-card" data-url="https://github.com"><span class="shortcut-icon code">⌘</span><span><b>GitHub</b><small>Проекты и код</small></span><span class="shortcut-arrow">↗</span></button>
-            <button class="shortcut-card" data-url="https://www.youtube.com"><span class="shortcut-icon video">▷</span><span><b>YouTube</b><small>Видео и обучение</small></span><span class="shortcut-arrow">↗</span></button>
-            <button class="shortcut-card add-shortcut" id="addShortcut"><span class="shortcut-icon plus">＋</span><span><b>Добавить</b><small>Новый сайт</small></span></button>
-          </div>
-
-          <div class="bottom-grid">
-            <article class="insight-card">
-              <div class="card-topline"><span class="section-kicker">SK/AI · WORKSPACE</span><span class="live-indicator"><i></i> ГОТОВ К РАБОТЕ</span></div>
-              <div class="insight-content"><div class="orbital-icon">✳</div><div><h3>Думайте шире.</h3><p>Передайте страницу помощнику, чтобы разобрать текст, выделить главное или продолжить работу с контекстом.</p></div></div>
-              <button class="card-link" id="openAssistant">Открыть помощника <span>→</span></button>
-            </article>
-            <article class="privacy-card">
-              <div class="privacy-icon">⌑</div>
-              <div><span class="section-kicker">ПРИВАТНОСТЬ</span><h3>Ваш браузер.<br>Ваши правила.</h3><p>Управление данными и разрешениями — под рукой.</p></div>
-              <button class="privacy-link" title="Настройки приватности">↗</button>
-            </article>
-          </div>
-          <footer class="page-footer"><span>Sk/Ai <b>0.1 concept</b></span><span>Сделано для вашего спокойного фокуса <i>✳</i></span></footer>
-        </div>
-      </section>
-
-      <aside class="assistant-panel" id="assistantPanel">
-        <div class="assistant-header">
-          <div class="assistant-title"><div class="assistant-avatar">✳</div><div><b>Sk/Ai <span>Assistant</span></b><small><i class="online-dot"></i> Помощник готов</small></div></div>
-          <div class="assistant-window-tools">
-            <button id="floatAssistant" title="Открыть отдельным окном" aria-label="Открыть отдельным окном">↗</button>
-            <button id="collapseAssistant" title="Свернуть панель" aria-label="Свернуть панель">−</button>
-            <button id="hideAssistant" title="Скрыть помощника" aria-label="Скрыть помощника">×</button>
-          </div>
-        </div>
-        <div class="assistant-context"><span class="context-icon">◉</span><span><b>Контекст страницы</b><small>Не передан</small></span><button id="sharePage">ПЕРЕДАТЬ</button></div>
-        <div class="chat-area" id="chatArea">
-          <div class="assistant-intro">
-            <div class="intro-spark">✳</div>
-            <div class="section-kicker">ВАШ ИНТЕЛЛЕКТУАЛЬНЫЙ ПОМОЩНИК</div>
-            <h2>С чего<br>начнём?</h2>
-            <p>Я могу помочь разобраться в информации, сформулировать идею или довести задачу до результата.</p>
-          </div>
-          <div class="suggestion-list">
-            <button class="suggestion" data-prompt="Кратко объясни, что умеет Sk/Ai."><span>✧</span> Объяснить сложную тему <i>↗</i></button>
-            <button class="suggestion" data-prompt="Помоги структурировать мою задачу."><span>⌁</span> Структурировать задачу <i>↗</i></button>
-            <button class="suggestion" data-prompt="Составь краткое резюме текущего контекста."><span>▤</span> Сделать краткое резюме <i>↗</i></button>
-          </div>
-        </div>
-        <div class="composer-wrap">
-          <div class="composer">
-            <textarea id="promptInput" rows="1" placeholder="Спросите о чём угодно..."></textarea>
-            <div class="composer-bottom">
-              <div class="mode-switch" role="group" aria-label="Режим ИИ">
-                <button class="mode-option active" data-mode="local"><span class="mode-dot local-dot"></span> Локально</button>
-                <button class="mode-option" data-mode="cloud"><span class="mode-dot cloud-dot"></span> Облако</button>
-              </div>
-              <div class="composer-actions"><button class="attach-button" title="Прикрепить файл">＋</button><button class="send-button" id="sendPrompt" title="Отправить">↑</button></div>
-            </div>
-          </div>
-          <div class="model-footnote" id="modelFootnote">Qwen · работает на этом устройстве</div>
-        </div>
-      </aside>
-
-      <button class="assistant-reopen" id="reopenAssistant" title="Показать помощника">✳</button>
-    </div>
-    <div class="statusbar"><span><i class="status-dot"></i> Защищённое пространство</span><span>LOCAL FIRST <b>·</b> SK/AI</span></div>
-  </main>
-
-  <div class="toast" id="toast" role="status"></div>
-  <script src="app.js"></script>
-</body>
-</html>
+<div class="aurora-bg"></div><div class="landscape"><div class="mountain mountain-left"></div><div class="mountain mountain-right"></div><div class="lake"></div></div>
+<main class="browser-window" id="browserWindow">
+<header class="titlebar">
+ <div class="brand-lockup"><span class="brand-mark">Sk<span>/</span><b>Ai</b></span></div>
+ <div class="tabs" id="tabs" role="tablist" aria-label="Вкладки"><button class="tab active" role="tab" aria-selected="true" data-title="Новая вкладка"><span class="tab-favicon">◉</span><span class="tab-name">Новая вкладка</span><span class="tab-close">×</span></button></div>
+ <button class="new-tab" id="newTab" aria-label="Новая вкладка">＋</button>
+ <div class="window-actions"><button aria-label="Свернуть">—</button><button aria-label="Развернуть">□</button><button class="close-window" aria-label="Закрыть">×</button></div>
+</header>
+<div class="toolbar">
+ <div class="nav-controls"><button class="icon-button" aria-label="Назад">‹</button><button class="icon-button" aria-label="Вперёд">›</button><button class="icon-button" aria-label="Обновить">↻</button></div>
+ <div class="omnibox"><span class="secure-mark">▣</span><input id="addressInput" placeholder="Введите адрес или поисковый запрос" aria-label="Адрес или поисковый запрос" spellcheck="false"><button class="omnibox-action" id="bookmarkButton" aria-label="Добавить закладку">☆</button></div>
+ <button class="toolbar-icon" title="Загрузки">↓</button><button class="profile-button" title="Профиль">D</button><button class="toolbar-icon" id="themeButton" title="Сменить оформление">⋮</button>
+</div>
+<div class="browser-body">
+<nav class="rail" aria-label="Навигация"><button class="rail-item selected" title="Главная">⌂</button><button class="rail-item" title="Помощник" id="assistantRail">✧</button><button class="rail-item" title="История">◷</button><button class="rail-item" title="Загрузки">↓</button><button class="rail-item" title="Расширения">♧</button><button class="rail-item" title="Настройки">⚙</button><span class="rail-spacer"></span><button class="rail-item moon" title="Ночной режим">☾</button><span class="rail-toggle"></span></nav>
+<section class="page-area" id="pageArea"><div class="page-scroll">
+ <div class="hero-brand"><div class="hero-logo">Sk<span>/</span><b>Ai</b></div><p>Умный браузер. Ваши правила.</p><i></i></div>
+ <div class="search-card"><span class="search-symbol">⌕</span><input id="homeSearch" placeholder="Найти что-то важное..." aria-label="Поиск"><button class="search-engine" id="engineButton">Яндекс <span>⌄</span></button><button class="search-submit" id="homeSearchSubmit" aria-label="Искать">→</button><div class="search-hint">Поиск через <b id="currentEngine">Яндекс</b></div></div>
+ <div class="shortcut-grid">
+ <button class="shortcut-card" data-url="skai://bookmarks"><span class="shortcut-icon bookmarks">▦</span><span><b>Закладки</b><small>Ваши ссылки</small></span><span class="shortcut-arrow">›</span></button>
+ <button class="shortcut-card" data-url="skai://privacy"><span class="shortcut-icon privacy">♢</span><span><b>Приватность</b><small>Полная защита</small></span><span class="shortcut-arrow">›</span></button>
+ <button class="shortcut-card" data-url="skai://extensions"><span class="shortcut-icon extensions">▦</span><span><b>Расширения</b><small>Больше возможностей</small></span><span class="shortcut-arrow">›</span></button>
+ <button class="shortcut-card" data-url="skai://themes"><span class="shortcut-icon themes">◉</span><span><b>Темы</b><small>Оформление</small></span><span class="shortcut-arrow">›</span></button>
+ </div>
+ <div class="privacy-strip"><span class="privacy-shield">✓</span><span>Блокировка рекламы и трекеров включена</span><div class="privacy-wave"></div><span class="privacy-version">♢ &nbsp;Sk/Ai v1.0 · Защита на высшем уровне</span></div>
+ <div class="page-footer"><span>Sk/Ai <b>DESKTOP</b></span><span>Сделано для вашего спокойного фокуса <i>✧</i></span></div>
+</div></section>
+<aside class="assistant-panel" id="assistantPanel">
+ <div class="assistant-header"><div class="assistant-title"><div class="assistant-avatar">◢</div><div><b>Sk/Ai Assistant</b><small><i class="online-dot"></i> Помощник готов</small></div></div><span class="local-badge">LOCAL</span><div class="assistant-window-tools"><button title="Настройки">⚙</button><button id="floatAssistant" title="Плавающее окно">↗</button><button id="collapseAssistant" title="Свернуть">−</button><button id="hideAssistant" title="Закрыть">×</button></div></div>
+ <div class="mode-switch mode-switch-wide"><button class="mode-option active" data-mode="local"><span class="mode-dot local-dot"></span>✧ Локальный ИИ</button><button class="mode-option" data-mode="cloud"><span class="mode-dot cloud-dot"></span>☁ Облако</button></div>
+ <div class="model-card"><span class="model-status"></span><div><b>Qwen3.5 · 2B</b><small id="modelFootnote">Работает на этом устройстве</small></div><span class="model-chevron">›</span></div>
+ <div class="security-card"><span class="security-icon">⬡</span><div><div class="security-title">Интеллектуальная защита <b>Активно</b></div><p>Qwen анализирует подозрительные сайты, блокирует угрозы и вредоносные скрипты.</p></div><span class="model-chevron">›</span></div>
+ <div class="chat-area" id="chatArea"><div class="assistant-intro"><div class="intro-spark">✧</div><div><b>Привет! Чем могу помочь?</b><p>Задавайте вопросы, ищите информацию или попросите проанализировать страницу.</p></div></div><div class="suggestion-list"><button class="suggestion" data-prompt="Объясни, что умеет Sk/Ai."><span>✧</span> Что умеет Sk/Ai? <i>↗</i></button><button class="suggestion" data-prompt="Помоги проанализировать текущую страницу."><span>⌁</span> Проанализировать страницу <i>↗</i></button></div></div>
+ <div class="composer-wrap"><div class="composer-tools"><button title="Прикрепить файл">♧</button><button title="Изображение">▧</button><button title="Код">&lt;/&gt;</button><button title="Очистить диалог">♜</button><button id="sharePage" title="Передать страницу">⇧</button></div><div class="composer"><textarea id="promptInput" rows="1" placeholder="Спросите о чём угодно..."></textarea><div class="composer-bottom"><div class="composer-actions"><button class="attach-button" title="Прикрепить">＋</button><button class="send-button" id="sendPrompt" title="Отправить">→</button></div></div></div></div>
+</aside><button class="assistant-reopen" id="reopenAssistant" title="Показать помощника">✧</button>
+</div><div class="statusbar"><span><i class="status-dot"></i> Sk/Ai · Ваше пространство</span><span>LOCAL FIRST <b>·</b> PRIVACY BY DESIGN</span></div>
+</main><div class="toast" id="toast" role="status"></div><script src="app.js"></script>
+</body></html>
