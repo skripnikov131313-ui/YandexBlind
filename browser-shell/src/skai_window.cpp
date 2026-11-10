@@ -46,6 +46,9 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lpa
       }
       DestroyWindow(window);
       return 0;
+    case WM_APP + 11:
+      DestroyWindow(window);
+      return 0;
     case WM_DESTROY:
       g_client = nullptr;
       PostQuitMessage(0);
@@ -69,7 +72,7 @@ HWND SkAiCreateMainWindow(HINSTANCE instance, int show_command) {
       CW_USEDEFAULT, CW_USEDEFAULT, 1440, 900, nullptr, nullptr, instance, nullptr);
   if (!g_window) return nullptr;
 
-  g_client = new SkAiClient();
+  g_client = new SkAiClient(g_window);
   CefWindowInfo info;
   RECT bounds{};
   GetClientRect(g_window, &bounds);
