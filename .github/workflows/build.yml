@@ -58,16 +58,16 @@ jobs:
           Copy-Item -Path (Join-Path $server.Directory.FullName "*") -Destination "dist\payload\AI" -Recurse -Force
           if (-not (Test-Path "dist\payload\AI\llama-server.exe")) { throw "Could not stage llama-server.exe." }
 
-          $modelName = "Qwen3.5-0.8B-Q4_0.gguf"
-          $modelUrl = "https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF/resolve/main/$modelName"
+          $modelName = "qwen3.5-2b-Q4_K_M.gguf"
+          $modelUrl = "https://huggingface.co/gguf/Qwen3.5-2B-GGUF/resolve/main/$modelName"
           $modelPath = "dist\payload\AI\models\$modelName"
           Invoke-WebRequest -Uri $modelUrl -OutFile $modelPath
-          $expectedModelSha = "57d1997790d1744fba5b40a7317df71ea5e2acee28c47e78f0cce39c0703f8cf"
+          $expectedModelSha = "9a3d0aa6c920f096441139b6a254542da855223fdad06855ea00c6c087fd713d"
           $actualModelSha = (Get-FileHash -Path $modelPath -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($actualModelSha -ne $expectedModelSha) {
             throw "Qwen model SHA-256 mismatch. Expected $expectedModelSha, got $actualModelSha"
           }
-          "Qwen3.5-0.8B Q4_0 SHA256: $actualModelSha" | Out-File "dist\payload\AI\MODEL.txt" -Encoding utf8
+          "Qwen3.5-2B Q4_K_M SHA256: $actualModelSha" | Out-File "dist\payload\AI\MODEL.txt" -Encoding utf8
           "llama.cpp runtime: $runtimeTag (Windows x64 CPU)" | Out-File "dist\payload\AI\RUNTIME.txt" -Encoding utf8
 
       - name: Prepare Yandex Blind files
@@ -81,7 +81,7 @@ jobs:
           @"
           Yandex Blind bundles llama.cpp as a local inference runtime.
           Runtime source: https://github.com/ggml-org/llama.cpp
-          Model: Qwen3.5-0.8B-GGUF (Q4_0), Apache-2.0
+          Model: Qwen3.5-2B-GGUF (Q4_K_M), Apache-2.0
           Model source: https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF
           The AI server binds only to 127.0.0.1 and is launched only while the browser is open.
           "@ | Out-File "dist\payload\AI\THIRD_PARTY_NOTICES.txt" -Encoding utf8
