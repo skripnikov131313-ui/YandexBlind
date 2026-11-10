@@ -217,13 +217,30 @@ bool SaveSitePermissionDecisions() {
   auto value = CefValue::Create();
   value->SetDictionary(dictionary);
   const auto json = CefWriteJSON(value, JSON_WRITER_DEFAULT).ToString();
-  std::ofstream file(path, std::ios::binary | std::ios::trunc);
-  if (!file) {
+  auto temporary_path = path;
+  temporary_path += L".tmp";
+  {
+    std::ofstream file(temporary_path, std::ios::binary | std::ios::trunc);
+    if (!file) {
+      return false;
+    }
+    file.write(json.data(), static_cast<std::streamsize>(json.size()));
+    file.flush();
+    if (!file.good()) {
+      file.close();
+      std::error_code cleanup_error;
+      std::filesystem::remove(temporary_path, cleanup_error);
+      return false;
+    }
+  }
+
+  if (!MoveFileExW(temporary_path.c_str(), path.c_str(),
+                   MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH)) {
+    std::error_code cleanup_error;
+    std::filesystem::remove(temporary_path, cleanup_error);
     return false;
   }
-  file.write(json.data(), static_cast<std::streamsize>(json.size()));
-  file.flush();
-  return file.good();
+  return true;
 }
 
 std::wstring DescribePermissionRequest(std::uint32_t permissions,
@@ -891,9 +908,22 @@ void SkAiSendSitePermissionList() {
 
 void SkAiRevokeSitePermission(const std::wstring& permission_key) {
   LoadSitePermissionDecisions();
-  const auto erased = g_site_permission_decisions.erase(permission_key);
-  if (erased == 0) return;
-  SaveSitePermissionDecisions();
+  const auto existing = g_site_permission_decisions.find(permission_key);
+  if (existing == g_site_permission_decisions.end()) return;
+
+  const bool previous_decision = existing->second;
+  g_site_permission_decisions.erase(existing);
+  if (!SaveSitePermissionDecisions()) {
+    g_site_permission_decisions[permission_key] = previous_decision;
+    if (g_ui_client && g_ui_client->GetBrowser()) {
+      const auto browser = g_ui_client->GetBrowser();
+      const auto frame = browser->GetMainFrame();
+      frame->ExecuteJavaScript(
+          L"window.skaiNative&&window.skaiNative.permissionStorageFailed&&window.skaiNative.permissionStorageFailed();",
+          frame->GetURL(), 0);
+    }
+    return;
+  }
   SkAiSendSitePermissionList();
 }
 
