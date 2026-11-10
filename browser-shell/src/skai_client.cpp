@@ -4,6 +4,7 @@
 #include "include/cef_values.h"
 
 #include <string>
+#include <sstream>
 
 SkAiClient::SkAiClient(HWND host_window, int tab_id, bool ui_browser)
     : host_window_(host_window), tab_id_(tab_id), ui_browser_(ui_browser) {}
@@ -29,15 +30,18 @@ bool SkAiClient::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
       const std::wstring url = args->GetString(2).ToWString();
       SkAiCreateTab(url.empty() ? L"about:blank" : url, true);
     } else if (action == "activate") {
-      SkAiActivateTab(args->GetInt(2));
+      SkAiActivateTab(std::stoi(args->GetString(2).ToString()));
     } else if (action == "close") {
-      SkAiCloseTab(args->GetInt(2));
+      SkAiCloseTab(std::stoi(args->GetString(2).ToString()));
     }
     return true;
   }
   if (category == "layout") {
-    SkAiSetContentBounds(args->GetInt(2), args->GetInt(3),
-                         args->GetInt(4), args->GetInt(5));
+    std::wistringstream values(args->GetString(1).ToWString());
+    int x=0, y=0, width=0, height=0; wchar_t c1=0, c2=0, c3=0;
+    if (values >> x >> c1 >> y >> c2 >> width >> c3 >> height &&
+        c1 == L',' && c2 == L',' && c3 == L',')
+      SkAiSetContentBounds(x, y, width, height);
     return true;
   }
   if (!browser) return true;
