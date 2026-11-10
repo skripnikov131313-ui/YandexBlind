@@ -2,6 +2,8 @@
 #include "include/cef_browser.h"
 #include "include/cef_client.h"
 #include "include/cef_task.h"
+#include "include/cef_values.h"
+#include "include/cef_parser.h"
 #include "skai_client.h"
 
 #include <filesystem>
@@ -117,6 +119,14 @@ void SkAiActivateTab(int tab_id) {
   for (auto& [id, tab] : g_tabs) tab.active = id == tab_id;
   g_active_tab_id = tab_id;
   LayoutChildren();
+  SendTabSnapshot();
+}
+void SkAiOnTabClosed(int tab_id) {
+  g_tabs.erase(tab_id);
+  if (g_active_tab_id == tab_id) {
+    g_active_tab_id = g_tabs.empty() ? 0 : g_tabs.rbegin()->first;
+    if (g_active_tab_id) SkAiActivateTab(g_active_tab_id);
+  }
   SendTabSnapshot();
 }
 void SkAiCloseTab(int tab_id) {
