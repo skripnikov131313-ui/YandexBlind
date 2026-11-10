@@ -302,7 +302,7 @@ assert.match(
 );
 assert.match(
   source,
-  /!["']http:|https:/,
+  /!\["http:", "https:"\]\.includes\(parsed\.protocol\)/,
   "Bookmark import must restrict URLs to HTTP and HTTPS."
 );
 
