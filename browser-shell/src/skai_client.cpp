@@ -1,6 +1,7 @@
 #include "skai_client.h"
 
 #include "skai_window.h"
+#include "skai_ai.h"
 #include "include/cef_parser.h"
 #include "include/cef_values.h"
 
@@ -160,6 +161,19 @@ bool SkAiClient::OnProcessMessageReceived(
 
   if (category == "assistant") {
     SkAiToggleFloatingAssistant();
+    return true;
+  }
+
+  if (category == "ai") {
+    if (action == "status") {
+      SkAiAiQueryStatus(browser);
+    } else if (action == "install") {
+      SkAiAiInstallModel(browser);
+    } else if (action == "send") {
+      if (args->GetSize() >= 3) {
+        SkAiAiSendChat(browser, args->GetString(2).ToWString());
+      }
+    }
     return true;
   }
 
