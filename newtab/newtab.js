@@ -4,7 +4,7 @@
   const $=id=>document.getElementById(id);
   const read=(k,d)=>{try{return localStorage.getItem("yb."+k)||d}catch{return d}};
   const write=(k,v)=>{try{localStorage.setItem("yb."+k,v)}catch{}};
-  let engine=engines[read("engine","yandex")]?read("engine","yandex"):"yandex",theme=read("theme","system"),motion=read("motion","on")!=="off";
+  let engine=engines[read("engine","yandex")]?read("engine","yandex"):"yandex",theme=read("theme","system"),scene=read("scene","aurora"),motion=read("motion","on")!=="off";
   let selectedFile=null,fileText="",busy=false,aiOnline=false,assistantMode=read("assistant-mode","local")==="cloud"?"cloud":"local";
   const conversation=[];
   const applyPrivacyControls=async()=>{
@@ -27,6 +27,7 @@
   $("third-party-cookie-toggle").addEventListener("change",e=>{write("third-party-cookies",e.target.checked?"on":"off");applyPrivacyControls()});
   const systemTheme=matchMedia("(prefers-color-scheme: light)");const applyTheme=()=>{document.body.classList.toggle("light",theme==="light"||(theme==="system"&&systemTheme.matches));$("theme-select").value=theme};systemTheme.addEventListener?.("change",()=>{if(theme==="system")applyTheme()});
   const applyMotion=()=>{document.body.classList.toggle("no-motion",!motion);$("motion-toggle").checked=motion};
+  const applyScene=()=>{document.body.dataset.scene=scene;$("scene-select").value=scene};
   const updateEngine=()=>{$("engine-quick").innerHTML=engines[engine].name+" <span>⌄</span>";$("engine-name").textContent=engines[engine].name.toUpperCase();$("engine-select").value=engine;if(assistantMode==="web")$("ai-scrim").querySelector(".model-strip b").textContent=engines[engine].name};
   const show=(id)=>{$(id).hidden=false;document.body.style.overflow="hidden"};
   const hide=(id)=>{$(id).hidden=true;if($("ai-scrim").hidden&&$("settings-scrim").hidden)document.body.style.overflow=""};
@@ -42,6 +43,7 @@
   $("engine-select").addEventListener("change",e=>{engine=e.target.value;write("engine",engine);updateEngine()});
   $("theme-select").addEventListener("change",e=>{theme=e.target.value;write("theme",theme);applyTheme()});
   $("motion-toggle").addEventListener("change",e=>{motion=e.target.checked;write("motion",motion?"on":"off");applyMotion()});
+  $("scene-select").addEventListener("change",e=>{scene=e.target.value;write("scene",scene);applyScene()});
   const setAssistantMode=(next)=>{
     assistantMode=next;write("assistant-mode",next);
     const local=next==="local";
@@ -92,5 +94,5 @@
   document.querySelectorAll(".suggestions button").forEach(b=>b.addEventListener("click",()=>{$("ai-prompt").value=b.dataset.prompt;$("ai-prompt").focus()}));
   $("file-input").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>300000){toast("Файл больше 300 КБ. Разделите его на части.");e.target.value="";return}try{fileText=await file.text();selectedFile=file;$("file-name").textContent=file.name;$("attachment").hidden=false;toast("Файл добавлен в локальный контекст.")}catch{toast("Не удалось прочитать файл.")}});
   const removeFile=()=>{selectedFile=null;fileText="";$("file-input").value="";$("attachment").hidden=true};$("file-remove").addEventListener("click",removeFile);
-  updateEngine();applyTheme();applyMotion();applyPrivacyControls();setAssistantMode(assistantMode);$("query").focus({preventScroll:true});health();setInterval(health,3500);
+  updateEngine();applyTheme();applyScene();applyMotion();applyPrivacyControls();setAssistantMode(assistantMode);$("query").focus({preventScroll:true});health();setInterval(health,3500);
 })();
