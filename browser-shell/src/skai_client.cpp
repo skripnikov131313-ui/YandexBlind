@@ -205,8 +205,8 @@ bool SkAiClient::OnProcessMessageReceived(
   }
 
   if (category == "permissionRevoke") {
-    if (args->GetSize() < 2) return true;
-    SkAiRevokeSitePermission(args->GetString(1).ToWString());
+    if (args->GetSize() < 3) return true;
+    SkAiRevokeSitePermission(args->GetString(2).ToWString());
     return true;
   }
 
