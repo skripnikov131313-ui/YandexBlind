@@ -8,7 +8,7 @@ base = fso.GetParentFolderName(WScript.ScriptFullName)
 browser = """" & base & "\Browser\chrome.exe" & """"
 profile = """" & shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\YandexBlind\Profile" & """"
 aiServer = base & "\AI\llama-server.exe"
-aiModel = base & "\AI\models\Qwen3.5-0.8B-Q4_0.gguf"
+aiModel = base & "\AI\models\qwen3.5-2b-Q4_K_M.gguf"
 
 ' Start the local model engine silently, bound to loopback only.
 If fso.FileExists(aiServer) And fso.FileExists(aiModel) Then
