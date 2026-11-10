@@ -284,7 +284,9 @@ bool SkAiClient::OnProcessMessageReceived(
   }
 
   if (category == "browser") {
-    SkAiBrowserAction(action.ToWString());
+    const std::wstring parameter = args->GetSize() >= 3
+        ? args->GetString(2).ToWString() : L"";
+    SkAiBrowserAction(action.ToWString(), parameter);
     return true;
   }
 
@@ -359,6 +361,15 @@ void SkAiClient::OnAddressChange(CefRefPtr<CefBrowser> /*browser*/,
         frame->GetURL(), 0);
   } else {
     SkAiNotifyTabState(tab_id_, L"Загрузка…", url.ToWString(), true);
+  }
+}
+
+void SkAiClient::OnFindResult(
+    CefRefPtr<CefBrowser> /*browser*/, int /*identifier*/, int count,
+    const CefRect& /*selection_rect*/, int active_match_ordinal,
+    bool final_update) {
+  if (!ui_browser_) {
+    SkAiNotifyFindResult(tab_id_, count, active_match_ordinal, final_update);
   }
 }
 
