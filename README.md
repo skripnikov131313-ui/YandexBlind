@@ -23,7 +23,7 @@ The assistant currently accepts text files up to 300 KB and truncates the local 
 GitHub Actions downloads the upstream Chromium-Gost archive, verifies its SHA-256, downloads the official llama.cpp Windows CPU runtime, downloads the Qwen GGUF model and verifies the model SHA-256, then packages all components with Inno Setup.
 
 - Chromium-Gost release: https://github.com/deemru/Chromium-Gost/releases/tag/156.0.8078.88
-- llama.cpp runtime release: https://github.com/ggml-org/llama.cpp/releases/tag/b12208
+- llama.cpp runtime release: https://github.com/ggml-org/llama.cpp/releases/tag/b12248
 - Qwen model: https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF
 
 ## Privacy model
