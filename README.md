@@ -64,3 +64,10 @@ The installer has not yet been verified on a real Windows 11 machine. The side-p
 ## Third-party components
 
 Chromium-Gost/Chromium, llama.cpp and Qwen are third-party components. Their upstream notices and licenses apply. Verify the model repository's current license and notices before redistributing a release.
+
+
+## Native Sk/Ai browser shell
+
+The native browser is being developed separately from the start-page extension prototype. It will replace Chromium's stock browser chrome with a Sk/Ai Windows interface while retaining the Chromium-Gost rendering and GOST/msspi engine.
+
+See [native-shell/README.md](native-shell/README.md) for the pinned source baseline, architecture, Windows build requirements and source-build scripts. The first source milestone is a reproducible Chromium-Gost checkout and baseline build; native UI patches are a separate, compile-tested series.
