@@ -15,7 +15,7 @@ std::wstring UiStartPage() {
   wchar_t executable[MAX_PATH]{};
   GetModuleFileNameW(nullptr, executable, MAX_PATH);
   const auto path = std::filesystem::path(executable).parent_path() / L"ui" / L"index.html";
-  return L"file:///" + path.wstring();
+  return L"file:///" + path.generic_wstring();
 }
 
 void LayoutBrowser(HWND window) {
