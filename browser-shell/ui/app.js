@@ -94,29 +94,37 @@
       description.textContent = (request.media ? "Доступ к устройству: " : "Сайт запрашивает: ") +
         (request.description || "дополнительные возможности");
       const note = document.createElement("small");
-      note.textContent = "Разрешение действует только для этого запроса.";
+      note.textContent = "Без сохранения решение действует только для этого запроса.";
+      const rememberLabel = document.createElement("label");
+      rememberLabel.className = "permission-remember";
+      const remember = document.createElement("input");
+      remember.type = "checkbox";
+      remember.checked = false;
+      const rememberText = document.createElement("span");
+      rememberText.textContent = "Запомнить решение для этого сайта";
+      rememberLabel.append(remember, rememberText);
       const actions = document.createElement("div");
       actions.className = "permission-prompt-actions";
       const deny = document.createElement("button");
       deny.type = "button";
       deny.className = "permission-deny";
       deny.textContent = "Запретить";
-      deny.addEventListener("click", () => resolvePermissionRequest(request.id, false));
+      deny.addEventListener("click", () => resolvePermissionRequest(request.id, false, remember.checked));
       const allow = document.createElement("button");
       allow.type = "button";
       allow.className = "permission-allow";
       allow.textContent = "Разрешить";
-      allow.addEventListener("click", () => resolvePermissionRequest(request.id, true));
+      allow.addEventListener("click", () => resolvePermissionRequest(request.id, true, remember.checked));
       actions.append(deny, allow);
-      card.append(heading, origin, description, note, actions);
+      card.append(heading, origin, description, note, rememberLabel, actions);
       root.append(card);
     });
   }
 
-  function resolvePermissionRequest(id, allow) {
+  function resolvePermissionRequest(id, allow, remember = false) {
     const key = String(id);
     if (!pendingPermissions.has(key)) return;
-    window.skaiNative?.resolvePermission(key, allow ? "allow" : "deny");
+    window.skaiNative?.resolvePermission(key, allow ? "allow" : "deny", remember);
     pendingPermissions.delete(key);
     renderPermissionPrompts();
   }
