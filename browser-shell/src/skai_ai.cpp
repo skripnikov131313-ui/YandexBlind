@@ -122,26 +122,34 @@ void NotifyStatus(CefRefPtr<CefBrowser> browser,
 }
 
 template <typename Fn>
-void LaunchWorker(Fn&& function) {
+bool LaunchWorker(Fn&& function) {
   {
     std::lock_guard<std::mutex> lock(g_worker_mutex);
-    if (g_shutting_down.load()) return;
+    if (g_shutting_down.load()) return false;
     ++g_active_workers;
   }
-  std::thread([task = std::forward<Fn>(function)]() mutable {
-    struct Completion {
-      ~Completion() {
-        std::lock_guard<std::mutex> lock(g_worker_mutex);
-        if (g_active_workers > 0) --g_active_workers;
-        g_worker_condition.notify_all();
+  try {
+    std::thread([task = std::forward<Fn>(function)]() mutable {
+      struct Completion {
+        ~Completion() {
+          std::lock_guard<std::mutex> lock(g_worker_mutex);
+          if (g_active_workers > 0) --g_active_workers;
+          g_worker_condition.notify_all();
+        }
+      } completion;
+      try {
+        task();
+      } catch (...) {
+        // Worker failures are reported at their operation boundary.
       }
-    } completion;
-    try {
-      task();
-    } catch (...) {
-      // Worker failures are reported at their operation boundary.
-    }
-  }).detach();
+    }).detach();
+    return true;
+  } catch (...) {
+    std::lock_guard<std::mutex> lock(g_worker_mutex);
+    if (g_active_workers > 0) --g_active_workers;
+    g_worker_condition.notify_all();
+    return false;
+  }
 }
 
 std::filesystem::path GetModelDirectory() {
@@ -788,7 +796,7 @@ cleanup:
 }  // namespace
 
 void SkAiAiQueryStatus(CefRefPtr<CefBrowser> browser) {
-  LaunchWorker([browser]() {
+  const bool started = LaunchWorker([browser]() {
     if (g_shutting_down.load()) return;
     const auto model = GetModelPath();
     std::error_code error;
@@ -816,6 +824,7 @@ void SkAiAiQueryStatus(CefRefPtr<CefBrowser> browser) {
                  verified ? L"Qwen 3.5 2B готова к запуску."
                           : L"Файл модели повреждён. Установите его заново.");
   });
+  if (!started) NotifyStatus(browser, L"error", 0, L"Не удалось запустить фоновую задачу проверки модели.");
 }
 
 void SkAiAiInstallModel(CefRefPtr<CefBrowser> browser) {
@@ -831,7 +840,7 @@ void SkAiAiInstallModel(CefRefPtr<CefBrowser> browser) {
 
   NotifyStatus(browser, L"downloading", 0,
                L"Подготовка загрузки модели Qwen 3.5 2B…");
-  LaunchWorker([browser]() {
+  const bool started = LaunchWorker([browser]() {
     const bool installed = DownloadModel(browser);
     {
       std::lock_guard<std::mutex> lock(g_model_mutex);
@@ -839,6 +848,10 @@ void SkAiAiInstallModel(CefRefPtr<CefBrowser> browser) {
       if (!installed) g_model_verified_this_run = false;
     }
   });
+  if (!started) {
+    { std::lock_guard<std::mutex> lock(g_model_mutex); g_model_download_active = false; }
+    NotifyStatus(browser, L"error", 0, L"Не удалось запустить фоновую загрузку модели.");
+  }
 }
 
 void SkAiAiSendChat(CefRefPtr<CefBrowser> browser,
@@ -853,7 +866,7 @@ void SkAiAiSendChat(CefRefPtr<CefBrowser> browser,
     return;
   }
 
-  LaunchWorker([browser, request_id, request = openai_request_json]() {
+  const bool started = LaunchWorker([browser, request_id, request = openai_request_json]() {
     if (g_shutting_down.load()) return;
     NotifyStatus(browser, L"loading", 0,
                  L"Запуск локальной модели на процессоре…");
@@ -879,6 +892,11 @@ void SkAiAiSendChat(CefRefPtr<CefBrowser> browser,
     NotifyStatus(browser, L"ready", 100,
                  L"Qwen 3.5 2B · локальный режим · CPU");
   });
+  if (!started) {
+    Notify(browser, L"localAiResult", JsonQuote(request_id) + L"," +
+           JsonQuote(L"Не удалось запустить фоновую задачу локального ИИ.") + L",true");
+    NotifyStatus(browser, L"error", 0, L"Не удалось запустить фоновую задачу локального ИИ.");
+  }
 }
 
 void SkAiAiShutdown() {
