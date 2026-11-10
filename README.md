@@ -17,8 +17,8 @@ GitHub Actions downloads the upstream release archive, verifies its SHA-256, pac
 
 Upstream release: https://github.com/deemru/Chromium-Gost/releases/tag/156.0.8078.88
 
-Pinned x64 ZIP SHA-256:
-`2556469361fc977e0802711a8f561abbf65735d8c321d43739505ebe2c7cb3a0d7`
+Pinned x64 MSI SHA-256:
+`ba38c6b7e8272104c9323538735d75dd2de4f7a63f82694122464f4b6495c9ad`
 
 ## CryptoPro CSP and certificates
 
