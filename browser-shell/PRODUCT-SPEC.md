@@ -25,7 +25,7 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [~] Local browsing history: capture completed native CEF navigations, search, remove individual entries and clear all. Persistence and navigation capture still require Windows runtime validation.
 - [~] Native CEF download handler saves to Downloads/SkAi, emits progress and exposes pause/resume/cancel/open/show actions. Download history persists in the CEF UI profile; unfinished downloads are marked interrupted after restart. Windows runtime validation remains open.
 - [ ] Extension manager and documented compatibility policy.
-- [ ] Multiple profiles and isolated profile data.
+- [~] Multiple named profiles with separate CEF request contexts/cache directories; UI state is namespaced per profile. Windows runtime isolation and profile-switch lifecycle still require validation.
 - [ ] Import/export of bookmarks and settings.
 - [ ] Find-in-page, print, zoom, fullscreen and developer tools.
 - [~] CEF permission prompts for camera, microphone, screen/audio capture, geolocation, notifications, clipboard and other supported permission types. Explicit allow/deny, optional remember-per-origin-and-type, saved decision list and revoke. Windows runtime validation and integration with a full permissions/settings database remain open.
