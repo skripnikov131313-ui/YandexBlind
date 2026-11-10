@@ -41,3 +41,11 @@ body:not(.light)[data-scene="mist"]{background:radial-gradient(ellipse at 15% 10
 body.light[data-scene="mist"]{background:radial-gradient(ellipse at 15% 10%,rgba(190,202,224,.34),transparent 40%),radial-gradient(ellipse at 90% 25%,rgba(177,218,210,.28),transparent 38%),var(--bg)}
 body:not(.light)[data-scene="midnight"]{background:radial-gradient(ellipse at 50% -8%,rgba(93,101,150,.14),transparent 42%),#141720}
 body.light[data-scene="midnight"]{background:radial-gradient(ellipse at 50% -8%,rgba(123,135,174,.2),transparent 42%),#e9ebf1}
+
+
+/* Dock / float controls */
+.top{gap:8px}
+.window-mode{height:31px;display:flex;align-items:center;gap:5px;padding:0 9px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--muted);font-size:12px;cursor:pointer;white-space:nowrap;transition:.2s}
+.window-mode span{font-size:7px;letter-spacing:.8px}
+.window-mode:hover{border-color:var(--lav);color:var(--text);background:color-mix(in srgb,var(--lav) 10%,var(--surface))}
+body.floating-window .window-mode{color:var(--mint);border-color:rgba(155,217,198,.25);background:rgba(155,217,198,.08)}
