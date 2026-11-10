@@ -47,7 +47,7 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [~] Redock the assistant into the browser panel.
 - [~] Conversation and Local/Cloud mode persistence scaffolding.
 - [~] Bookmarks, bookmark folders, history, remembered site permissions, recent download metadata and the last 50 HTTP(S) tabs use the local CEF UI profile. History is capped at 2,000 entries and downloads at 200 records.
-- [ ] Verified cross-window and cross-session chat synchronization.
+- [~] Cross-window chat/mode synchronization via storage events and profile-scoped keys; same-origin behavior and persistence still require Windows CEF runtime validation.
 - [ ] Multiple named conversations and search.
 - [ ] Explicit page-content transfer after a user action.
 - [ ] Text/code and common document attachments.
