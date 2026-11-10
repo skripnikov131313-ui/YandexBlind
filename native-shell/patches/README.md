@@ -4,8 +4,9 @@ Place reviewed, version-pinned unified Git patches here:
 
 - 0001-skai-native-color-pipeline.patch
 - 0002-skai-native-branding.patch
-- 0003-skai-browser-frame.patch
-- 0004-skai-docked-assistant.patch
+- 0003-skai-toolbar-and-tab-geometry.patch
+- 0004-skai-browser-frame.patch
+- 0005-skai-docked-assistant.patch
 
 Patches are applied in lexical order after the pinned upstream Chromium-Gost preparation step and before GN generation.
 
