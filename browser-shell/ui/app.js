@@ -1045,7 +1045,6 @@
     notify("Помощник возвращён в браузер");
   };
 
-  let tabSequence = 1;
   function setActiveTabUi(tab) {
     $$(".tab").forEach(item => {
       const active = item === tab;
@@ -1090,8 +1089,8 @@
   }
   function createTab(url = "about:blank") {
     if (internalViewType) closeInternalView();
-    createTabElement(tabSequence++);
-    // Native CEF allocates the authoritative ID and publishes a tab snapshot.
+    // Native CEF owns tab IDs. The tab element is created only when the
+    // authoritative native snapshot arrives; no speculative JS ID is allocated.
     window.skaiNative?.newTab(url);
   }
   const homeTab = $(".tab");
@@ -1127,7 +1126,6 @@
         $("#addressInput").value = info.url;
         syncBookmarkButton();
       }
-      tabSequence = Math.max(tabSequence, id + 1);
     });
     $$(".tab").forEach(tab => {
       const id = Number(tab.dataset.tabId || 0);
