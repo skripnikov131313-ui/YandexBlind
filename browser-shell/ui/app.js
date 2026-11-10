@@ -46,9 +46,9 @@
   $("#hideAssistant")?.addEventListener("click", hideAssistant);
   $("#collapseAssistant")?.addEventListener("click", hideAssistant);
   $("#floatAssistant")?.addEventListener("click", () => {
-    browser.classList.toggle("assistant-floating");
-    browser.classList.remove("assistant-collapsed");
-    notify(browser.classList.contains("assistant-floating") ? "Режим отдельной панели (демо)" : "Помощник закреплён справа");
+    hideAssistant();
+    window.skaiNative?.toggleFloatingAssistant();
+    notify("Помощник открыт в отдельном окне");
   });
 
   $(".mode-option").forEach(button => {
@@ -157,6 +157,11 @@
 
   window.skaiNative = window.skaiNative || {};
   window.skaiNative.addressChanged = url => { $("#addressInput").value = url; };
+  window.skaiNative.assistantClosed = () => {
+    browser.classList.remove("assistant-collapsed", "assistant-floating");
+    panel.classList.remove("mobile-hidden");
+    notify("Помощник возвращён в браузер");
+  };
 
   let tabSequence = 1;
   function activateTab(tab) {
