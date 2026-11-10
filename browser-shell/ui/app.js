@@ -712,6 +712,118 @@
     });
     field(appearanceGroup, "Уменьшить движение", "Отключить декоративные переходы и анимации.", motionToggle);
 
+    const bookmarkTransferGroup = group(
+      "Закладки: импорт и экспорт",
+      "Переносите закладки между профилями Sk/Ai в проверяемом JSON-формате."
+    );
+    const bookmarkTransferRow = document.createElement("div");
+    bookmarkTransferRow.className = "settings-actions-row";
+    const exportBookmarksButton = document.createElement("button");
+    exportBookmarksButton.type = "button";
+    exportBookmarksButton.className = "settings-refresh";
+    exportBookmarksButton.textContent = "Экспортировать JSON";
+    const importBookmarksButton = document.createElement("button");
+    importBookmarksButton.type = "button";
+    importBookmarksButton.className = "settings-refresh";
+    importBookmarksButton.textContent = "Импортировать JSON";
+    const bookmarkFileInput = document.createElement("input");
+    bookmarkFileInput.type = "file";
+    bookmarkFileInput.accept = ".json,application/json";
+    bookmarkFileInput.hidden = true;
+
+    exportBookmarksButton.addEventListener("click", () => {
+      const payload = {
+        schema: "skai.bookmarks",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        folders: [...bookmarkFolders],
+        bookmarks: bookmarks.map(item => ({
+          title: String(item.title || item.url || "").slice(0, 120),
+          url: String(item.url || ""),
+          folder: bookmarkFolders.includes(item.folder) ? item.folder : "Без папки",
+          createdAt: Number.isFinite(Number(item.createdAt)) ? Number(item.createdAt) : Date.now()
+        })).filter(item => /^https?:\/\//i.test(item.url))
+      };
+      try {
+        const data = JSON.stringify(payload, null, 2);
+        const blob = new Blob([data], { type: "application/json;charset=utf-8" });
+        const objectUrl = URL.createObjectURL(blob);
+        const download = document.createElement("a");
+        download.href = objectUrl;
+        download.download = "skai-bookmarks-" + new Date().toISOString().slice(0, 10) + ".json";
+        download.hidden = true;
+        document.body.append(download);
+        download.click();
+        download.remove();
+        window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1500);
+        notify("Экспортировано закладок: " + payload.bookmarks.length);
+      } catch (_) {
+        notify("Не удалось подготовить файл закладок для экспорта");
+      }
+    });
+
+    importBookmarksButton.addEventListener("click", () => bookmarkFileInput.click());
+    bookmarkFileInput.addEventListener("change", async () => {
+      const file = bookmarkFileInput.files?.[0];
+      bookmarkFileInput.value = "";
+      if (!file) return;
+      if (file.size <= 0 || file.size > 5 * 1024 * 1024) {
+        notify("Файл должен быть непустым и не превышать 5 МБ");
+        return;
+      }
+      try {
+        const payload = JSON.parse(await file.text());
+        if (!payload || payload.schema !== "skai.bookmarks" || payload.version !== 1 ||
+            !Array.isArray(payload.bookmarks) || !Array.isArray(payload.folders)) {
+          throw new Error("Unsupported bookmark export format");
+        }
+        if (payload.bookmarks.length > 5000 || payload.folders.length > 200) {
+          throw new Error("Bookmark export exceeds entry limits");
+        }
+
+        const cleanFolder = value => String(value || "")
+          .replace(/[\\/:*?"<>|]/g, "")
+          .trim()
+          .slice(0, 32);
+        const nextFolders = [...new Set([
+          "Без папки",
+          ...bookmarkFolders,
+          ...payload.folders.map(cleanFolder).filter(value => value && value !== "Без папки")
+        ])];
+        const existingUrls = new Set(bookmarks.map(item => String(item.url || "")));
+        const imported = [];
+        for (const entry of payload.bookmarks) {
+          if (!entry || typeof entry.url !== "string" || entry.url.length > 4096) continue;
+          let parsed;
+          try { parsed = new URL(entry.url); } catch (_) { continue; }
+          if (!["http:", "https:"].includes(parsed.protocol) ||
+              parsed.username || parsed.password) continue;
+          const url = parsed.href;
+          if (existingUrls.has(url)) continue;
+          existingUrls.add(url);
+          const folder = cleanFolder(entry.folder);
+          imported.push({
+            title: String(entry.title || url).trim().slice(0, 120) || url,
+            url,
+            folder: nextFolders.includes(folder) ? folder : "Без папки",
+            createdAt: Number.isFinite(Number(entry.createdAt)) ? Number(entry.createdAt) : Date.now()
+          });
+        }
+
+        bookmarkFolders = nextFolders;
+        bookmarks = [...imported, ...bookmarks].slice(0, 5000);
+        persistBookmarkFolders();
+        persistBookmarks();
+        syncBookmarkButton();
+        notify("Добавлено закладок: " + imported.length);
+        if (internalViewType === "bookmarks") renderInternalView("bookmarks");
+      } catch (_) {
+        notify("Файл не распознан или содержит некорректные записи");
+      }
+    });
+    bookmarkTransferRow.append(exportBookmarksButton, importBookmarksButton);
+    bookmarkTransferGroup.append(bookmarkTransferRow, bookmarkFileInput);
+
     const privacyGroup = group("Приватность", "Текущий статус функций нативной версии браузера.");
     const privacyNote = document.createElement("div");
     privacyNote.className = "settings-note";
