@@ -19,7 +19,7 @@
  function setMode(value){
   mode=value;
   document.querySelectorAll("[data-mode]").forEach(b=>b.classList.toggle("active",b.dataset.mode===mode));
-  $("#note").textContent=mode==="local"?"Локальный режим · запросы остаются на устройстве":"Облачный режим · передача пока отключена";
+  $("#note").textContent=mode==="local"?"Локальная модель не подключена; запросы не отправляются":"Облачная модель не подключена; передача отключена";
   try { localStorage.setItem(modeKey,mode); } catch (_) {}
  }
  setMode(mode); render();
