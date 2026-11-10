@@ -715,6 +715,12 @@ void SkAiSwitchProfile(const std::wstring& raw_name) {
     return;
   }
 
+  // Close the detached assistant before changing profiles so its UI and
+  // conversation cannot remain attached to the previous profile.
+  if (g_assistant_client && !g_assistant_client->is_closing()) {
+    g_assistant_client->RequestClose();
+  }
+
   // Pending permission callbacks belong to the previous profile and must
   // never be stored using the newly selected profile path.
   SkAiCancelAllPermissions();
@@ -1371,8 +1377,10 @@ void SkAiToggleFloatingAssistant() {
   g_assistant_client = new SkAiClient(nullptr, -1, true);
 
   ++g_pending_browser_creates;
+  const std::wstring assistant_url =
+      UiFile(L"assistant.html") + L"?profile=" + g_active_profile;
   const bool started = CefBrowserHost::CreateBrowser(
-      window_info, g_assistant_client, UiFile(L"assistant.html"),
+      window_info, g_assistant_client, assistant_url,
       browser_settings, nullptr, nullptr);
   if (!started) {
     --g_pending_browser_creates;
