@@ -4,9 +4,31 @@
 #include "include/cef_parser.h"
 #include "include/cef_values.h"
 
-#include <exception>
+#include <cerrno>
+#include <climits>
+#include <cwchar>
 #include <sstream>
 #include <string>
+
+namespace {
+bool TryParseTabId(const CefString& input, int& tab_id) {
+  const std::wstring value = input.ToWString();
+  if (value.empty()) {
+    return false;
+  }
+
+  wchar_t* end = nullptr;
+  errno = 0;
+  const long parsed = std::wcstol(value.c_str(), &end, 10);
+  if (errno == ERANGE || end == value.c_str() || *end != L'\\0' ||
+      parsed < 0 || parsed > INT_MAX) {
+    return false;
+  }
+
+  tab_id = static_cast<int>(parsed);
+  return true;
+}
+}  // namespace
 
 SkAiClient::SkAiClient(HWND host_window, int tab_id, bool ui_browser)
     : host_window_(host_window), tab_id_(tab_id), ui_browser_(ui_browser) {}
@@ -53,16 +75,14 @@ bool SkAiClient::OnProcessMessageReceived(
     if (action == "new") {
       SkAiCreateTab(args->GetString(2).ToWString(), true);
     } else if (action == "activate") {
-      try {
-        SkAiActivateTab(std::stoi(args->GetString(2).ToString()));
-      } catch (const std::exception&) {
-        // Ignore malformed renderer input.
+      int tab_id = 0;
+      if (TryParseTabId(args->GetString(2), tab_id)) {
+        SkAiActivateTab(tab_id);
       }
     } else if (action == "close") {
-      try {
-        SkAiCloseTab(std::stoi(args->GetString(2).ToString()));
-      } catch (const std::exception&) {
-        // Ignore malformed renderer input.
+      int tab_id = 0;
+      if (TryParseTabId(args->GetString(2), tab_id)) {
+        SkAiCloseTab(tab_id);
       }
     }
     return true;
