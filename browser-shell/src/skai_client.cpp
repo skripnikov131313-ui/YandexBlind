@@ -199,6 +199,17 @@ bool SkAiClient::OnProcessMessageReceived(
     return true;
   }
 
+  if (category == "permissionsList") {
+    SkAiSendSitePermissionList();
+    return true;
+  }
+
+  if (category == "permissionRevoke") {
+    if (args->GetSize() < 2) return true;
+    SkAiRevokeSitePermission(args->GetString(1).ToWString());
+    return true;
+  }
+
   if (category == "permission") {
     if (args->GetSize() < 4) return true;
     std::uint64_t request_id = 0;
