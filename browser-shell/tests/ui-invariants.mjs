@@ -65,6 +65,10 @@ assert.match(
   "Profile switching must close the detached assistant."
 );
 
+const htmlSource = readFileSync(
+  new URL("../ui/index.html", import.meta.url),
+  "utf8"
+);
 const aiSource = readFileSync(
   new URL("../src/skai_ai.cpp", import.meta.url),
   "utf8"
@@ -175,6 +179,49 @@ assert.match(
   /runtime\/llama\/llama-server\.exe/,
   "The Windows package must include llama-server.exe."
 );
+
+assert.match(htmlSource, /id="findButton"/, "The browser toolbar must expose page search.");
+assert.match(htmlSource, /id="findBar"/, "The page find bar must be present in the UI.");
+assert.match(htmlSource, /id="zoomIn"/, "The browser toolbar must expose zoom controls.");
+assert.match(htmlSource, /id="printPage"/, "The browser toolbar must expose the print command.");
+assert.match(
+  source,
+  /window\.skaiNative\.browserAction\("findNext", query\)/,
+  "Find next must call the native CEF find API."
+);
+assert.match(
+  source,
+  /window\.skaiNative\.browserAction\("zoomIn"\)/,
+  "Zoom controls must call the native CEF host."
+);
+assert.match(
+  source,
+  /window\.skaiNative\.findResult =/,
+  "The renderer must receive native CEF find result notifications."
+);
+assert.match(
+  clientSource,
+  /GetFindHandler\(\) override \{ return this; \}/,
+  "The native client must expose a CEF find handler."
+);
+assert.match(
+  clientSource,
+  /void SkAiClient::OnFindResult/,
+  "Native find result callbacks must be handled."
+);
+assert.match(
+  clientSource,
+  /SkAiBrowserAction\(action\.ToWString\(\), parameter\)/,
+  "The native client must forward optional browser command parameters."
+);
+const browserWindowSource = readFileSync(
+  new URL("../src/skai_window.cpp", import.meta.url),
+  "utf8"
+);
+assert.match(browserWindowSource, /host->Find\(parameter, true, false, false\)/);
+assert.match(browserWindowSource, /host->StopFinding\(true\)/);
+assert.match(browserWindowSource, /host->SetZoomLevel/);
+assert.match(browserWindowSource, /host->Print\(\)/);
 
 assert.match(
   workflowSource,
