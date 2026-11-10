@@ -13,15 +13,19 @@ int RunSkAi(HINSTANCE instance, int show_command, void* sandbox_info) {
   CefMainArgs args(instance);
   CefRefPtr<SkAiApp> app = new SkAiApp();
 
-  // The CEF bootstrap supplies this handle. A missing handle is treated as
-  // an explicit development fallback only; packaged builds use the sandbox.
+  // Refuse to start without the bootstrap-provided sandbox handle. Running
+  // this browser without Chromium's renderer sandbox is not an accepted mode.
+  if (sandbox_info == nullptr) {
+    return 2;
+  }
+
   const int subprocess_code = CefExecuteProcess(args, app, sandbox_info);
   if (subprocess_code >= 0) {
     return subprocess_code;
   }
 
   CefSettings settings;
-  settings.no_sandbox = (sandbox_info == nullptr);
+  settings.no_sandbox = false;
   settings.multi_threaded_message_loop = false;
   settings.external_message_pump = false;
   settings.windowless_rendering_enabled = false;
@@ -32,11 +36,14 @@ int RunSkAi(HINSTANCE instance, int show_command, void* sandbox_info) {
           FOLDERID_LocalAppData, KF_FLAG_CREATE, nullptr, &local))) {
     const auto profile =
         std::filesystem::path(local) / L"SkAi" / L"Profiles" / L"Default";
-    std::filesystem::create_directories(profile);
-    CefString(&settings.root_cache_path) = profile.wstring();
-    CefString(&settings.cache_path) = (profile / L"Cache").wstring();
-    settings.persist_session_cookies = true;
-    settings.persist_user_preferences = true;
+    std::error_code filesystem_error;
+    std::filesystem::create_directories(profile, filesystem_error);
+    if (!filesystem_error) {
+      CefString(&settings.root_cache_path) = profile.wstring();
+      CefString(&settings.cache_path) = (profile / L"Cache").wstring();
+      settings.persist_session_cookies = true;
+      settings.persist_user_preferences = true;
+    }
     CoTaskMemFree(local);
   }
 
