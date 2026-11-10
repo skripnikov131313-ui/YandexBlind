@@ -21,14 +21,14 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [~] Address bar accepts URLs and search queries.
 - [~] Back, forward, reload and stop controls.
 - [~] Restore up to 50 recent HTTP(S) tabs in their saved order, with the previous active tab restored last. Crash-recovery semantics and Windows runtime validation remain open.
-- [ ] Bookmarks with folders, editing and persistence.
+- [~] Local bookmarks: add/remove current page, editable titles, create/rename/delete folders, move between folders and filter. Persisted in the UI CEF profile; Windows runtime validation remains open.
 - [~] Local browsing history: capture completed native CEF navigations, search, remove individual entries and clear all. Persistence and navigation capture still require Windows runtime validation.
 - [~] Native CEF download handler saves to Downloads/SkAi, emits progress and exposes pause/resume/cancel/open/show actions. Download history persists in the CEF UI profile; unfinished downloads are marked interrupted after restart. Windows runtime validation remains open.
 - [ ] Extension manager and documented compatibility policy.
 - [ ] Multiple profiles and isolated profile data.
 - [ ] Import/export of bookmarks and settings.
 - [ ] Find-in-page, print, zoom, fullscreen and developer tools.
-- [ ] Site permission manager for camera, microphone, location, notifications and clipboard.
+- [~] CEF permission prompts for camera, microphone, screen/audio capture, geolocation, notifications, clipboard and other supported permission types. Explicit allow/deny, optional remember-per-origin-and-type, saved decision list and revoke. Windows runtime validation and a broader site settings page remain open.
 
 ## 2. Search
 
@@ -36,7 +36,7 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [~] Provider cycle control on the start page.
 - [~] Address bar and start-page search use the selected provider.
 - [~] Selected provider is stored independently from the AI mode.
-- [ ] Dedicated provider picker/settings page.
+- [~] Settings view exposes the provider picker, theme selection and reduced-motion control.
 
 ## 3. Sk/Ai Assistant
 
@@ -46,7 +46,7 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [~] Floating-window minimize, maximize, restore, close and native topmost behavior.
 - [~] Redock the assistant into the browser panel.
 - [~] Conversation and Local/Cloud mode persistence scaffolding.
-- [~] Bookmarks, bookmark folders, history, recent download metadata and the last 50 HTTP(S) tabs use the CEF UI profile storage. History is capped at 2,000 entries and downloads at 200 records.
+- [~] Bookmarks, bookmark folders, history, remembered site permissions, recent download metadata and the last 50 HTTP(S) tabs use the local CEF UI profile. History is capped at 2,000 entries and downloads at 200 records.
 - [ ] Verified cross-window and cross-session chat synchronization.
 - [ ] Multiple named conversations and search.
 - [ ] Explicit page-content transfer after a user action.
@@ -80,10 +80,10 @@ The mode selector belongs next to the assistant composer.
 - [~] Local UI assets are bundled; no font/CDN is required.
 - [ ] Maintainable ad/tracker filter lists and network request filtering.
 - [ ] Configurable third-party cookie restrictions while preserving first-party sessions.
-- [ ] Per-site permission manager.
+- [~] Per-origin permission decisions are stored in the local profile; the settings UI lists remembered allow/deny choices and supports revocation. Unremembered requests are denied unless the user explicitly allows them.
 - [~] Standard Chromium certificate validation and sandbox are retained in the intended build configuration; this still requires Windows runtime verification.
 - [ ] Verify Chromium Safe Browsing and security services in the packaged runtime.
-- [~] History can be searched, individual entries removed and all history cleared. Download rows can be removed from the current view; cookie/cache/site-data controls and persistent download history remain open.
+- [~] History can be searched, individual entries removed and all history cleared. Download metadata persists, completed files reopen only from the managed Downloads/SkAi directory; cookie/cache/site-data controls remain open.
 - [~] Cloud placeholder sends nothing; production Cloud must require explicit consent.
 - [ ] Security review and network-traffic audit.
 
@@ -120,6 +120,6 @@ The mode selector belongs next to the assistant composer.
 
 ## Current milestone
 
-Native C++/Win32 + CEF shell with tabs/navigation controls, session restoration, bookmark folders/editing, local history, persistent download history and a native CEF downloads manager is implemented in source. The current CEF build uses the post-CEF-138 bootstrap architecture and explicitly refuses to start without the sandbox handle.
+Native C++/Win32 + CEF shell with tabs/navigation controls, session restoration, bookmark folders/editing, local history, persistent download history, native permission prompts and remembered per-site permission management is implemented in source. The current CEF build uses the post-CEF-138 bootstrap architecture and explicitly refuses to start without the sandbox handle.
 
 JavaScript syntax and HTML-to-JS element-reference checks pass in the repository inspection. The Windows workflow has not yet produced a successful build artifact; its latest run is queued and no Windows compile/runtime result is claimed. No Windows runtime behavior is claimed as tested. Next gate: complete Windows CI build and native-window smoke test. After that: multiple profiles, extension compatibility, per-site permission management and browser settings, then integrate local AI.
