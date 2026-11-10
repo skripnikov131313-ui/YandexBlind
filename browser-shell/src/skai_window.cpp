@@ -5,11 +5,9 @@
 
 #include <filesystem>
 #include <string>
-#include <windowsx.h>
 
 namespace {
 constexpr wchar_t kWindowClass[] = L"SkAi.NativeBrowserWindow";
-constexpr int kToolbarHeight = 92;
 HWND g_window = nullptr;
 CefRefPtr<SkAiClient> g_client;
 
@@ -28,8 +26,8 @@ void LayoutBrowser(HWND window) {
   const int height = bounds.bottom - bounds.top;
   const auto host = g_client->GetBrowser()->GetHost();
   if (host && host->GetWindowHandle()) {
-    SetWindowPos(host->GetWindowHandle(), nullptr, 0, kToolbarHeight, width,
-                 (height > kToolbarHeight ? height - kToolbarHeight : 0),
+    SetWindowPos(host->GetWindowHandle(), nullptr, 0, 0, width,
+                 height,
                  SWP_NOZORDER | SWP_NOACTIVATE);
   }
 }
@@ -52,15 +50,6 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lpa
       g_client = nullptr;
       PostQuitMessage(0);
       return 0;
-    case WM_NCHITTEST: {
-      const LRESULT hit = DefWindowProcW(window, message, wparam, lparam);
-      if (hit == HTCLIENT) {
-        POINT point{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
-        ScreenToClient(window, &point);
-        if (point.y < 42) return HTCAPTION;
-      }
-      return hit;
-    }
     default:
       return DefWindowProcW(window, message, wparam, lparam);
   }
