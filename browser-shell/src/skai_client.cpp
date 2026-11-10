@@ -16,17 +16,17 @@
 #include <knownfolders.h>
 
 namespace {
-bool TryParseDownloadId(const CefString& input, uint32_t& download_id) {
+bool TryParseDownloadId(const CefString& input, std::uint32_t& download_id) {
   const std::wstring value = input.ToWString();
   if (value.empty()) return false;
   wchar_t* end = nullptr;
   errno = 0;
   const unsigned long parsed = std::wcstoul(value.c_str(), &end, 10);
-  if (errno == ERANGE || end == value.c_str() || *end != L'\\0' ||
+  if (errno == ERANGE || end == value.c_str() || *end != L'\0' ||
       parsed > UINT_MAX) {
     return false;
   }
-  download_id = static_cast<uint32_t>(parsed);
+  download_id = static_cast<std::uint32_t>(parsed);
   return true;
 }
 
