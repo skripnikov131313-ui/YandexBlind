@@ -36,6 +36,15 @@ class SkAiV8Bridge final : public CefV8Handler {
       }
       args->SetString(0, "browser");
       args->SetString(1, arguments[0]->GetStringValue());
+    } else if (name == "tabAction") {
+      if (arguments.size() < 2) { exception = "Tab action arguments are required."; return true; }
+      args->SetString(0, "tab");
+      args->SetString(1, arguments[0]->GetStringValue());
+      args->SetString(2, arguments[1]->GetStringValue());
+    } else if (name == "layoutAction") {
+      if (arguments.empty() || !arguments[0]->IsString()) { exception = "Content bounds are required."; return true; }
+      args->SetString(0, "layout");
+      args->SetString(1, arguments[0]->GetStringValue());
     } else {
       return false;
     }
@@ -54,6 +63,8 @@ void SkAiApp::OnWebKitInitialized() {
       native function windowAction();
       native function navigate();
       native function browserAction();
+      native function tabAction();
+      native function layoutAction();
       skaiNative.minimize = function() { windowAction("minimize"); };
       skaiNative.toggleMaximize = function() { windowAction("toggleMaximize"); };
       skaiNative.close = function() { windowAction("close"); };
@@ -61,6 +72,10 @@ void SkAiApp::OnWebKitInitialized() {
       skaiNative.back = function() { browserAction("back"); };
       skaiNative.forward = function() { browserAction("forward"); };
       skaiNative.reload = function() { browserAction("reload"); };
+      skaiNative.newTab = function(url) { tabAction("new", String(url || "about:blank")); };
+      skaiNative.activateTab = function(id) { tabAction("activate", String(id)); };
+      skaiNative.closeTab = function(id) { tabAction("close", String(id)); };
+      skaiNative.setContentBounds = function(x,y,w,h) { layoutAction([x,y,w,h].join(",")); };
     })();
   )", bridge);
 }
