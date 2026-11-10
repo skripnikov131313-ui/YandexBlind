@@ -319,6 +319,7 @@ bool SkAiClient::OnBeforeDownload(
   const auto path = MakeUniqueDownloadPath(
       directory, suggested_name.ToWString());
   callback->Continue(path.wstring(), false);
+  return true;
 }
 
 void SkAiClient::OnDownloadUpdated(
