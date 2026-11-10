@@ -1,92 +1,117 @@
-# Sk/Ai Native Browser Shell
+# Sk/Ai Native Browser
 
-This directory is the beginning of the **native Sk/Ai browser**, separate from the earlier start-page extension prototype.
+This is the native browser product track. It is intentionally separate from the earlier extension-based proof of concept.
 
-## Goal
+## Product boundary
 
-Replace the stock Chromium browser chrome with Sk/Ai's own Windows browser interface while retaining the Chromium-Gost browser engine and its GOST/msspi integration.
+Sk/Ai owns the Windows browser application, window chrome, tabs, navigation controls, workspace, assistant, preferences, privacy UX, installer and update experience.
 
-The product is not a new HTML renderer or a new JavaScript engine. It is a native browser application built by modifying Chromium's own browser UI layer. This preserves the mature rendering, networking, process isolation, certificate and web-platform implementation rather than reimplementing them.
+**Upstream Chromium is the embedded browser engine and the foundation for mature web compatibility.** We do not write a new HTML/CSS renderer, JavaScript engine or network stack. We modify Chromium's browser application and UI source so that the product visible to the user is Sk/Ai, not the stock Chromium interface.
+
+This source track uses ordinary upstream Chromium. There is no Chromium-Gost dependency, GOST TLS layer, msspi submodule or CryptoPro CSP requirement.
 
 ## Pinned source baseline
 
-- Chromium-Gost source tag: **156.0.8078.88**
-- Upstream: https://github.com/deemru/Chromium-Gost
-- Windows patch/build scripts: upstream build_windows/
-- GOST transport integration: upstream src/gostssl.cpp, src/msspi/, and their corresponding Chromium/BoringSSL patches.
+- Upstream repository: https://chromium.googlesource.com/chromium/src
+- Chromium tag: **156.0.8078.88**
+- Local source path on the build machine: D:\SkAiBuild\chromium\src
+- depot_tools: D:\SkAiBuild\depot_tools
 
-The existing distribution uses Chromium-Gost 156.0.8078.88. We pin that same source tag for the first reproducible source build instead of silently moving to a different upstream revision. Updating the pin is a separate, reviewed change.
+The exact Chromium version is read from chrome/VERSION after checkout and verified before patching or building. Version changes require an explicit reviewed update to the source pin and patch series.
 
-## Browser layout
+## Browser window target
 
-The default window follows the supplied Sk/Ai reference:
+The default layout follows the supplied Sk/Ai design:
 
-1. Native Windows title controls and Sk/Ai top chrome.
-2. Native tab strip.
-3. Sk/Ai navigation row with Back, Forward, Reload, secure-connection status, omnibox, bookmarks, downloads and menu.
-4. A narrow vertical navigation rail on the left.
-5. The active website/search page in the main content region.
-6. A docked Sk/Ai Assistant on the right, sharing the window with the page rather than covering it.
+1. A native Windows title area with Sk/Ai identity and native window controls.
+2. A custom tab strip with new-tab button.
+3. A custom navigation row: Back, Forward, Reload, secure connection indicator, omnibox, bookmarks, downloads, profile and menu.
+4. A left navigation rail.
+5. The active page/search workspace.
+6. A right-side Sk/Ai Assistant dock that consumes its own layout width; it never covers the webpage.
 
-The assistant can be:
-- docked on the right (default);
-- docked on the left (user preference);
-- detached into a separate resizable Windows window;
-- minimized, maximized, restored or re-docked;
-- optionally kept above other Windows windows, but only after the user enables that native Windows behavior.
+The assistant is designed to support:
+- docking on the right by default, with optional left docking;
+- resizing through a draggable divider;
+- detached mode in a separate resizable native window;
+- minimize, maximize, restore and re-dock;
+- optional Windows Always-on-Top, off by default;
+- retained chat state when switching tabs or window mode.
 
-The webpage must resize to the remaining content region when the assistant is docked. It must never be obscured by a modal assistant overlay.
+## Native implementation
 
-## Native implementation direction
+The actual shell belongs in Chromium C++ Views / browser UI, not in an extension page.
 
-The shell belongs in Chromium's C++ Views browser UI, not in a full-screen extension page.
+Primary integration points for Chromium 156:
+- chrome/browser/ui/views/frame/browser_view.* — browser window layout and content host.
+- chrome/browser/ui/views/frame/browser_view_layout.* — layout calculations.
+- chrome/browser/ui/views/frame/tab_strip_region_view.* — tab strip host.
+- chrome/browser/ui/views/toolbar/toolbar_view.* — navigation controls and toolbar.
+- chrome/browser/ui/views/side_panel/* — native docked panel infrastructure.
+- chrome/browser/ui/color/* — ColorProvider mixers for Soft Aurora.
+- chrome/browser/ui/tabs/tab_style.* — native tab geometry.
 
-Primary integration points in Chromium 156:
-- chrome/browser/ui/views/frame/browser_view.h/.cc — top-level browser view, chrome/content layout and side-panel ownership.
-- chrome/browser/ui/views/frame/browser_view_layout.* — layout constraints and available bounds.
-- chrome/browser/ui/views/frame/tab_strip_region_view.* — tab row and new-tab affordance.
-- chrome/browser/ui/views/toolbar/toolbar_view.* — navigation controls, location bar and toolbar buttons.
-- chrome/browser/ui/views/side_panel/* — docked side-panel infrastructure.
-- chrome/browser/ui/color/* — Chrome color mixers and ColorIds for the Soft Aurora native palette.
-
-We will extend these existing subsystems rather than build a parallel tab, navigation, security or WebContents implementation.
+The browser's existing Browser, Profile, TabStripModel, WebContents, LocationBarModel, navigation controller, permission manager, download manager, security-state services and session restore remain canonical. Sk/Ai replaces their presentation and user-facing workflow, not their security-critical implementations.
 
 ## AI boundary
 
-Local Qwen remains a separate CPU process bound to loopback only. The native assistant UI calls the local inference service and passes page context only after an explicit user action. Cloud mode remains unavailable until a provider, key storage and per-request consent UI are implemented.
+- Local Qwen runs as a separate CPU inference process bound to 127.0.0.1 only.
+- Page context is transferred only after explicit user action.
+- Password inputs, payment fields, cookies, hidden form values and browser profile data are never scraped into prompts.
+- Page text and uploaded files are untrusted context, not instructions.
+- Cloud mode remains unavailable until a provider, secure secret storage, data disclosure and per-request confirmation are implemented.
+- Switching Local / Cloud must never silently transmit chat history or page context.
 
-Page text, files and web content are untrusted context, not instructions. Password fields, form values, cookies and browser profile data must never be scraped into the assistant context.
+## Privacy and security
 
-## Source build
+- Use upstream Chromium certificate verification and platform certificate stores.
+- Use standard TLS. No GOST TLS or CryptoPro integration is in scope.
+- Do not disable certificate validation, sandboxing, site isolation or Safe Browsing to work around compatibility problems.
+- Avoid project analytics SDKs and project telemetry endpoints.
+- Permissions for microphone, camera, geolocation, notifications and clipboard remain user-controlled.
+- Browser privacy controls should expose clear behavior for cookies, third-party storage, trackers and site permissions without falsifying website consent or breaking first-party sessions.
 
-Chromium's Windows source build needs a dedicated build machine. Current Chromium guidance asks for at least 100 GB free NTFS disk and recommends more than 16 GB RAM; the official current Windows toolchain is Visual Studio 2026. The user's 8 GB daily-use PC is not our build server.
+## Windows source build
 
-The scripts here:
-- check build prerequisites;
-- clone the pinned Chromium-Gost patch repository and depot_tools;
-- optionally initialize a Chromium checkout;
-- generate the upstream private environment override without changing upstream tracked files;
-- run the pinned upstream GOST preparation step;
-- apply Sk/Ai patches from native-shell/patches/*.patch;
-- optionally build the upstream baseline for comparison.
+A full Chromium source build is a separate build-host operation. The user's 8 GB Windows PC is the runtime target, not the recommended source-build machine. Chromium's current Windows instructions list at least 100 GB free NTFS disk and recommend more than 16 GB RAM; they require Visual Studio 2026 with the C++ desktop workload and MFC/ATL components.
 
-The first milestone is reproducible source preparation and baseline build. The first native Soft Aurora color-mixer patch is in native-shell/patches/0001-skai-native-color-pipeline.patch and passed the exact-source apply-check on Windows CI. A second patch changes Chromium's product identity to Sk/Ai in native-shell/patches/0002-skai-native-branding.patch; its apply-check is now included in the same ordered CI validation. Neither patch has been compiled or runtime-validated yet. Further native UI patches will be introduced in small, reviewable, compile-tested steps.
+Use the bootstrap and build scripts:
 
-## Current state
+    pwsh -File .\native-shell\bootstrap.ps1 -Workspace D:\SkAiBuild -ChromiumRef 156.0.8078.88 -InitializeChromiumCheckout
 
-- [x] Separate native-shell work branch.
-- [x] Source baseline pinned to the current project Chromium-Gost version.
-- [x] Chromium-Gost preparation workflow inspected.
-- [x] Native integration points mapped.
-- [x] Bootstrap/build/validation scripts added.
-- [ ] Full Chromium source checkout on a large Windows build machine.
-- [ ] Baseline Chromium-Gost source build.
-- [x] First Sk/Ai ColorProvider patch added for Chromium 156 (exact-source apply-check passed in CI).
-- [x] Native product branding patch added (Sk/Ai product and installer names; next CI apply-check pending).
-- [x] Native tab corner radii and toolbar / omnibox spacing refinement added (CI apply-check pending).
-- [x] Native C++ Assistant toolbar button added; it opens the stable Sk/Ai extension entry in Chromium's docked Side Panel (CI apply-check pending).
-- [ ] Native docked assistant registration.
-- [ ] Floating Windows assistant and Always-on-Top option.
-- [ ] Windows 11 integration and performance validation.
+    pwsh -File .\native-shell\build.ps1 -Workspace D:\SkAiBuild -ChromiumRef 156.0.8078.88 -BaselineOnly
 
-A green script-validation job is not a compiled browser. We will report source preparation, compilation and runtime tests separately.
+The baseline build compiles unmodified upstream Chromium. To build the Sk/Ai patch overlay, omit -BaselineOnly after the ordered patch series passes validation.
+
+A configured self-hosted runner can be labelled:
+
+    self-hosted, windows, x64, skai-chromium-large
+
+A hosted Windows runner is used for script checks, JavaScript syntax validation and patch apply-checks; it is not used for the complete source build.
+
+## UI prototype
+
+The supplied design is implemented as a standalone interactive preview in [ui-prototype/](ui-prototype/). Open ui-prototype/index.html in a desktop browser. No framework, package installation or external image/font request is required.
+
+The prototype demonstrates layout and interaction only. It does not render websites, connect Qwen or ship as the browser shell. The next step is to port its visual system into native Chromium Views and connect it to real browser services.
+
+## Current implementation state
+
+- [x] Separate native-browser source branch.
+- [x] Clean upstream Chromium source pin.
+- [x] Source bootstrap and GN/Ninja build scripts.
+- [x] Exact-source patch validator against upstream Chromium 156.0.8078.88.
+- [x] Soft Aurora ColorProvider patch.
+- [x] Sk/Ai product branding patch.
+- [x] Rounded tab and toolbar-spacing patch.
+- [x] Native assistant toolbar entry point (opens the Sk/Ai extension side-panel entry when that extension is installed).
+- [x] Interactive HTML/CSS/JS UI prototype matching the supplied reference.
+- [ ] Full clean Chromium source checkout on a large Windows build host.
+- [ ] Compile pristine Chromium baseline.
+- [ ] Compile Sk/Ai patch overlay.
+- [ ] Replace the stock browser frame and native tab strip with the full Sk/Ai layout.
+- [ ] Implement the real docked assistant view inside the browser-owned workspace.
+- [ ] Floating assistant window and Always-on-Top integration.
+- [ ] Local Qwen bridge, profile integration and runtime validation on Windows 11.
+
+A passing JavaScript check or patch apply-check does not mean Chromium has compiled. Source preparation, compilation and runtime tests are tracked separately.
