@@ -56,9 +56,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Build pinned Chromium-Gost baseline
+      - name: Build pinned pristine Chromium baseline
         shell: pwsh
-        run: ./native-shell/build.ps1 -Workspace D:\SkAiBuild -ChromiumGostRef 156.0.8078.88 -InitializeChromiumCheckout -BaselineOnly
+        run: ./native-shell/build.ps1 -Workspace D:\SkAiBuild -ChromiumRef 156.0.8078.88 -InitializeChromiumCheckout -BaselineOnly
 
       - name: Upload baseline artifacts
         uses: actions/upload-artifact@v4
