@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Sk/Ai Start",
+  "name": "Sk/Ai Browser",
   "version": "0.3.0",
-  "description": "Privacy-focused start page with local Qwen assistant, tracker filtering and configurable search.",
+  "description": "Sk/Ai Browser with a native docked assistant, local AI and privacy controls.",
   "permissions": [
     "declarativeNetRequest",
     "privacy",
