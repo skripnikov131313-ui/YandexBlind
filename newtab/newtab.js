@@ -5,7 +5,8 @@
   const read=(k,d)=>{try{return localStorage.getItem("yb."+k)||d}catch{return d}};
   const write=(k,v)=>{try{localStorage.setItem("yb."+k,v)}catch{}};
   let engine=engines[read("engine","yandex")]?read("engine","yandex"):"yandex",theme=read("theme","dark"),motion=read("motion","on")!=="off";
-  let selectedFile=null,fileText="",busy=false,aiOnline=false,assistantMode=read("assistant-mode","local")==="web"?"web":"local";
+  let selectedFile=null,fileText="",busy=false,aiOnline=false,assistantMode=read("assistant-mode","local")==="cloud"?"cloud":"local";
+  const conversation=[];
   const applyPrivacyControls=async()=>{
     const filtersOn=read("filters","on")!=="off";
     const thirdPartyOn=read("third-party-cookies","on")!=="off";
@@ -41,14 +42,51 @@
   $("engine-select").addEventListener("change",e=>{engine=e.target.value;write("engine",engine);updateEngine()});
   $("theme-select").addEventListener("change",e=>{theme=e.target.value;write("theme",theme);applyTheme()});
   $("motion-toggle").addEventListener("change",e=>{motion=e.target.checked;write("motion",motion?"on":"off");applyMotion()});
-  const setAssistantMode=(next)=>{assistantMode=next;write("assistant-mode",next);const local=next==="local";$("mode-local").classList.toggle("active",local);$("mode-web").classList.toggle("active",!local);$("mode-local").setAttribute("aria-pressed",String(local));$("mode-web").setAttribute("aria-pressed",String(!local));$("ai-scrim").classList.toggle("mode-web",!local);$("mode-explainer").textContent=local?"Запрос обрабатывается локальной моделью Qwen. Данные не отправляются в облачный ИИ.":"Запрос откроется в новой вкладке у выбранной поисковой системы. Поисковик получит ваш запрос и IP-адрес; локальный Qwen не вызывается."; $("ai-title").innerHTML=local?'Qwen <span>Assistant</span>':'Web <span>Search</span>';$("ai-scrim").querySelector(".model-strip b").textContent=local?"Qwen3.5 · 2B":engines[engine].name;$("ai-scrim").querySelector(".model-strip small").textContent=local?"Работает на этом устройстве":"Откроет результаты в новой вкладке";$("ai-scrim").querySelector(".local-badge").lastChild.textContent=local?" LOCAL":" WEB"; $("ai-prompt").placeholder=local?"Спросите о чём угодно…":"Что найти в интернете?";$("privacy-caption").innerHTML=local?'<i></i> НЕ ПОКИДАЕТ УСТРОЙСТВО':'<i></i> ЗАПРОС УЙДЁТ В ПОИСК';$("attach-label").title=local?"Добавить текстовый файл":"Файлы доступны только в локальном режиме";if(!local&&selectedFile){removeFile();toast("Веб-поиск не отправляет прикреплённые файлы.");}};
-  $("mode-local").addEventListener("click",()=>setAssistantMode("local"));$("mode-web").addEventListener("click",()=>setAssistantMode("web"));
+  const setAssistantMode=(next)=>{
+    assistantMode=next;write("assistant-mode",next);
+    const local=next==="local";
+    $("mode-local").classList.toggle("active",local);$("mode-cloud").classList.toggle("active",!local);
+    $("mode-local").setAttribute("aria-pressed",String(local));$("mode-cloud").setAttribute("aria-pressed",String(!local));
+    $("ai-scrim").classList.toggle("cloud-mode",!local);
+    $("ai-scrim").querySelector(".model-strip").classList.toggle("local-mode",local);
+    $("ai-scrim").querySelector(".model-strip").classList.toggle("cloud-mode",!local);
+    $("ai-title").innerHTML=local?'Qwen <span>Assistant</span>':'Cloud <span>Assistant</span>';
+    $("ai-scrim").querySelector(".model-strip b").textContent=local?"Qwen3.5 · 2B":"Облачная модель";
+    $("ai-scrim").querySelector(".model-strip small").textContent=local?"Работает на этом устройстве":"Провайдер API ещё не подключён";
+    $("mode-badge").textContent=local?"LOCAL":"CLOUD";
+    $("mode-explainer").textContent=local?"Локальная модель продолжит диалог с общей историей. Сообщения остаются на устройстве.":"История диалога сохранена и будет передана облачной модели после подключения провайдера. Перед отправкой будет показан состав передаваемых данных.";
+    $("ai-prompt").placeholder=local?"Продолжить диалог с Qwen…":"Продолжить диалог в облаке…";
+    $("privacy-caption").innerHTML=local?'<i></i> ОБРАБОТКА НА УСТРОЙСТВЕ':'<i></i> ПЕРЕДАЧА ПОСЛЕ ПОДТВЕРЖДЕНИЯ';
+    $("attach-label").title=local?"Добавить текстовый файл":"Вложения пока доступны только локально";
+  };
+  $("mode-local").addEventListener("click",()=>setAssistantMode("local"));
+  $("mode-cloud").addEventListener("click",()=>setAssistantMode("cloud"));
   const health=async()=>{try{const r=await fetch("http://127.0.0.1:8765/health",{cache:"no-store",signal:AbortSignal.timeout(1200)});aiOnline=r.ok}catch{aiOnline=false}const label=aiOnline?"Локальное ядро готово":"Локальное ядро запускается";$("ai-status").textContent=label;$("ai-dot").classList.toggle("offline",!aiOnline);$("settings-ai-status").textContent=aiOnline?"Qwen готов к работе":"Qwen не отвечает";$("settings-ai-dot").classList.toggle("green",aiOnline)};
   const addMessage=(role,text,extra="")=>{const area=$("chat-area");$("welcome").hidden=true;const el=document.createElement("div");el.className="message "+role+(extra?" "+extra:"");const label=document.createElement("span");label.className="message-label";label.textContent=role==="user"?"ВЫ":"QWEN";el.append(label,document.createTextNode(text));area.append(el);area.scrollTop=area.scrollHeight;return el};
-  const sendMessage=async()=>{if(busy)return;const prompt=$("ai-prompt").value.trim();if(!prompt&&!fileText)return;if(assistantMode==="web"){if(!prompt){toast("Для веб-поиска введите запрос.");return;}$("ai-prompt").value="";addMessage("user",prompt);const target=engines[engine].url+encodeURIComponent(prompt);const opened=window.open(target,"_blank");if(opened)opened.opener=null;addMessage("assistant",opened?"Поиск открыт в новой вкладке: "+engines[engine].name+". Запрос передан поисковой системе. Вернитесь в эту вкладку, чтобы продолжить работу с локальным Qwen.":"Браузер заблокировал новую вкладку. Разрешите всплывающие окна для стартовой страницы и повторите поиск.");return;} $("ai-prompt").value="";const full=(fileText?"Контекст из прикреплённого файла ("+(selectedFile?.name||"документ")+ "):\n"+fileText.slice(0,4500)+"\n\n":"")+prompt;addMessage("user",prompt||(selectedFile?"Проанализируй прикреплённый файл: "+selectedFile.name:""));const placeholder=addMessage("assistant","Подготавливаю ответ…");busy=true;$("ai-send").disabled=true;
-    try{const response=await fetch("http://127.0.0.1:8765/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"qwen-local",messages:[{role:"system",content:"Ты локальный помощник внутри браузера. Отвечай по-русски, ясно и по делу. Помогай с повседневными задачами, текстами и документами. Не выдумывай факты. Если пользователь приложил текст, используй его как контекст. Учитывай ограничение контекста и отвечай компактно."},{role:"user",content:full}],temperature:0.65,max_tokens:480,stream:false}),signal:AbortSignal.timeout(180000)});
-      if(!response.ok)throw new Error("Локальный движок вернул HTTP "+response.status);const data=await response.json();const answer=data.choices?.[0]?.message?.content||"Модель не вернула текстовый ответ.";placeholder.lastChild.textContent=answer;
-    }catch(err){placeholder.classList.add("error");placeholder.lastChild.textContent=err.name==="TimeoutError"?"Модель отвечает слишком долго. Попробуйте сократить запрос.":"Не удалось связаться с локальным Qwen. Проверьте, что модуль ИИ установлен и запущен. ("+err.message+")";}finally{busy=false;$("ai-send").disabled=false;$("chat-area").scrollTop=$("chat-area").scrollHeight;health()}
+  const sendMessage=async()=>{
+    if(busy)return;
+    const prompt=$("ai-prompt").value.trim();
+    if(!prompt&&!fileText)return;
+    if(assistantMode==="cloud"){
+      toast("История сохранена. Для облачного режима сначала подключи провайдера API — ничего не отправлено.");
+      return;
+    }
+    $("ai-prompt").value="";
+    const userText=(fileText?"Контекст из файла ("+(selectedFile?.name||"документ")+"):\\n"+fileText.slice(0,4500)+"\\n\\n":"")+prompt;
+    addMessage("user",prompt||(selectedFile?"Проанализируй прикреплённый файл: "+selectedFile.name:""));
+    conversation.push({role:"user",content:userText});
+    const placeholder=addMessage("assistant","Подготавливаю ответ…");
+    busy=true;$("ai-send").disabled=true;
+    try{
+      const messages=[{role:"system",content:"Ты локальный помощник внутри браузера Sk/Ai. Отвечай по-русски, ясно и по делу. Сохраняй контекст всего диалога. Не выдумывай факты. Учитывай ограничение контекста."},...conversation.slice(-18)];
+      const response=await fetch("http://127.0.0.1:8765/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"qwen-local",messages,temperature:0.65,max_tokens:480,stream:false}),signal:AbortSignal.timeout(180000)});
+      if(!response.ok)throw new Error("Локальный движок вернул HTTP "+response.status);
+      const data=await response.json();const answer=data.choices?.[0]?.message?.content||"Модель не вернула текстовый ответ.";
+      placeholder.lastChild.textContent=answer;conversation.push({role:"assistant",content:answer});
+    }catch(err){
+      conversation.pop();placeholder.classList.add("error");
+      placeholder.lastChild.textContent=err.name==="TimeoutError"?"Модель отвечает слишком долго. Попробуйте сократить запрос.":"Не удалось связаться с локальным Qwen. ("+err.message+")";
+    }finally{busy=false;$("ai-send").disabled=false;$("chat-area").scrollTop=$("chat-area").scrollHeight;health()}
   };
   $("ai-send").addEventListener("click",sendMessage);$("ai-prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});
   document.querySelectorAll(".suggestions button").forEach(b=>b.addEventListener("click",()=>{$("ai-prompt").value=b.dataset.prompt;$("ai-prompt").focus()}));
