@@ -35,9 +35,31 @@
   const openSettings=()=>{show("settings-scrim");$("theme-select").value=theme};
   $("settings-open").addEventListener("click",openSettings);$("settings-close").addEventListener("click",()=>hide("settings-scrim"));
   $("settings-scrim").addEventListener("click",e=>{if(e.target===$("settings-scrim"))hide("settings-scrim")});
-  $("ai-open").addEventListener("click",()=>{show("ai-scrim");$("ai-prompt").focus()});$("ai-close").addEventListener("click",()=>hide("ai-scrim"));
+  const openAssistant=async()=>{
+    try{
+      if(!chrome?.sidePanel?.open)throw new Error("В этой сборке Chromium-Gost не обнаружена поддержка встроенной боковой панели.");
+      const currentWindow=await chrome.windows.getCurrent();
+      if(!currentWindow?.id)throw new Error("Не удалось определить окно браузера.");
+      await chrome.sidePanel.open({windowId:currentWindow.id});
+    }catch(err){toast("Sk/Ai Assistant: "+err.message);}
+  };
+  $("ai-close").addEventListener("click",()=>hide("ai-scrim"));
   $("ai-scrim").addEventListener("click",e=>{if(e.target===$("ai-scrim"))hide("ai-scrim")});
-  $("privacy-open").addEventListener("click",openSettings);$("appearance-open").addEventListener("click",openSettings);$("engine-quick").addEventListener("click",openSettings);
+  $("privacy-open").addEventListener("click",openSettings);
+  $("appearance-open").addEventListener("click",openSettings);
+  $("engine-quick").addEventListener("click",openSettings);
+  $("bookmarks-open").addEventListener("click",()=>chrome.tabs.create({url:"chrome://bookmarks/"}));
+  $("extensions-open").addEventListener("click",()=>chrome.tabs.create({url:"chrome://extensions/"}));
+  document.querySelectorAll(".rail-btn").forEach(button=>button.addEventListener("click",()=>{
+    const action=button.dataset.action;
+    if(action==="assistant"){openAssistant();return;}
+    if(action==="history"){chrome.tabs.create({url:"chrome://history/"});return;}
+    if(action==="downloads"){chrome.tabs.create({url:"chrome://downloads/"});return;}
+    if(action==="bookmarks"){chrome.tabs.create({url:"chrome://bookmarks/"});return;}
+    if(action==="extensions"){chrome.tabs.create({url:"chrome://extensions/"});return;}
+    if(action==="privacy"||action==="settings"||action==="appearance"){openSettings();return;}
+    if(action==="home"){window.scrollTo({top:0,behavior:motion?"smooth":"auto"});}
+  }));
   document.addEventListener("keydown",e=>{if(e.key==="Escape"){hide("ai-scrim");hide("settings-scrim")}if((e.ctrlKey||e.metaKey)&&e.key===","){e.preventDefault();openSettings()}if(e.key==="/"&&!["INPUT","TEXTAREA"].includes(document.activeElement.tagName)){e.preventDefault();$("query").focus()}if((e.ctrlKey||e.metaKey)&&e.key==="Enter"&&!$("ai-scrim").hidden)sendMessage()});
   $("search-form").addEventListener("submit",e=>{e.preventDefault();const q=$("query").value.trim();if(q)location.href=engines[engine].url+encodeURIComponent(q);else $("query").focus()});
   $("engine-select").addEventListener("change",e=>{engine=e.target.value;write("engine",engine);updateEngine()});
