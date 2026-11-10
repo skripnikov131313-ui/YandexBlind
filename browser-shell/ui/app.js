@@ -25,6 +25,7 @@
   if (!["system", "dark", "light"].includes(themeMode)) themeMode = "system";
   let mode = "local";
   let toastTimer = 0;
+  let activePageLoading = false;
   const conversationKey = "skai.conversation.v1";
   const modeKey = "skai.assistant.mode.v1";
   let conversation = [];
@@ -181,7 +182,10 @@
   });
   $("#goBack")?.addEventListener("click", () => window.skaiNative?.back());
   $("#goForward")?.addEventListener("click", () => window.skaiNative?.forward());
-  $("#reloadPage")?.addEventListener("click", () => window.skaiNative?.reload());
+  $("#reloadPage")?.addEventListener("click", () => {
+    if (activePageLoading) window.skaiNative?.stop();
+    else window.skaiNative?.reload();
+  });
 
   $("#themeButton")?.addEventListener("click", cycleTheme);
   $$(".shortcut-card[data-url]").forEach(card => card.addEventListener("click", () => {
@@ -195,6 +199,21 @@
 
   window.skaiNative = window.skaiNative || {};
   window.skaiNative.addressChanged = url => { $("#addressInput").value = url; };
+  window.skaiNative.navigationState = (id, canGoBack, canGoForward, isLoading) => {
+    const selected = id === 0 || $('.tab[data-tab-id="' + id + '']')?.classList.contains("active");
+    if (!selected) return;
+    activePageLoading = !!isLoading;
+    const back = $("#goBack");
+    const forward = $("#goForward");
+    const reload = $("#reloadPage");
+    if (back) back.disabled = !canGoBack;
+    if (forward) forward.disabled = !canGoForward;
+    if (reload) {
+      reload.textContent = activePageLoading ? "×" : "↻";
+      reload.title = activePageLoading ? "Остановить загрузку" : "Обновить страницу";
+      reload.setAttribute("aria-label", reload.title);
+    }
+  };
   window.skaiNative.assistantClosed = () => {
     browser.classList.remove("assistant-collapsed", "assistant-floating");
     panel.classList.remove("mobile-hidden");
