@@ -2,7 +2,7 @@ diff --git a/chrome/browser/ui/color/BUILD.gn b/chrome/browser/ui/color/BUILD.gn
 index 42f66c6cce565ea6aa6f55bd75e61b6788eec601..0000000000000000000000000000000000000000 100644
 --- a/chrome/browser/ui/color/BUILD.gn
 +++ b/chrome/browser/ui/color/BUILD.gn
-@@ -43,5 +43,7 @@ source_set("mixers") {
+@@ -42,6 +42,8 @@ source_set("mixers") {
      "omnibox_color_mixer.h",
      "product_specifications_color_mixer.cc",
      "product_specifications_color_mixer.h",
