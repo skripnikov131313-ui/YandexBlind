@@ -38,11 +38,13 @@ void SkAiDownloadAction(std::uint32_t download_id, const std::wstring& action);
 void SkAiOpenDownloadedFile(const std::wstring& path, const std::wstring& action);
 
 std::uint64_t SkAiRequestSitePermission(
-    const std::wstring& requesting_origin, std::uint32_t requested_permissions,
-    bool media_request,
+    int tab_id, const std::wstring& requesting_origin,
+    std::uint32_t requested_permissions, bool media_request,
     CefRefPtr<CefPermissionPromptCallback> prompt_callback,
     CefRefPtr<CefMediaAccessCallback> media_callback,
     std::uint64_t cef_prompt_id = 0);
 void SkAiResolvePermission(std::uint64_t request_id, bool allow, bool remember);
 void SkAiDismissPermission(std::uint64_t cef_prompt_id);
 void SkAiCancelAllPermissions();
+
+void SkAiCancelPermissionsForTab(int tab_id);
