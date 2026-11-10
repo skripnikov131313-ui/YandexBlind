@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Yandex Blind</title>
+  <style>
+    :root { color-scheme: light dark; font-family: "Segoe UI", Arial, sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f6f8; color: #202124; }
+    main { width: min(680px, calc(100% - 40px)); margin-top: -8vh; text-align: center; }
+    .brand { font-size: clamp(34px, 7vw, 54px); font-weight: 650; letter-spacing: -2px; margin-bottom: 30px; }
+    .brand span { color: #e53935; }
+    form { display: flex; padding: 7px; gap: 8px; border: 1px solid #d9dde2; border-radius: 14px; background: white; box-shadow: 0 5px 22px #18223012; }
+    input { min-width: 0; flex: 1; border: 0; outline: 0; padding: 13px 15px; font-size: 17px; color: #202124; background: transparent; }
+    button { border: 0; border-radius: 10px; padding: 0 22px; background: #fc3f1d; color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
+    .hint { margin-top: 18px; color: #737b84; font-size: 13px; }
+    @media (prefers-color-scheme: dark) {
+      body { background: #202124; color: #f1f3f4; }
+      form { background: #303134; border-color: #4a4d50; }
+      input { color: #f1f3f4; }
+      .hint { color: #aeb4ba; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <div class="brand">Yandex <span>Blind</span></div>
+    <form action="https://yandex.ru/search/" method="get">
+      <input name="text" type="search" placeholder="Поиск в Яндексе" aria-label="Поиск в Яндексе" autofocus>
+      <button type="submit">Найти</button>
+    </form>
+    <div class="hint">Поиск открывается на yandex.ru</div>
+  </main>
+</body>
+</html>
