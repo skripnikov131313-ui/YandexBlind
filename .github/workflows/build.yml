@@ -46,7 +46,7 @@ jobs:
       - name: Download local Qwen runtime and model
         shell: pwsh
         run: |
-          $runtimeTag = "b12208"
+          $runtimeTag = "b12248"
           $runtimeAsset = "llama-$runtimeTag-bin-win-cpu-x64.zip"
           $runtimeUrl = "https://github.com/ggml-org/llama.cpp/releases/download/$runtimeTag/$runtimeAsset"
           New-Item -ItemType Directory -Force -Path "dist\llama", "dist\payload\AI\models" | Out-Null
