@@ -170,8 +170,9 @@ bool SkAiClient::OnProcessMessageReceived(
     } else if (action == "install") {
       SkAiAiInstallModel(browser);
     } else if (action == "send") {
-      if (args->GetSize() >= 3) {
-        SkAiAiSendChat(browser, args->GetString(2).ToWString());
+      if (args->GetSize() >= 4) {
+        SkAiAiSendChat(browser, args->GetString(2).ToWString(),
+                       args->GetString(3).ToWString());
       }
     }
     return true;
