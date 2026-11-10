@@ -156,3 +156,47 @@ body:not(.light) .mode-option.active#mode-cloud{color:#d0bfff}
 .toast{border-radius:14px;backdrop-filter:blur(20px);box-shadow:var(--shadow)}
 @media(max-width:760px){h1{letter-spacing:-3.3px}.feature-card{min-height:165px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important}}
+
+
+/* Background atmospheres — user-selectable, independent from color scheme */
+body[data-scene="mist"]{
+ background:
+ radial-gradient(ellipse at 18% 12%,rgba(177,190,220,.19),transparent 38%),
+ radial-gradient(ellipse at 82% 24%,rgba(155,199,191,.14),transparent 36%),
+ radial-gradient(ellipse at 50% 100%,rgba(195,177,207,.10),transparent 42%),
+ var(--bg);
+}
+body.light[data-scene="mist"]{
+ background:
+ radial-gradient(ellipse at 18% 12%,rgba(190,202,224,.35),transparent 38%),
+ radial-gradient(ellipse at 82% 24%,rgba(177,218,210,.29),transparent 36%),
+ radial-gradient(ellipse at 50% 100%,rgba(214,197,222,.23),transparent 42%),
+ var(--bg);
+}
+body[data-scene="midnight"]{
+ background:
+ radial-gradient(ellipse at 50% -8%,rgba(93,101,150,.15),transparent 42%),
+ radial-gradient(ellipse at 100% 100%,rgba(74,94,125,.10),transparent 40%),
+ #141720;
+}
+body.light[data-scene="midnight"]{
+ background:
+ radial-gradient(ellipse at 50% -8%,rgba(123,135,174,.20),transparent 42%),
+ radial-gradient(ellipse at 100% 100%,rgba(118,145,165,.14),transparent 40%),
+ #e9ebf1;
+}
+.scene-label{display:block;margin-top:17px;margin-bottom:8px;font-size:12px;color:var(--muted)}
+.setting-group select#scene-select{margin-top:0}
+body.no-motion *,body.no-motion *:before,body.no-motion *:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+@media(max-width:620px){
+ .topbar{height:70px;padding:0 22px}
+ .nav-status{display:none}
+ .page{width:min(100% - 32px,1000px)}
+ .hero{padding:76px 0 68px}
+ .feature-grid{grid-template-columns:1fr;gap:11px}
+ .feature-card{min-height:155px}
+ .searchbar{height:62px;padding-left:17px;gap:10px}
+ .search-submit{width:40px;height:40px}
+ .search-hint{font-size:7px;letter-spacing:.8px}
+ footer{gap:10px;flex-wrap:wrap;font-size:8px}
+}
