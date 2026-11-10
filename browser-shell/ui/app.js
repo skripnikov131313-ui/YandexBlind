@@ -379,6 +379,74 @@
     else window.skaiNative?.reload();
   });
 
+  let zoomPercent = 100;
+  const findBar = $("#findBar");
+  const findInput = $("#findInput");
+  function updateZoomLabel() {
+    const label = $("#zoomLevel");
+    if (label) label.textContent = zoomPercent + "%";
+  }
+  function requestFind(direction = "find") {
+    const query = findInput?.value || "";
+    if (!query.trim()) {
+      window.skaiNative?.browserAction("stopFind");
+      const count = $("#findCount");
+      if (count) count.textContent = "0 совпадений";
+      return;
+    }
+    window.skaiNative?.browserAction(direction, query);
+  }
+  function openFindBar() {
+    if (!findBar) return;
+    findBar.hidden = false;
+    findInput?.focus();
+    findInput?.select();
+    requestFind("find");
+  }
+  function closeFindBar() {
+    if (!findBar) return;
+    window.skaiNative?.browserAction("stopFind");
+    findBar.hidden = true;
+    if (findInput) findInput.value = "";
+    const count = $("#findCount");
+    if (count) count.textContent = "0 совпадений";
+  }
+  $("#findButton")?.addEventListener("click", () => {
+    if (findBar?.hidden) openFindBar();
+    else closeFindBar();
+  });
+  findInput?.addEventListener("input", () => requestFind("find"));
+  findInput?.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      requestFind(event.shiftKey ? "findPrevious" : "findNext");
+    } else if (event.key === "Escape") {
+      event.preventDefault();
+      closeFindBar();
+      $("#findButton")?.focus();
+    }
+  });
+  $("#findNext")?.addEventListener("click", () => requestFind("findNext"));
+  $("#findPrevious")?.addEventListener("click", () => requestFind("findPrevious"));
+  $("#findClose")?.addEventListener("click", closeFindBar);
+  $("#zoomIn")?.addEventListener("click", () => {
+    window.skaiNative?.browserAction("zoomIn");
+    zoomPercent = Math.min(300, Math.round(zoomPercent * 1.2 / 5) * 5);
+    updateZoomLabel();
+  });
+  $("#zoomOut")?.addEventListener("click", () => {
+    window.skaiNative?.browserAction("zoomOut");
+    zoomPercent = Math.max(30, Math.round(zoomPercent / 1.2 / 5) * 5);
+    updateZoomLabel();
+  });
+  $("#zoomLevel")?.addEventListener("click", () => {
+    window.skaiNative?.browserAction("zoomReset");
+    zoomPercent = 100;
+    updateZoomLabel();
+  });
+  $("#printPage")?.addEventListener("click", () => window.skaiNative?.browserAction("print"));
+  updateZoomLabel();
+
   $("#themeButton")?.addEventListener("click", cycleTheme);
   let bookmarkKey = profileStorageKey("skai.bookmarks.v1");
   let bookmarkFoldersKey = profileStorageKey("skai.bookmark.folders.v1");
@@ -1216,6 +1284,16 @@
       reload.title = activePageLoading ? "Остановить загрузку" : "Обновить страницу";
       reload.setAttribute("aria-label", reload.title);
     }
+  };
+  window.skaiNative.findResult = (matchCount, activeMatchOrdinal, finalUpdate) => {
+    const count = Number(matchCount) || 0;
+    const active = Number(activeMatchOrdinal) || 0;
+    const label = $("#findCount");
+    if (!label) return;
+    label.textContent = count === 0
+      ? (findInput?.value.trim() ? "Совпадений не найдено" : "0 совпадений")
+      : active + " из " + count;
+    label.dataset.final = String(!!finalUpdate);
   };
   window.skaiNative.profilesUpdated = profiles => {
     knownProfiles = Array.isArray(profiles)
