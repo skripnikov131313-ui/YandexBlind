@@ -55,7 +55,6 @@ bool g_model_verified_this_run = false;
 std::mutex g_server_mutex;
 HANDLE g_server_process = nullptr;
 HANDLE g_server_job = nullptr;
-DWORD g_server_process_id = 0;
 unsigned short g_server_port = 0;
 std::wstring g_server_api_key;
 
@@ -566,7 +565,6 @@ bool EnsureServer(unsigned short& port, std::wstring& api_key,
   if (g_server_process) {
     CloseHandle(g_server_process);
     g_server_process = nullptr;
-    g_server_process_id = 0;
     g_server_port = 0;
     g_server_api_key.clear();
   }
@@ -665,7 +663,6 @@ bool EnsureServer(unsigned short& port, std::wstring& api_key,
 
   g_server_process = process.hProcess;
   g_server_job = job;
-  g_server_process_id = process.dwProcessId;
   g_server_port = port;
   g_server_api_key = api_key;
 
@@ -680,7 +677,6 @@ bool EnsureServer(unsigned short& port, std::wstring& api_key,
         CloseHandle(g_server_job);
         g_server_job = nullptr;
       }
-      g_server_process_id = 0;
       g_server_port = 0;
       g_server_api_key.clear();
       return false;
@@ -698,7 +694,6 @@ bool EnsureServer(unsigned short& port, std::wstring& api_key,
     CloseHandle(g_server_job);
     g_server_job = nullptr;
   }
-  g_server_process_id = 0;
   g_server_port = 0;
   g_server_api_key.clear();
   return false;
@@ -946,7 +941,6 @@ void SkAiAiShutdown() {
       CloseHandle(g_server_job);
       g_server_job = nullptr;
     }
-    g_server_process_id = 0;
     g_server_port = 0;
     g_server_api_key.clear();
   }
