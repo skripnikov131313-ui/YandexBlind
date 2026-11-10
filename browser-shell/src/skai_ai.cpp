@@ -837,7 +837,7 @@ void SkAiAiSendChat(CefRefPtr<CefBrowser> browser,
     std::wstring answer;
     if (!PostChatRequest(port, api_key, request, answer, error_message)) {
       Notify(browser, L"localAiResult",
-             L"0," + JsonQuote(error_message) + L",true");
+             JsonQuote(request_id) + L"," + JsonQuote(error_message) + L",true");
       NotifyStatus(browser, L"error", 0, error_message);
       return;
     }
