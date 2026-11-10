@@ -192,6 +192,7 @@
   const historyKey = "skai.history.v1";
   let bookmarks = [];
   let historyItems = [];
+  let downloads = [];
   let internalViewType = "";
   try { bookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || "[]"); } catch (_) { bookmarks = []; }
   try { historyItems = JSON.parse(localStorage.getItem(historyKey) || "[]"); } catch (_) { historyItems = []; }
@@ -240,32 +241,57 @@
     createTab(url);
     closeInternalView();
   }
+  function formatDownloadBytes(value) {
+    if (!Number.isFinite(value) || value < 0) return "Размер неизвестен";
+    const units = ["Б", "КБ", "МБ", "ГБ"];
+    let size = value, unit = 0;
+    while (size >= 1024 && unit < units.length - 1) { size /= 1024; unit++; }
+    return (unit === 0 ? Math.round(size) : size.toFixed(1)) + " " + units[unit];
+  }
+  function downloadStatusLabel(item) {
+    if (item.state === "complete") return "Завершено";
+    if (item.state === "paused") return "Приостановлено";
+    if (item.state === "cancelled") return "Отменено";
+    if (item.state === "interrupted") return "Прервано";
+    if (item.state === "active") return item.percent >= 0 ? "Загрузка · " + item.percent + "%" : "Загрузка";
+    return "Подготовка";
+  }
+  function runDownloadAction(item, action) {
+    window.skaiNative?.downloadAction(item.id, action);
+  }
   function renderInternalView(type) {
     internalViewType = type;
     const view = $("#internalView");
     if (!view) return;
     view.hidden = false;
     pageSections.forEach(section => { section.hidden = true; });
-    $("#internalViewTitle").textContent = type === "bookmarks" ? "Закладки" : "История";
-    $("#internalViewDescription").textContent = type === "bookmarks"
-      ? "Сохранённые страницы в вашем профиле"
-      : "Недавно посещённые страницы · хранится локально";
+    $("#internalViewTitle").textContent =
+      type === "bookmarks" ? "Закладки" : type === "history" ? "История" : "Загрузки";
+    $("#internalViewDescription").textContent =
+      type === "bookmarks" ? "Сохранённые страницы в вашем профиле" :
+      type === "history" ? "Недавно посещённые страницы · хранится локально" :
+      "Файлы, полученные через браузер · папка Загрузки/SkAi";
     const list = $("#internalViewList");
     list.replaceChildren();
-    const allItems = type === "bookmarks" ? bookmarks : historyItems;
+    const allItems = type === "bookmarks" ? bookmarks :
+      type === "history" ? historyItems : downloads;
     const searchInput = $("#internalViewSearch");
-    if (searchInput) searchInput.placeholder = type === "bookmarks"
-      ? "Найти закладку по названию или адресу"
-      : "Найти посещённую страницу";
+    if (searchInput) searchInput.placeholder =
+      type === "bookmarks" ? "Найти закладку по названию или адресу" :
+      type === "history" ? "Найти посещённую страницу" : "Найти файл по имени или адресу";
     const query = (searchInput?.value || "").trim().toLocaleLowerCase("ru-RU");
     const items = allItems.map((item, index) => ({ item, index })).filter(entry => {
-      const haystack = ((entry.item.title || "") + " " + (entry.item.url || "")).toLocaleLowerCase("ru-RU");
+      const haystack = ((entry.item.title || entry.item.fileName || "") + " " +
+        (entry.item.url || "") + " " + (entry.item.path || "")).toLocaleLowerCase("ru-RU");
       return !query || haystack.includes(query);
     });
     $("#internalViewEmpty").hidden = items.length > 0;
     $("#internalViewEmpty").textContent = allItems.length === 0
-      ? (type === "bookmarks" ? "Пока нет закладок. Нажмите ☆ рядом с адресом страницы." : "История посещений пока пуста.")
+      ? (type === "bookmarks" ? "Пока нет закладок. Нажмите ☆ рядом с адресом страницы." :
+         type === "history" ? "История посещений пока пуста." :
+         "Пока нет загрузок. Загруженные файлы появятся здесь.")
       : "По вашему запросу ничего не найдено.";
+
     items.forEach(({ item, index }) => {
       const row = document.createElement("article");
       row.className = "library-row";
@@ -273,31 +299,82 @@
       open.className = "library-open";
       open.type = "button";
       const title = document.createElement("b");
-      title.textContent = item.title || item.url;
       const detail = document.createElement("small");
-      detail.textContent = type === "history"
-        ? item.url + " · " + formatVisitTime(item.visitedAt)
-        : item.url;
+
+      if (type === "downloads") {
+        title.textContent = item.fileName || "Загрузка";
+        const received = formatDownloadBytes(item.receivedBytes || 0);
+        const total = item.totalBytes > 0 ? " из " + formatDownloadBytes(item.totalBytes) : "";
+        const speed = item.state === "active" && item.speedBytesPerSec > 0
+          ? " · " + formatDownloadBytes(item.speedBytesPerSec) + "/с" : "";
+        detail.textContent = downloadStatusLabel(item) + " · " + received + total + speed;
+        open.addEventListener("click", () => {
+          if (item.state === "complete") runDownloadAction(item, "open");
+        });
+        open.disabled = item.state !== "complete";
+      } else {
+        title.textContent = item.title || item.url;
+        detail.textContent = type === "history"
+          ? item.url + " · " + formatVisitTime(item.visitedAt)
+          : item.url;
+        open.addEventListener("click", () => openSavedUrl(item.url));
+      }
       open.append(title, detail);
-      open.addEventListener("click", () => openSavedUrl(item.url));
-      const remove = document.createElement("button");
-      remove.className = "library-remove";
-      remove.type = "button";
-      remove.textContent = type === "bookmarks" ? "Удалить" : "Убрать";
-      remove.addEventListener("click", () => {
-        if (type === "bookmarks") {
-          bookmarks.splice(index, 1);
-          persistBookmarks();
-          syncBookmarkButton();
+      row.append(open);
+
+      if (type === "downloads") {
+        const actions = document.createElement("div");
+        actions.className = "download-actions";
+        const addAction = (label, action, variant = "") => {
+          const button = document.createElement("button");
+          button.className = "library-remove " + variant;
+          button.type = "button";
+          button.textContent = label;
+          button.addEventListener("click", () => runDownloadAction(item, action));
+          actions.append(button);
+        };
+        if (item.state === "active") {
+          addAction("Пауза", "pause");
+          addAction("Отменить", "cancel");
+        } else if (item.state === "paused") {
+          addAction("Продолжить", "resume");
+          addAction("Отменить", "cancel");
+        } else if (item.state === "complete") {
+          addAction("Открыть", "open");
+          addAction("Папка", "show");
         } else {
-          historyItems.splice(index, 1);
-          persistHistory();
+          const remove = document.createElement("button");
+          remove.className = "library-remove";
+          remove.type = "button";
+          remove.textContent = "Убрать";
+          remove.addEventListener("click", () => {
+            downloads.splice(index, 1);
+            renderInternalView("downloads");
+          });
+          actions.append(remove);
         }
-        renderInternalView(type);
-      });
-      row.append(open, remove);
+        row.append(actions);
+      } else {
+        const remove = document.createElement("button");
+        remove.className = "library-remove";
+        remove.type = "button";
+        remove.textContent = type === "bookmarks" ? "Удалить" : "Убрать";
+        remove.addEventListener("click", () => {
+          if (type === "bookmarks") {
+            bookmarks.splice(index, 1);
+            persistBookmarks();
+            syncBookmarkButton();
+          } else {
+            historyItems.splice(index, 1);
+            persistHistory();
+          }
+          renderInternalView(type);
+        });
+        row.append(remove);
+      }
       list.append(row);
     });
+
     const footer = $("#internalViewFooter");
     footer.replaceChildren();
     if (type === "history" && historyItems.length) {
@@ -311,6 +388,11 @@
         renderInternalView("history");
       });
       footer.append(clear);
+    } else if (type === "downloads" && downloads.length) {
+      const note = document.createElement("span");
+      note.className = "downloads-note";
+      note.textContent = "Список активен до закрытия браузера; сами файлы остаются в папке загрузок.";
+      footer.append(note);
     }
   }
   function openInternalView(type) {
@@ -348,6 +430,8 @@
   }
   $("#bookmarkButton")?.addEventListener("click", toggleBookmark);
   $("#historyNav")?.addEventListener("click", () => openInternalView("history"));
+  $("#downloadsNav")?.addEventListener("click", () => openInternalView("downloads"));
+  $("#downloadsButton")?.addEventListener("click", () => openInternalView("downloads"));
   $("#homeNav")?.addEventListener("click", () => {
     closeInternalView();
     activateTab(homeTab);
@@ -476,6 +560,23 @@
       setActiveTabUi(activeTab);
       syncBookmarkButton();
     }
+  };
+  window.skaiNative.downloadUpdated = item => {
+    if (!item || !Number.isFinite(Number(item.id))) return;
+    const id = Number(item.id);
+    const existing = downloads.findIndex(entry => entry.id === id);
+    const normalized = {
+      ...item,
+      id,
+      percent: Number(item.percent),
+      receivedBytes: Number(item.receivedBytes),
+      totalBytes: Number(item.totalBytes),
+      speedBytesPerSec: Number(item.speedBytesPerSec)
+    };
+    if (existing >= 0) downloads[existing] = normalized;
+    else downloads.unshift(normalized);
+    downloads = downloads.slice(0, 200);
+    if (internalViewType === "downloads") renderInternalView("downloads");
   };
   window.skaiNative.updateTab = (id, title, url, loading) => {
     const tab = $('.tab[data-tab-id="' + id + '"]');
