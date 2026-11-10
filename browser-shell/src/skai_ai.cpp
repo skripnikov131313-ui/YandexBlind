@@ -53,6 +53,7 @@ bool g_model_verified_this_run = false;
 
 std::mutex g_server_mutex;
 HANDLE g_server_process = nullptr;
+HANDLE g_server_job = nullptr;
 DWORD g_server_process_id = 0;
 unsigned short g_server_port = 0;
 std::wstring g_server_api_key;
@@ -531,6 +532,10 @@ bool EnsureServer(unsigned short& port, std::wstring& api_key,
     g_server_port = 0;
     g_server_api_key.clear();
   }
+  if (g_server_job) {
+    CloseHandle(g_server_job);
+    g_server_job = nullptr;
+  }
 
   const auto model_path = GetModelPath();
   bool model_verified = false;
@@ -601,7 +606,27 @@ bool EnsureServer(unsigned short& port, std::wstring& api_key,
     return false;
   }
   CloseHandle(process.hThread);
+
+  HANDLE job = CreateJobObjectW(nullptr, nullptr);
+  JOBOBJECT_EXTENDED_LIMIT_INFORMATION job_limits{};
+  job_limits.BasicLimitInformation.LimitFlags = JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE;
+  const bool job_ready = job &&
+      SetInformationJobObject(job, JobObjectExtendedLimitInformation,
+                              &job_limits, sizeof(job_limits)) &&
+      AssignProcessToJobObject(job, process.hProcess);
+  if (!job_ready) {
+    const DWORD job_error = GetLastError();
+    TerminateProcess(process.hProcess, 1);
+    WaitForSingleObject(process.hProcess, 3000);
+    CloseHandle(process.hProcess);
+    if (job) CloseHandle(job);
+    error_message = L"Не удалось включить контроль жизненного цикла локального runtime. Код Windows: " +
+                    std::to_wstring(job_error);
+    return false;
+  }
+
   g_server_process = process.hProcess;
+  g_server_job = job;
   g_server_process_id = process.dwProcessId;
   g_server_port = port;
   g_server_api_key = api_key;
@@ -613,6 +638,10 @@ bool EnsureServer(unsigned short& port, std::wstring& api_key,
           L"llama-server завершился при запуске. Проверьте комплект runtime.";
       CloseHandle(g_server_process);
       g_server_process = nullptr;
+      if (g_server_job) {
+        CloseHandle(g_server_job);
+        g_server_job = nullptr;
+      }
       g_server_process_id = 0;
       g_server_port = 0;
       g_server_api_key.clear();
@@ -627,6 +656,10 @@ bool EnsureServer(unsigned short& port, std::wstring& api_key,
   WaitForSingleObject(g_server_process, 3000);
   CloseHandle(g_server_process);
   g_server_process = nullptr;
+  if (g_server_job) {
+    CloseHandle(g_server_job);
+    g_server_job = nullptr;
+  }
   g_server_process_id = 0;
   g_server_port = 0;
   g_server_api_key.clear();
@@ -860,6 +893,10 @@ void SkAiAiShutdown() {
       }
       CloseHandle(g_server_process);
       g_server_process = nullptr;
+    }
+    if (g_server_job) {
+      CloseHandle(g_server_job);
+      g_server_job = nullptr;
     }
     g_server_process_id = 0;
     g_server_port = 0;
