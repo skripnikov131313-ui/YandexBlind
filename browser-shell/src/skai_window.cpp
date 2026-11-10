@@ -256,9 +256,14 @@ std::wstring DescribePermissionRequest(std::uint32_t permissions,
     add(CEF_MEDIA_PERMISSION_DESKTOP_AUDIO_CAPTURE, L"звук рабочего стола");
     add(CEF_MEDIA_PERMISSION_DESKTOP_VIDEO_CAPTURE, L"запись экрана");
   } else {
-    add(CEF_PERMISSION_TYPE_GEOLOCATION, L"геолокация");
-    add(CEF_PERMISSION_TYPE_NOTIFICATIONS, L"уведомления");
+    add(CEF_PERMISSION_TYPE_AR_SESSION, L"AR-сессия");
+    add(CEF_PERMISSION_TYPE_CAMERA_PAN_TILT_ZOOM, L"управление камерой");
+    add(CEF_PERMISSION_TYPE_CAPTURED_SURFACE_CONTROL, L"управление захваченным экраном");
     add(CEF_PERMISSION_TYPE_CLIPBOARD, L"буфер обмена");
+    add(CEF_PERMISSION_TYPE_TOP_LEVEL_STORAGE_ACCESS, L"доступ к хранилищу");
+    add(CEF_PERMISSION_TYPE_DISK_QUOTA, L"квота диска");
+    add(CEF_PERMISSION_TYPE_LOCAL_FONTS, L"системные шрифты");
+    add(CEF_PERMISSION_TYPE_GEOLOCATION, L"геолокация");
     add(CEF_PERMISSION_TYPE_CAMERA_STREAM, L"камера");
     add(CEF_PERMISSION_TYPE_MIC_STREAM, L"микрофон");
     add(CEF_PERMISSION_TYPE_MIDI_SYSEX, L"MIDI-устройства");
@@ -271,6 +276,12 @@ std::wstring DescribePermissionRequest(std::uint32_t permissions,
     add(CEF_PERMISSION_TYPE_LOCAL_NETWORK, L"локальная сеть");
     add(CEF_PERMISSION_TYPE_LOOPBACK_NETWORK, L"локальные подключения");
     add(CEF_PERMISSION_TYPE_CAMERA_PAN_TILT_ZOOM, L"управление камерой");
+    add(CEF_PERMISSION_TYPE_PROTECTED_MEDIA_IDENTIFIER, L"защищённые медиа");
+    add(CEF_PERMISSION_TYPE_REGISTER_PROTOCOL_HANDLER, L"регистрация обработчика протокола");
+    add(CEF_PERMISSION_TYPE_VR_SESSION, L"VR-сессия");
+    add(CEF_PERMISSION_TYPE_WEB_APP_INSTALLATION, L"установка веб-приложения");
+    add(CEF_PERMISSION_TYPE_SENSORS, L"датчики устройства");
+    add(CEF_PERMISSION_TYPE_LOCAL_NETWORK_ACCESS_DEPRECATED, L"доступ к локальной сети");
   }
 
   if (labels.empty()) {
