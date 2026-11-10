@@ -32,6 +32,10 @@
     browser.classList.add("assistant-collapsed");
     browser.classList.remove("assistant-floating");
   }
+  $("#nativeMinimize")?.addEventListener("click", () => window.skaiNative?.minimize());
+  $("#nativeMaximize")?.addEventListener("click", () => window.skaiNative?.toggleMaximize());
+  $("#nativeClose")?.addEventListener("click", () => window.skaiNative?.close());
+
   $("#assistantRail")?.addEventListener("click", showAssistant);
   $("#reopenAssistant")?.addEventListener("click", showAssistant);
   $("#hideAssistant")?.addEventListener("click", hideAssistant);
