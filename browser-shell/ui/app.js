@@ -252,12 +252,21 @@
       : "Недавно посещённые страницы · хранится локально";
     const list = $("#internalViewList");
     list.replaceChildren();
-    const items = type === "bookmarks" ? bookmarks : historyItems;
+    const allItems = type === "bookmarks" ? bookmarks : historyItems;
+    const searchInput = $("#internalViewSearch");
+    if (searchInput) searchInput.placeholder = type === "bookmarks"
+      ? "Найти закладку по названию или адресу"
+      : "Найти посещённую страницу";
+    const query = (searchInput?.value || "").trim().toLocaleLowerCase("ru-RU");
+    const items = allItems.map((item, index) => ({ item, index })).filter(entry => {
+      const haystack = ((entry.item.title || "") + " " + (entry.item.url || "")).toLocaleLowerCase("ru-RU");
+      return !query || haystack.includes(query);
+    });
     $("#internalViewEmpty").hidden = items.length > 0;
-    $("#internalViewEmpty").textContent = type === "bookmarks"
-      ? "Пока нет закладок. Нажмите ☆ рядом с адресом страницы."
-      : "История посещений пока пуста.";
-    items.forEach((item, index) => {
+    $("#internalViewEmpty").textContent = allItems.length === 0
+      ? (type === "bookmarks" ? "Пока нет закладок. Нажмите ☆ рядом с адресом страницы." : "История посещений пока пуста.")
+      : "По вашему запросу ничего не найдено.";
+    items.forEach(({ item, index }) => {
       const row = document.createElement("article");
       row.className = "library-row";
       const open = document.createElement("button");
@@ -344,6 +353,9 @@
     activateTab(homeTab);
   });
   $("#internalViewClose")?.addEventListener("click", () => closeInternalView());
+  $("#internalViewSearch")?.addEventListener("input", () => {
+    if (internalViewType) renderInternalView(internalViewType);
+  });
   $(".shortcut-card[data-url]").forEach(card => card.addEventListener("click", () => {
     const route = card.dataset.url;
     if (route === "skai://bookmarks") {
