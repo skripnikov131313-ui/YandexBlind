@@ -868,6 +868,7 @@ void SkAiDismissPermission(std::uint64_t cef_prompt_id) {
 }
 
 void SkAiSendSitePermissionList() {
+  if (g_close_requested) return;
   LoadSitePermissionDecisions();
   auto list = CefListValue::Create();
   std::size_t index = 0;
@@ -916,6 +917,7 @@ void SkAiSendSitePermissionList() {
 }
 
 void SkAiRevokeSitePermission(const std::wstring& permission_key) {
+  if (g_close_requested) return;
   LoadSitePermissionDecisions();
   const auto existing = g_site_permission_decisions.find(permission_key);
   if (existing == g_site_permission_decisions.end()) return;
