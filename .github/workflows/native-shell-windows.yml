@@ -127,6 +127,24 @@ jobs:
           }
           Copy-Item -Path (Join-Path $runtimeFiles "*") -Destination $runtime -Recurse -Force
           Copy-Item -Path (Join-Path $llamaSource "LICENSE") -Destination (Join-Path $runtime "LICENSE-llama.cpp.txt") -Force
+
+          $qwenRevision = "15852e8c16360a2fea060d615a32b45270f8a8fc8"
+          $qwenLicense = Join-Path $runtime "LICENSE-Qwen3.5-2B.txt"
+          Invoke-WebRequest -Uri "https://huggingface.co/Qwen/Qwen3.5-2B/resolve/$qwenRevision/LICENSE" -OutFile $qwenLicense
+          $qwenLicenseText = Get-Content $qwenLicense -Raw
+          if (!$qwenLicenseText.Contains("Apache License") -or !$qwenLicenseText.Contains("Version 2.0")) {
+            throw "The pinned Qwen model license is missing or is not Apache-2.0."
+          }
+          @(
+            "Model: Qwen3.5-2B Q4_K_M GGUF",
+            "GGUF source: https://huggingface.co/gguf/Qwen3.5-2B-GGUF",
+            "GGUF file: qwen3.5-2b-Q4_K_M.gguf",
+            "SHA-256: 9a3d0aa6c920f096441139b6a254542da855223fdad06855ea00c6c087fd713d",
+            "Upstream model: https://huggingface.co/Qwen/Qwen3.5-2B",
+            "Upstream revision: $qwenRevision",
+            "License: Apache-2.0"
+          ) | Set-Content -Path (Join-Path $runtime "MODEL-INFO.txt") -Encoding utf8
+
           @(
             "Runtime: llama.cpp v0.9.0",
             "Commit: $llamaCommit",
@@ -171,9 +189,12 @@ jobs:
             "chrome_200_percent.pak",
             "runtime/llama/llama-server.exe",
             "runtime/llama/LICENSE-llama.cpp.txt",
+            "runtime/llama/LICENSE-Qwen3.5-2B.txt",
+            "runtime/llama/MODEL-INFO.txt",
             "runtime/llama/BUILD-INFO.txt",
             "runtime/llama/ggml-cpu-x64.dll",
-            "runtime/llama/ggml-cpu-sse42.dll"
+            "runtime/llama/ggml-cpu-sse42.dll",
+            "runtime/llama/ggml-cpu-haswell.dll"
           )
           foreach ($item in $required) {
             $path = Join-Path $bin $item
