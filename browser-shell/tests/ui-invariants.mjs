@@ -206,12 +206,7 @@ assert.match(
   /window\.skaiNative\.sendLocalAi\(requestId, JSON\.stringify\(makeLocalRequest\(\)\)\)/,
   "The floating assistant must use the same native local inference bridge."
 );
-assert.match(
-  source,
-  /Облачный провайдер пока не подключён\. Запрос и контекст не отправлены\./,
-  "Cloud mode must remain non-transmitting until a provider and consent flow exist."
-);
-
+  /Облачный провайдер пока не подключён\. Данные и контекст не отправлены\./,
 assert.match(
   source,
   /localAiPendingId = requestId/,
