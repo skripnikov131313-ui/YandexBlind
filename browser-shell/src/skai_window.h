@@ -48,3 +48,6 @@ void SkAiDismissPermission(std::uint64_t cef_prompt_id);
 void SkAiCancelAllPermissions();
 
 void SkAiCancelPermissionsForTab(int tab_id);
+
+void SkAiSendSitePermissionList();
+void SkAiRevokeSitePermission(const std::wstring& permission_key);
