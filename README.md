@@ -11,9 +11,10 @@ The native shell is still under development. Source implementation, successful W
 
 ## Product direction
 
-- A custom Sk/Ai browser window, tab strip, toolbar and address/search bar.
+- A custom Sk/Ai browser window, tab strip, toolbar, address/search bar and session restoration for the last 50 HTTP(S) tabs.
 - Standard Chromium rendering and security through CEF.
 - Yandex, Google, Bing, DuckDuckGo, Brave Search and Startpage as selectable search providers.
+- Local bookmark folders with editable titles, browsing history and a persistent downloads library; downloads are stored in `Downloads/SkAi`.
 - An assistant docked at the right side of the browser, detachable into a separate topmost Windows window and redockable.
 - Soft Aurora visual language: dark graphite/navy, indigo-violet and mint/teal accents, with a coordinated light theme.
 - 8 GB RAM target and CPU-only local AI.
