@@ -270,26 +270,67 @@
   let internalViewType = "";
   const pendingPermissions = new Map();
   let savedSitePermissions = [];
-  try { bookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || "[]"); } catch (_) { bookmarks = []; }
-  try { bookmarkFolders = JSON.parse(localStorage.getItem(bookmarkFoldersKey) || '["Без папки"]'); } catch (_) { bookmarkFolders = ["Без папки"]; }
-  try { historyItems = JSON.parse(localStorage.getItem(historyKey) || "[]"); } catch (_) { historyItems = []; }
-  try { downloads = JSON.parse(localStorage.getItem(downloadsKey) || "[]"); } catch (_) { downloads = []; }
-  if (!Array.isArray(bookmarks)) bookmarks = [];
-  if (!Array.isArray(bookmarkFolders)) bookmarkFolders = ["Без папки"];
-  bookmarkFolders = [...new Set(["Без папки", ...bookmarkFolders.filter(name => typeof name === "string" && name.trim()).map(name => name.trim().slice(0, 32))])];
-  bookmarks.forEach(item => {
-    if (!item.folder || !bookmarkFolders.includes(item.folder)) item.folder = "Без папки";
-  });
-  if (!Array.isArray(historyItems)) historyItems = [];
-  if (!Array.isArray(downloads)) downloads = [];
-  downloads = downloads.filter(item => item && typeof item.path === "string")
-    .slice(0, 200)
-    .map(item => ({
-      ...item,
-      id: null,
-      sessionActive: false,
-      state: ["active", "paused", "pending"].includes(item.state) ? "interrupted" : item.state
-    }));
+  let knownProfiles = [{ name: "default", active: true }];
+  let profileStartupResolved = false;
+
+  function readProfileArray(key, fallback = []) {
+    try {
+      const value = JSON.parse(localStorage.getItem(key) || "null");
+      return Array.isArray(value) ? value : fallback;
+    } catch (_) {
+      return fallback;
+    }
+  }
+  function loadProfileData(name) {
+    const normalized = /^[a-z0-9_-]{1,24}$/.test(String(name || ""))
+      ? String(name) : "default";
+    activeProfileName = normalized;
+    try { localStorage.setItem("skai.active.profile.v1", activeProfileName); } catch (_) {}
+
+    sessionKey = profileStorageKey("skai.session.tabs.v1");
+    sessionToRestore = readProfileArray(sessionKey)
+      .filter(item => item && typeof item.url === "string" && /^https?:\/\//i.test(item.url))
+      .slice(0, 50);
+
+    bookmarkKey = profileStorageKey("skai.bookmarks.v1");
+    bookmarkFoldersKey = profileStorageKey("skai.bookmark.folders.v1");
+    historyKey = profileStorageKey("skai.history.v1");
+    downloadsKey = profileStorageKey("skai.downloads.v1");
+    conversationKey = profileStorageKey("skai.conversation.v1");
+    modeKey = profileStorageKey("skai.assistant.mode.v1");
+
+    bookmarks = readProfileArray(bookmarkKey);
+    bookmarkFolders = readProfileArray(bookmarkFoldersKey, ["Без папки"]);
+    bookmarkFolders = [...new Set(["Без папки", ...bookmarkFolders
+      .filter(folder => typeof folder === "string" && folder.trim())
+      .map(folder => folder.trim().slice(0, 32))])];
+    bookmarks.forEach(item => {
+      if (!item.folder || !bookmarkFolders.includes(item.folder)) item.folder = "Без папки";
+    });
+    historyItems = readProfileArray(historyKey);
+    downloads = readProfileArray(downloadsKey)
+      .filter(item => item && typeof item.path === "string")
+      .slice(0, 200)
+      .map(item => ({
+        ...item,
+        id: null,
+        sessionActive: false,
+        state: ["active", "paused", "pending"].includes(item.state) ? "interrupted" : item.state
+      }));
+    conversation = readProfileArray(conversationKey);
+    mode = "local";
+    try { mode = localStorage.getItem(modeKey) || "local"; } catch (_) {}
+    bookmarkFolderFilter = "*";
+    renderConversation();
+    applyAssistantMode();
+    syncBookmarkButton();
+    if (internalViewType) renderInternalView(internalViewType);
+  }
+
+  bookmarks = readProfileArray(bookmarkKey);
+  bookmarkFolders = readProfileArray(bookmarkFoldersKey, ["Без папки"]);
+  historyItems = readProfileArray(historyKey);
+  downloads = readProfileArray(downloadsKey);
 
   const pageSections = $$(".page-scroll > :not(#internalView)");
   function syncBookmarkButton() {
