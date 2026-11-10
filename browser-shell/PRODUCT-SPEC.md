@@ -8,7 +8,7 @@ A standalone Windows 11 x64 desktop browser with its own Sk/Ai visual language, 
 ## 1. Native browser
 - [ ] Custom Sk/Ai application window and native Windows lifecycle.
 - [ ] Chromium engine embedded through CEF; standard public web PKI/TLS only. Russian GOST certificates and CryptoPro are explicitly out of scope.
-- [ ] Real independent tabs: create, close, switch, restore and show loading state/favicon/title.
+- [x] Initial native CEF tab controller: create, close, switch, loading/title/address synchronization. (Restore/session recovery and real favicons remain open.)
 - [ ] Address bar accepts URLs and search queries.
 - [ ] Back, forward, reload, stop and home.
 - [ ] Bookmarks with folders and editing.
@@ -97,4 +97,4 @@ The mode selector belongs directly beside the assistant prompt field.
 - Mark each milestone as scaffolded, built, runtime-tested or released. Never conflate these states.
 
 ## Current milestone
-Native C++/Win32 + CEF application scaffold and local Aurora UI. Not yet compiled or runtime-tested on Windows. Next: complete a successful Windows CI build, then implement the native browser controller and multiple browser views/tabs.
+Native C++/Win32 + CEF application scaffold, local Aurora UI and first native multi-tab controller. Not yet compiled or runtime-tested on Windows. Next: successful Windows CI build, then tab lifecycle hardening, browser profile/storage and CEF runtime packaging.
