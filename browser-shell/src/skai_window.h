@@ -4,6 +4,7 @@
 #include <string>
 #include "include/cef_download_handler.h"
 #include "include/cef_download_item.h"
+#include "include/cef_permission_handler.h"
 
 HWND SkAiCreateMainWindow(HINSTANCE instance, int show_command);
 
@@ -35,3 +36,13 @@ void SkAiNotifyDownloadState(CefRefPtr<CefDownloadItem> item,
 void SkAiDownloadAction(std::uint32_t download_id, const std::wstring& action);
 
 void SkAiOpenDownloadedFile(const std::wstring& path, const std::wstring& action);
+
+std::uint64_t SkAiRequestSitePermission(
+    const std::wstring& requesting_origin, std::uint32_t requested_permissions,
+    bool media_request,
+    CefRefPtr<CefPermissionPromptCallback> prompt_callback,
+    CefRefPtr<CefMediaAccessCallback> media_callback,
+    std::uint64_t cef_prompt_id = 0);
+void SkAiResolvePermission(std::uint64_t request_id, bool allow);
+void SkAiDismissPermission(std::uint64_t cef_prompt_id);
+void SkAiCancelAllPermissions();
