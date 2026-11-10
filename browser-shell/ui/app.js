@@ -265,9 +265,9 @@
     return tab;
   }
   function createTab(url = "about:blank") {
-    const tab = createTabElement(tabSequence++);
+    createTabElement(tabSequence++);
+    // Native CEF allocates the authoritative ID and publishes a tab snapshot.
     window.skaiNative?.newTab(url);
-    activateTab(tab);
   }
   const homeTab = $(".tab");
   if (homeTab) { homeTab.dataset.tabId = "0"; bindTab(homeTab); }
