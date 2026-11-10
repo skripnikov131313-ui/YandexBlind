@@ -427,6 +427,7 @@
     return tab;
   }
   function createTab(url = "about:blank") {
+    if (internalViewType) closeInternalView();
     createTabElement(tabSequence++);
     // Native CEF allocates the authoritative ID and publishes a tab snapshot.
     window.skaiNative?.newTab(url);
