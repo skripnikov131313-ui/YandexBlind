@@ -39,3 +39,13 @@ button,input,select,textarea{font:inherit}button{color:inherit}.grain{position:f
 .brand-ai{display:inline-block;clip-path:inset(0 100% 0 0);transform:translateX(-12px);opacity:0;animation:skai-reveal .95s cubic-bezier(.16,1,.3,1) .22s forwards}
 @keyframes skai-reveal{0%{clip-path:inset(0 100% 0 0);transform:translateX(-12px);opacity:0;text-shadow:0 0 0 transparent}65%{opacity:1;text-shadow:0 0 18px color-mix(in srgb,var(--accent) 55%,transparent)}100%{clip-path:inset(0 0 0 0);transform:translateX(0);opacity:1;text-shadow:none}}
 @media(prefers-reduced-motion:reduce){.brand-ai{animation:none;clip-path:none;transform:none;opacity:1}}
+
+/* Explicit model identity colors */
+.mode-option.active#mode-local{color:#9bd5b0;background:rgba(105,190,139,.13);border-color:rgba(105,190,139,.28)}
+.mode-option.active#mode-cloud{color:#c3a8ff;background:rgba(157,121,230,.15);border-color:rgba(157,121,230,.32)}
+.model-strip.local-mode .model-orb{color:#9bd5b0;background:rgba(105,190,139,.13)}
+.model-strip.cloud-mode .model-orb{color:#c3a8ff;background:rgba(157,121,230,.15)}
+.local-badge{color:#9bd5b0}
+#ai-scrim.cloud-mode .local-badge{color:#c3a8ff}
+#ai-scrim.cloud-mode .local-badge i{background:#ad8bfa;box-shadow:0 0 10px #ad8bfa88}
+#ai-scrim.cloud-mode .privacy-caption i{background:#ad8bfa;box-shadow:0 0 10px #ad8bfa88}
