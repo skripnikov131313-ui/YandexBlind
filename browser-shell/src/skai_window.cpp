@@ -236,6 +236,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wparam,
     case WM_DESTROY:
       if (hwnd == g_window) {
         g_tabs.clear();
+        g_downloads.clear();
         g_ui_client = nullptr;
         g_assistant_client = nullptr;
         g_window = nullptr;
