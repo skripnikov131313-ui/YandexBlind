@@ -9,9 +9,6 @@ on:
       - ".github/workflows/native-shell-windows.yml"
   workflow_dispatch:
 
-concurrency:
-  group: skai-native-shell-${{ github.head_ref || github.ref }}
-  cancel-in-progress: true
 
 jobs:
   windows-x64:
