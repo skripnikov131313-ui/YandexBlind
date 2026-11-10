@@ -31,3 +31,11 @@ button,input,select,textarea{font:inherit}button{color:inherit}.grain{position:f
 .mode-explainer{margin:0 2px 12px}
 .composer-bottom .privacy-caption{margin-right:auto}
 @media(max-width:420px){.mode-option{padding:0 8px;font-size:8px}.mode-option span{margin-right:2px}.attach-btn span{display:none}.composer-tools{gap:7px}}
+
+/* Sk/Ai identity reveal */
+.brand-word{display:inline-flex;align-items:center;overflow:hidden;white-space:nowrap}
+.brand-sk{position:relative;z-index:1}
+.brand-slash{color:var(--accent-strong);margin:0 1px;transform:skew(-18deg)}
+.brand-ai{display:inline-block;clip-path:inset(0 100% 0 0);transform:translateX(-12px);opacity:0;animation:skai-reveal .95s cubic-bezier(.16,1,.3,1) .22s forwards}
+@keyframes skai-reveal{0%{clip-path:inset(0 100% 0 0);transform:translateX(-12px);opacity:0;text-shadow:0 0 0 transparent}65%{opacity:1;text-shadow:0 0 18px color-mix(in srgb,var(--accent) 55%,transparent)}100%{clip-path:inset(0 0 0 0);transform:translateX(0);opacity:1;text-shadow:none}}
+@media(prefers-reduced-motion:reduce){.brand-ai{animation:none;clip-path:none;transform:none;opacity:1}}
