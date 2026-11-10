@@ -534,7 +534,7 @@ void SkAiNotifyDownloadState(CefRefPtr<CefDownloadItem> item,
 
   auto& record = g_downloads[id];
   record.path = item->GetFullPath().ToWString();
-  record.callback = in_progress ? callback : nullptr;
+  record.callback = (in_progress || paused) ? callback : nullptr;
 
   auto dictionary = CefDictionaryValue::Create();
   dictionary->SetDouble("id", static_cast<double>(id));
