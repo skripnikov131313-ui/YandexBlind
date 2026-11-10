@@ -35,13 +35,9 @@
   const openSettings=()=>{show("settings-scrim");$("theme-select").value=theme};
   $("settings-open").addEventListener("click",openSettings);$("settings-close").addEventListener("click",()=>hide("settings-scrim"));
   $("settings-scrim").addEventListener("click",e=>{if(e.target===$("settings-scrim"))hide("settings-scrim")});
-  const openAssistant=async()=>{
-    try{
-      if(!chrome?.sidePanel?.open)throw new Error("В этой сборке Chromium-Gost не обнаружена поддержка встроенной боковой панели.");
-      const currentWindow=await chrome.windows.getCurrent();
-      if(!currentWindow?.id)throw new Error("Не удалось определить окно браузера.");
-      await chrome.sidePanel.open({windowId:currentWindow.id});
-    }catch(err){toast("Sk/Ai Assistant: "+err.message);}
+  const openAssistant=()=>{
+    if(!chrome.sidePanel?.open){toast("В этой сборке Chromium-Gost не обнаружена поддержка встроенной боковой панели.");return;}
+    chrome.sidePanel.open({windowId:chrome.windows.WINDOW_ID_CURRENT}).catch(err=>toast("Sk/Ai Assistant: "+err.message));
   };
   $("ai-close").addEventListener("click",()=>hide("ai-scrim"));
   $("ai-scrim").addEventListener("click",e=>{if(e.target===$("ai-scrim"))hide("ai-scrim")});
