@@ -1,100 +1,124 @@
 # Sk/Ai — Product Specification
 
-This file is the project-wide acceptance checklist. A feature is not considered complete merely because its control is visible in the UI: it must be implemented, tested and documented.
+This is the project-wide acceptance checklist. A control is not complete because it is visible: it must be implemented, built, tested and documented.
+
+Status key:
+- [ ] Not implemented.
+- [~] Implemented in source / prototype; Windows build or runtime validation is still pending.
+- [x] Built and tested against the stated acceptance criteria.
 
 ## Product goal
-A standalone Windows 11 x64 desktop browser with its own Sk/Ai visual language, native window shell, Chromium rendering engine, privacy controls and integrated AI workspace. The browser must be usable as a normal daily browser, not only as an AI launcher.
+
+A standalone Windows 11 x64 browser with a C++20 Win32 shell and standard Chromium engine embedded through CEF. The product is a browser for everyday use with a custom Sk/Ai interface, integrated assistant workspace and explicit privacy controls. It is not a new browser engine.
+
+GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 
 ## 1. Native browser
-- [ ] Custom Sk/Ai application window and native Windows lifecycle.
-- [ ] Chromium engine embedded through CEF; standard public web PKI/TLS only. Russian GOST certificates and CryptoPro are explicitly out of scope.
-- [x] Initial native CEF tab controller: create, close, switch, loading/title/address synchronization. (Restore/session recovery and real favicons remain open.)
-- [ ] Address bar accepts URLs and search queries.
-- [ ] Back, forward, reload, stop and home.
-- [ ] Bookmarks with folders and editing.
+
+- [~] Custom borderless Sk/Ai application window and native Windows window controls.
+- [~] CEF bootstrap architecture with the Chromium sandbox enabled in source.
+- [~] Native CEF tab controller: create, close, activate, title/URL/loading/favicon synchronization.
+- [~] Address bar accepts URLs and search queries.
+- [~] Back, forward, reload and stop controls.
+- [ ] Session restore and crash recovery.
+- [ ] Bookmarks with folders, editing and persistence.
 - [ ] Browsing history with search and clearing controls.
 - [ ] Downloads with progress, open, show-in-folder and remove.
-- [ ] Extension manager and a documented compatibility policy.
+- [ ] Extension manager and documented compatibility policy.
 - [ ] Multiple profiles and isolated profile data.
-- [ ] Import/export bookmarks and settings.
-- [ ] Find-in-page, print, zoom, fullscreen and page source/developer tools where appropriate.
+- [ ] Import/export of bookmarks and settings.
+- [ ] Find-in-page, print, zoom, fullscreen and developer tools.
+- [ ] Site permission manager for camera, microphone, location, notifications and clipboard.
 
 ## 2. Search
-- [ ] User-selectable default search provider: Yandex, Google, Bing, DuckDuckGo, Brave Search or Startpage.
-- [ ] Provider switcher beside the start-page search field.
-- [ ] Address-bar search uses the selected provider.
-- [ ] Search provider choice is independent of the AI mode.
+
+- [~] Provider URL support for Yandex, Google, Bing, DuckDuckGo, Brave Search and Startpage.
+- [~] Provider cycle control on the start page.
+- [~] Address bar and start-page search use the selected provider.
+- [~] Selected provider is stored independently from the AI mode.
+- [ ] Dedicated provider picker/settings page.
 
 ## 3. Sk/Ai Assistant
-- [ ] Persistent right-side docked panel; never a full-screen modal over the current website.
-- [ ] Collapse, restore, resize and detach into a separate floating window.
-- [ ] Floating window supports minimize, maximize, restore, close and native Windows always-on-top.
-- [ ] Chat history and multiple conversations.
-- [ ] Context remains available when switching Local AI, Cloud AI and Internet Search modes.
-- [ ] Explicit user action before sharing current-page content with the assistant.
-- [ ] Support text/code and common document attachments in staged releases.
-- [ ] Explain when a capability is unavailable; never display fake model/security status.
+
+- [~] Right-side docked assistant panel in the browser UI.
+- [~] Collapse and restore the docked panel.
+- [~] Detach into a separate native CEF popup window.
+- [~] Floating-window minimize, maximize, restore, close and native topmost behavior.
+- [~] Redock the assistant into the browser panel.
+- [~] Conversation and Local/Cloud mode persistence scaffolding.
+- [ ] Verified cross-window and cross-session chat synchronization.
+- [ ] Multiple named conversations and search.
+- [ ] Explicit page-content transfer after a user action.
+- [ ] Text/code and common document attachments.
+- [ ] Resizable docked panel and keyboard shortcuts.
 
 ## 4. AI modes
-The mode selector belongs directly beside the assistant prompt field.
+
+The mode selector belongs next to the assistant composer.
 
 ### Local AI
-- [ ] Qwen 3.5 2B GGUF Q4_K_M baseline model.
-- [ ] llama.cpp runtime, CPU-only supported.
-- [ ] Target low-memory configuration: 8 GB system RAM.
-- [ ] No prompt or page content leaves the device in local mode.
-- [ ] Model download, integrity verification, install/update and model status.
+- [ ] Qwen 3.5 2B GGUF Q4_K_M model integration.
+- [ ] llama.cpp runtime, CPU-only.
+- [ ] 8 GB RAM performance profile and bounded context.
+- [ ] Model download, SHA-256 verification, install/update and health status.
+- [ ] Guarantee and test that prompts/page content remain local.
 
 ### Cloud AI
-- [ ] Provider selection and API-key storage using Windows-protected credential storage.
-- [ ] Before sending any prompt, attachment or page content, show exactly what will be transferred and obtain explicit consent.
-- [ ] Clear cloud-mode indicator.
+- [~] Cloud mode is a non-transmitting placeholder.
+- [ ] Provider selection and API-key storage through Windows-protected credential storage.
+- [ ] Explicit transfer preview and consent before sending any prompt, attachment or page context.
 - [ ] No silent fallback from Local to Cloud.
 
 ### Internet Search
-- [ ] A distinct assistant mode that searches the web rather than pretending the local model has live access.
-- [ ] Display sources and openable result links.
-- [ ] Keep search mode distinct from the browser's default search provider.
-- [ ] Preserve the current chat context when changing modes.
+- [ ] A distinct assistant mode that searches the web and returns source links.
+- [ ] Preserve chat context when switching among Local, Cloud and Internet Search.
 
 ## 5. Privacy and security
-- [ ] No first-party product analytics SDK or telemetry.
-- [ ] No external font/CDN requests from local UI resources.
-- [ ] Block known advertising and tracking domains with maintainable filter lists.
-- [ ] Third-party cookie restrictions configurable by the user.
-- [ ] Do not break first-party sign-in/session cookies by default.
-- [ ] Per-site permissions for camera, microphone, location, notifications and clipboard.
-- [ ] Standard Chromium certificate validation and Safe Browsing/security protections remain enabled.
-- [ ] Do not fake cookie consent or bypass website security controls.
-- [ ] AI page inspection is supplementary and must never replace Chromium security checks.
+
+- [~] No project analytics SDK or telemetry endpoint in the native-shell source.
+- [~] Local UI assets are bundled; no font/CDN is required.
+- [ ] Maintainable ad/tracker filter lists and network request filtering.
+- [ ] Configurable third-party cookie restrictions while preserving first-party sessions.
+- [ ] Per-site permission manager.
+- [~] Standard Chromium certificate validation and sandbox are retained in the intended build configuration; this still requires Windows runtime verification.
+- [ ] Verify Chromium Safe Browsing and security services in the packaged runtime.
 - [ ] Clear controls for history, cookies, cache, downloads and site data.
-- [ ] Cloud transfer requires explicit consent; local mode remains local.
+- [~] Cloud placeholder sends nothing; production Cloud must require explicit consent.
+- [ ] Security review and network-traffic audit.
 
 ## 6. Appearance and interaction
-- [ ] Reference screenshot is the visual source of truth: Aurora Glass / Soft Aurora.
-- [ ] Themes: Soft Aurora, Quiet Mist and Deep Space.
-- [ ] Light/dark follows Windows by default, with manual override.
-- [ ] Local mode uses mint/teal; Cloud mode uses violet; Internet Search gets a separate search identity.
-- [ ] Responsive layout and Windows DPI scaling.
-- [ ] Respect reduced-motion accessibility settings.
-- [ ] Logo slash animation reveals the Ai mark.
-- [ ] No unwanted blank borders or decorative UI that obscures content.
+
+- [~] Aurora Glass / Soft Aurora desktop layout: tabs, toolbar, left rail, start page and right assistant.
+- [~] Graphite/navy surfaces with violet, blue, cyan and mint accents.
+- [~] Local mint and Cloud violet mode identities.
+- [~] Windows system light/dark preference with manual override.
+- [ ] Quiet Mist and Deep Space fully implemented as selectable themes.
+- [~] Native DPI-aware main window and content bounds; real multi-monitor tests pending.
+- [ ] Reduced-motion and full keyboard/accessibility audit.
+- [ ] Final logo slash animation and motion polish.
+- [ ] Review responsive behavior at supported Windows window sizes.
 
 ## 7. Windows integration and delivery
-- [ ] Per-user installer; no mandatory administrator rights for ordinary installation.
-- [ ] Start menu shortcut, file associations only with consent, clean uninstall.
-- [ ] Update channel and signed release packages.
-- [ ] Crash reporting is opt-in; no silent telemetry.
-- [ ] Native window management and always-on-top behavior.
-- [ ] Runtime packaging includes CEF subprocess, locales, resources and sandbox components.
-- [ ] Automated Windows x64 build and smoke tests.
+
+- [~] CEF runtime packaging is configured: bootstrap EXE, client DLL, Chromium DLLs and resource/locale files.
+- [~] Windows x64 GitHub Actions workflow includes build, runtime-file checks and native-window smoke test.
+- [ ] Successful Windows x64 CI run and downloadable artifact.
+- [ ] Real Windows 11 runtime smoke test across multiple tabs and popup lifecycle.
+- [ ] Per-user installer without mandatory elevation.
+- [ ] Start menu shortcut, optional file associations and clean uninstall.
+- [ ] Update channel and signed packages.
+- [ ] Opt-in crash diagnostics; no silent telemetry.
 
 ## 8. Engineering rules
+
 - Separate UI, browser controller, CEF integration, profile/storage, privacy, AI orchestration and Windows services.
-- Do not mix the legacy extension prototype with the native-shell runtime.
-- Keep secrets out of source code and logs.
-- Pin external runtime versions and verify downloaded artifacts by cryptographic hash.
-- Mark each milestone as scaffolded, built, runtime-tested or released. Never conflate these states.
+- Keep the legacy extension prototype separate from the native-shell runtime.
+- Keep secrets out of source and logs.
+- Pin external runtime versions and verify downloaded archives.
+- Report each milestone as source-implemented, built, runtime-tested or released. Never conflate these states.
 
 ## Current milestone
-Native C++/Win32 + CEF application scaffold, local Aurora UI and first native multi-tab controller. Not yet compiled or runtime-tested on Windows. Next: successful Windows CI build, then tab lifecycle hardening, browser profile/storage and CEF runtime packaging.
+
+Native C++/Win32 + CEF shell with tab/navigation controls and an independent assistant popup is implemented in source. The current CEF build uses the post-CEF-138 bootstrap architecture and explicitly refuses to start without the sandbox handle.
+
+JavaScript syntax checks pass locally. The Windows workflow has been created and is currently queued by GitHub Actions; it has not yet produced a successful build artifact. No Windows runtime behavior is claimed as tested. Next gate: complete Windows CI build and native-window smoke test. After that: harden profile/session storage, implement core browser services (bookmarks/history/downloads/permissions), then integrate local AI.
