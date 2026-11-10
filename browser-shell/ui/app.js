@@ -851,6 +851,9 @@
       reload.setAttribute("aria-label", reload.title);
     }
   };
+  window.skaiNative.permissionStorageFailed = () => {
+    notify("Не удалось сохранить настройки разрешений в профиле Windows");
+  };
   window.skaiNative.sitePermissionsUpdated = items => {
     savedSitePermissions = Array.isArray(items) ? items : [];
     renderSavedSitePermissions();
