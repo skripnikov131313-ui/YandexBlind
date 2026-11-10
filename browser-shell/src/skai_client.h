@@ -11,18 +11,31 @@
 #include "include/cef_display_handler.h"
 #include "include/cef_load_handler.h"
 #include "include/cef_download_handler.h"
+#include "include/cef_permission_handler.h"
 
 class SkAiClient final : public CefClient,
                          public CefLifeSpanHandler,
                          public CefDisplayHandler,
                          public CefLoadHandler,
-                         public CefDownloadHandler {
+                         public CefDownloadHandler,
+                         public CefPermissionHandler {
  public:
   SkAiClient(HWND host_window, int tab_id, bool ui_browser);
   CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override { return this; }
   CefRefPtr<CefDisplayHandler> GetDisplayHandler() override { return this; }
   CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
   CefRefPtr<CefDownloadHandler> GetDownloadHandler() override { return this; }
+  CefRefPtr<CefPermissionHandler> GetPermissionHandler() override { return this; }
+  bool OnRequestMediaAccessPermission(CefRefPtr<CefBrowser> browser,
+      CefRefPtr<CefFrame> frame, const CefString& requesting_origin,
+      uint32_t requested_permissions,
+      CefRefPtr<CefMediaAccessCallback> callback) override;
+  bool OnShowPermissionPrompt(CefRefPtr<CefBrowser> browser,
+      uint64_t prompt_id, const CefString& requesting_origin,
+      uint32_t requested_permissions,
+      CefRefPtr<CefPermissionPromptCallback> callback) override;
+  void OnDismissPermissionPrompt(CefRefPtr<CefBrowser> browser,
+      uint64_t prompt_id, cef_permission_request_result_t result) override;
   bool OnBeforeDownload(CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefDownloadItem> download_item, const CefString& suggested_name,
       CefRefPtr<CefBeforeDownloadCallback> callback) override;
