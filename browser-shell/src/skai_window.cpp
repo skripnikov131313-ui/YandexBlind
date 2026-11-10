@@ -6,6 +6,7 @@
 #include "include/cef_parser.h"
 #include "include/cef_request_context.h"
 #include "skai_client.h"
+#include "skai_ai.h"
 
 #include <windowsx.h>
 #include <algorithm>
@@ -515,6 +516,7 @@ void SendTabSnapshot() {
 }
 
 void BeginApplicationClose(HWND window) {
+  SkAiAiShutdown();
   SkAiCancelAllPermissions();
   if (g_close_requested) {
     return;
