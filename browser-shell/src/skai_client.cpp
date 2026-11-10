@@ -60,7 +60,10 @@ bool SkAiClient::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
 }
 void SkAiClient::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
   browser_ = browser;
-  if (!ui_browser_) SkAiNotifyTabState(tab_id_, L"Новая вкладка", browser->GetMainFrame()->GetURL(), false);
+  if (!ui_browser_) {
+    SkAiNotifyTabState(tab_id_, L"Новая вкладка", browser->GetMainFrame()->GetURL(), false);
+    SkAiActivateTab(tab_id_);
+  }
 }
 bool SkAiClient::DoClose(CefRefPtr<CefBrowser>) { return false; }
 void SkAiClient::OnBeforeClose(CefRefPtr<CefBrowser>) {
