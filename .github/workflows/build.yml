@@ -82,7 +82,7 @@ jobs:
           Yandex Blind bundles llama.cpp as a local inference runtime.
           Runtime source: https://github.com/ggml-org/llama.cpp
           Model: Qwen3.5-2B-GGUF (Q4_K_M), Apache-2.0
-          Model source: https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF
+          Model source: https://huggingface.co/gguf/Qwen3.5-2B-GGUF
           The AI server binds only to 127.0.0.1 and is launched only while the browser is open.
           "@ | Out-File "dist\payload\AI\THIRD_PARTY_NOTICES.txt" -Encoding utf8
 
