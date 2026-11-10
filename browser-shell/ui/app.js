@@ -76,6 +76,51 @@
     browser.classList.remove("assistant-collapsed", "assistant-floating");
     panel.classList.remove("mobile-hidden");
   }
+  function renderPermissionPrompts() {
+    const root = $("#permissionPrompts");
+    if (!root) return;
+    root.replaceChildren();
+    root.hidden = pendingPermissions.size === 0;
+
+    pendingPermissions.forEach(request => {
+      const card = document.createElement("section");
+      card.className = "permission-prompt-card";
+      const heading = document.createElement("b");
+      heading.textContent = "Запрос разрешения";
+      const origin = document.createElement("div");
+      origin.className = "permission-prompt-origin";
+      origin.textContent = request.origin || "Неизвестный сайт";
+      const description = document.createElement("p");
+      description.textContent = (request.media ? "Доступ к устройству: " : "Сайт запрашивает: ") +
+        (request.description || "дополнительные возможности");
+      const note = document.createElement("small");
+      note.textContent = "Разрешение действует только для этого запроса.";
+      const actions = document.createElement("div");
+      actions.className = "permission-prompt-actions";
+      const deny = document.createElement("button");
+      deny.type = "button";
+      deny.className = "permission-deny";
+      deny.textContent = "Запретить";
+      deny.addEventListener("click", () => resolvePermissionRequest(request.id, false));
+      const allow = document.createElement("button");
+      allow.type = "button";
+      allow.className = "permission-allow";
+      allow.textContent = "Разрешить";
+      allow.addEventListener("click", () => resolvePermissionRequest(request.id, true));
+      actions.append(deny, allow);
+      card.append(heading, origin, description, note, actions);
+      root.append(card);
+    });
+  }
+
+  function resolvePermissionRequest(id, allow) {
+    const key = String(id);
+    if (!pendingPermissions.has(key)) return;
+    window.skaiNative?.resolvePermission(key, allow ? "allow" : "deny");
+    pendingPermissions.delete(key);
+    renderPermissionPrompts();
+  }
+
   function hideAssistant() {
     browser.classList.add("assistant-collapsed");
     browser.classList.remove("assistant-floating");
@@ -217,6 +262,7 @@
   let downloads = [];
   let lastDownloadPersistAt = 0;
   let internalViewType = "";
+  const pendingPermissions = new Map();
   try { bookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || "[]"); } catch (_) { bookmarks = []; }
   try { bookmarkFolders = JSON.parse(localStorage.getItem(bookmarkFoldersKey) || '["Без папки"]'); } catch (_) { bookmarkFolders = ["Без папки"]; }
   try { historyItems = JSON.parse(localStorage.getItem(historyKey) || "[]"); } catch (_) { historyItems = []; }
@@ -743,6 +789,22 @@
       reload.title = activePageLoading ? "Остановить загрузку" : "Обновить страницу";
       reload.setAttribute("aria-label", reload.title);
     }
+  };
+  window.skaiNative.permissionRequested = request => {
+    if (!request || request.id === undefined || request.id === null) return;
+    const id = String(request.id);
+    pendingPermissions.set(id, {
+      id,
+      origin: String(request.origin || ""),
+      description: String(request.description || ""),
+      media: !!request.media
+    });
+    showAssistant();
+    renderPermissionPrompts();
+  };
+  window.skaiNative.permissionDismissed = id => {
+    pendingPermissions.delete(String(id));
+    renderPermissionPrompts();
   };
   window.skaiNative.assistantClosed = () => {
     browser.classList.remove("assistant-collapsed", "assistant-floating");
