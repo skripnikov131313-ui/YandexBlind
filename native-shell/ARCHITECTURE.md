@@ -1,10 +1,12 @@
-# Sk/Ai native architecture
+# Sk/Ai Native Browser Architecture
 
 ## 1. Product boundary
 
-Sk/Ai owns the browser chrome and product behavior. Chromium-Gost owns web rendering and the mature browser platform.
+Sk/Ai is the browser application and product. Upstream Chromium is the internal web engine and foundation for compatibility and security.
 
-We do not fork Blink, V8, the network stack or certificate verification. We fork the browser application/UI layer and retain the upstream GOST patch series intact.
+We fork and modify the Chromium browser UI/application layer. We do not implement Blink, V8, HTML/CSS layout, JavaScript execution or the network stack from scratch.
+
+The product has no GOST TLS, msspi or CryptoPro CSP requirement. It uses ordinary Chromium TLS and platform certificate stores.
 
 ## 2. Main window composition
 
@@ -21,7 +23,7 @@ We do not fork Blink, V8, the network stack or certificate verification. We fork
     │   ├── SkAiOmnibox
     │   ├── BookmarkButton
     │   ├── DownloadsButton
-    │   └── MainMenuButton
+    │   └── Profile / MainMenu
     ├── SkAiWorkspace
     │   ├── SkAiNavigationRail
     │   ├── WebContentsRegion
@@ -29,38 +31,36 @@ We do not fork Blink, V8, the network stack or certificate verification. We fork
     └── BrowserServices
         ├── Chromium Profile / TabStripModel / WebContents
         ├── Permission and Privacy Services
-        ├── Download Manager
+        ├── Download Manager / Session Restore
         └── Local AI Bridge
 
-The browser's existing Browser, TabStripModel, WebContents, LocationBarModel, navigation controller, permission manager, download manager and security-state services remain the source of truth. UI controls call those services; they do not reproduce them.
+Existing Browser, Profile, TabStripModel, WebContents, LocationBarModel, navigation controller, permission manager, download manager and security-state services remain canonical. Sk/Ai controls call these services; they do not create parallel tab or network implementations.
 
 ## 3. Split workspace
 
-- The assistant is a child of the browser's native layout, not a fixed-position overlay.
-- The main content region is laid out to the exact remaining width.
-- The divider is draggable and keyboard accessible.
-- A minimum content width prevents the webpage from collapsing to a narrow strip.
-- The dock is hidden/shown without destroying the chat or current tab.
+- Assistant is part of the native browser layout, not a fixed-position overlay.
+- Web content is resized to the exact remaining width.
+- Divider is draggable and keyboard accessible.
+- Minimum content width prevents the webpage from collapsing.
+- Dock can be hidden and restored without destroying chat state.
 - Left/right placement is a persisted preference.
-- Floating mode is a separate native browser-owned window and shares the same conversation model.
-- "Always on top" is a Windows-only optional behavior; it is off by default and must be visibly indicated when on.
+- Floating mode is a separate native browser-owned window.
+- Always-on-Top is an optional Windows behavior, off by default and visibly indicated when active.
 
 ## 4. Tabs and navigation
 
-Native Chromium tab/navigation state remains canonical. Sk/Ai replaces the presentation and command routing but not:
-- session restore;
-- tab lifecycle;
-- tab drag/drop and tear-off;
-- site isolation;
+Native Chromium state remains canonical. Sk/Ai replaces presentation and user-facing command routing, not:
+- tab lifecycle, drag/drop, tear-off and session restore;
+- site isolation and process model;
 - omnibox navigation and autocomplete;
-- download and permission models;
+- downloads and permission models;
 - certificate indicators and security interstitials.
 
-Omnibox input uses Chromium's normal navigation/search pipeline. The chosen search provider is a user preference, independent of AI mode. The default may be Yandex; alternatives remain selectable.
+Omnibox input uses Chromium's navigation/search pipeline. Search provider is a user preference independent of AI mode. Yandex may be the default; Google, Bing, DuckDuckGo, Brave Search and Startpage remain selectable.
 
 ## 5. Soft Aurora native design tokens
 
-The same palette must be shared across native Views, the New Tab page and assistant UI.
+The same palette must be shared across native Views, the start page and assistant UI.
 
 ### Dark
 - Window: #171923
@@ -83,47 +83,44 @@ The same palette must be shared across native Views, the New Tab page and assist
 - Rose: #B8759B
 - Sky: #568EAE
 
-Local AI remains mint. Cloud AI remains lavender. Color is semantic, not merely decorative. Use Chromium ColorIds/ColorProvider mixers for persistent native UI colors; direct SkColor values are reserved for transient effects.
+Local AI remains mint. Cloud AI remains lavender. Use Chromium ColorIds / ColorProvider mixers for native UI colors; direct SkColor values are reserved for transient effects. Respect operating-system theme by default with a manual override.
 
 ## 6. Privacy and AI
 
 - The local inference process binds only to 127.0.0.1.
-- Local prompts/page snippets/files are sent only to the local model process.
-- The assistant receives page context only after explicit user action.
-- Password inputs, payment fields, cookies, browser history and hidden form values are never included by default.
-- A page's text is untrusted data; it cannot override assistant system rules.
-- Cloud mode remains a disabled placeholder until provider selection, secret storage, clear data disclosure and per-request user approval exist.
-- No conversation is uploaded automatically when the mode switch changes.
+- Prompts, supported page snippets and text files are sent only to local inference in Local mode.
+- Page context is collected only after explicit user action.
+- Password inputs, payment fields, cookies, hidden form values, browser history and profile data are never added to prompt context by default.
+- Page content is untrusted data and cannot override assistant system instructions.
+- Cloud mode remains disabled until provider selection, secure secret storage, data disclosure and per-request consent exist.
+- Switching mode never uploads the current conversation automatically.
+- No project analytics SDK or project telemetry endpoint is added.
 
-## 7. GOST preservation
+## 7. Browser security baseline
 
-The native UI patch series must not modify the upstream GOST transport implementation unless a separate security-reviewed requirement demands it.
-
-Keep the Chromium-Gost source pin, msspi submodule, BoringSSL patch and Chromium patch sequence intact. A Sk/Ai shell patch is applied after upstream chromium-gost-prepare.bat completes. We must test:
-- ordinary TLS sites;
-- GOST TLS sites;
-- client certificate selection;
-- certificate errors/interstitials;
-- CryptoPro CSP compatibility where installed.
-
-No test may disable certificate validation as a shortcut.
+- Use upstream Chromium TLS and certificate validation with Windows platform certificate stores.
+- No GOST TLS, msspi or CryptoPro CSP integration is in scope.
+- Preserve sandboxing, site isolation, Safe Browsing and certificate error interstitials.
+- Never disable certificate validation to work around a site or test failure.
+- Microphone, camera, geolocation, notifications and clipboard require explicit permission.
+- Privacy controls must not spoof cookie consent or silently break first-party website state.
 
 ## 8. Process and memory model
 
-- No browser-wide AI service is started in the background unless the user enables AI or opens the assistant.
-- Qwen CPU inference is throttled and limited on the 8 GB target.
-- The 2B model is optional at install time and can be installed later.
-- Inactive tabs can be suspended using Chromium's native lifecycle/discard mechanisms.
-- Browser UI remains responsive while inference runs.
-- Model errors do not block navigation or crash browser processes.
+- No browser-wide AI process is started until user enables AI or opens the assistant.
+- Qwen CPU inference is throttled and memory-bounded on the 8 GB runtime target.
+- The 2B model is optional at install time.
+- Inactive tabs may use Chromium's native lifecycle/discard mechanisms.
+- UI remains responsive while inference runs.
+- Model failures do not block navigation or crash browser processes.
 
 ## 9. Delivery gates
 
-1. Source gate: pinned source checkout and upstream GOST patches complete.
-2. Baseline gate: upstream Chromium-Gost compiles from source with no Sk/Ai patches.
-3. UI gate: first native Soft Aurora chrome patch compiles and opens.
+1. Source gate: pinned upstream Chromium source checkout and dependencies complete.
+2. Baseline gate: pristine upstream Chromium compiles on the large Windows build host.
+3. UI gate: native Soft Aurora, brand and toolbar patches compile and open.
 4. Navigation gate: tabs, omnibox, restore, downloads and permissions work.
 5. Assistant gate: docked assistant resizes content and supports floating mode.
-6. GOST gate: regression tests for TLS and CSP pass.
-7. Performance gate: acceptable startup, RAM and tab lifecycle on 8 GB machines.
-8. Release gate: signed, reproducible Windows installer and update channel.
+6. Security gate: standard TLS, Windows certificate stores, certificate errors, sandboxing and Safe Browsing regressions pass.
+7. Performance gate: startup, memory and tab lifecycle are measured on 8 GB Windows machines.
+8. Release gate: reproducible per-user Windows installer and update channel.
