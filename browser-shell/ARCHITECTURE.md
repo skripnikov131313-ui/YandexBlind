@@ -38,7 +38,7 @@ The packaged output is written to `out/skai/bin/Release`. It contains `SkAi.exe`
 
 ## Local AI runtime
 
-The Windows workflow also builds `llama-server.exe` from llama.cpp v0.9.0 (verified against commit `cd959bae99ff4bed22bef2604f45241c09bbb8c8`) with CPU-only settings and packages its runtime DLLs under `runtime/llama/`. The GGUF installer downloads the pinned model over HTTPS, computes SHA-256 incrementally with Windows CNG/BCrypt, and only atomically installs the file after the digest matches. Local inference binds to `127.0.0.1`, uses an ephemeral API key, disables the server Web UI, and does not use a network proxy for inference requests. The Cloud mode is still a non-transmitting placeholder.
+The Windows workflow also builds `llama-server.exe` from llama.cpp v0.9.0 (verified against commit `cd959bae99ff4bed22bef2604f45241c09bbb8c8`) with CPU-only settings, dynamic CPU backend loading and runtime-dispatched x64/SSE4.2/AVX/AVX2-family variants. The packaged executable directory includes the matching `ggml-cpu-*.dll` backends under `runtime/llama/`; llama.cpp selects the best supported variant on the current CPU. The GGUF installer downloads the pinned model over HTTPS, computes SHA-256 incrementally with Windows CNG/BCrypt, and only atomically installs the file after the digest matches. Local inference binds to `127.0.0.1`, uses an ephemeral API key, disables the server Web UI, and does not use a network proxy for inference requests. The Cloud mode is still a non-transmitting placeholder.
 
 ## CI
 
