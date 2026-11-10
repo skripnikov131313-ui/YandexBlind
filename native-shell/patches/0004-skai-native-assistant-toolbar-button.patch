@@ -14,7 +14,7 @@ index f9bb38f92374559f70077dfcb24c2010d1b7efba..00000000000000000000000000000000
 +#include "extensions/browser/extension_registry.h"
 +#include "extensions/common/extension.h"
  #include "third_party/skia/include/core/SkPath.h"
-@@ -486,8 +490,29 @@
+@@ -486,10 +490,41 @@
    if (location_bar_view) {
      location_bar_view_ = AddChildView(std::move(location_bar_view));
      location_bar_ = location_bar_view_;
@@ -60,7 +60,7 @@ diff --git a/chrome/browser/ui/views/toolbar/toolbar_view.h b/chrome/browser/ui/
 index 50e546251e9f8021683a6929593205daefbb0596..0000000000000000000000000000000000000000 100644
 --- a/chrome/browser/ui/views/toolbar/toolbar_view.h
 +++ b/chrome/browser/ui/views/toolbar/toolbar_view.h
-@@ -411,4 +411,5 @@
+@@ -409,5 +409,6 @@
    // view hierarchy.
    raw_ptr<ToolbarButton> contextual_tasks_button_ = nullptr;
 +  raw_ptr<ToolbarButton> skai_assistant_button_ = nullptr;
