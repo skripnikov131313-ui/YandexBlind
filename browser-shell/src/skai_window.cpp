@@ -8,6 +8,7 @@
 #include "skai_client.h"
 
 #include <windowsx.h>
+#include <algorithm>
 #include <filesystem>
 #include <cwchar>
 #include <cwctype>
@@ -139,12 +140,12 @@ CefRefPtr<CefRequestContext> GetOrCreateProfileContext(
   if (directory.empty()) return nullptr;
 
   std::error_code error;
-  if (!std::filesystem::exists(directory, error)) {
-    if (!create_if_missing) return nullptr;
-    error.clear();
-    std::filesystem::create_directories(directory / L"Cache", error);
-    if (error) return nullptr;
+  if (!std::filesystem::exists(directory, error) && !create_if_missing) {
+    return nullptr;
   }
+  error.clear();
+  std::filesystem::create_directories(directory / L"Cache", error);
+  if (error) return nullptr;
 
   CefRequestContextSettings context_settings;
   CefString(&context_settings.cache_path) = (directory / L"Cache").wstring();
