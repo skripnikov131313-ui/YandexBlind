@@ -190,7 +190,7 @@
   };
   window.skaiNative.updateFavicon = (id, url) => {
     const tab = $('.tab[data-tab-id="' + id + '"]');
-    if (!tab || !/^https?:\\/\\//i.test(url)) return;
+    if (!tab || !/^https?:\/\//i.test(url)) return;
     const icon = $(".tab-favicon", tab);
     if (!icon) return;
     const image = document.createElement("img");
