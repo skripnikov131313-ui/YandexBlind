@@ -4,11 +4,13 @@
 #include "include/cef_client.h"
 #include "include/cef_values.h"
 #include "include/cef_parser.h"
+#include "include/cef_request_context.h"
 #include "skai_client.h"
 
 #include <windowsx.h>
 #include <filesystem>
 #include <cwchar>
+#include <cwctype>
 #include <fstream>
 #include <iterator>
 #include <map>
@@ -31,6 +33,9 @@ CefRefPtr<SkAiClient> g_assistant_client;
 struct Tab {
   int id = 0;
   CefRefPtr<SkAiClient> client;
+  CefRefPtr<CefRequestContext> request_context;
+  std::wstring profile = L"default";
+  bool closing = false;
   bool active = false;
   bool can_go_back = false;
   bool can_go_forward = false;
@@ -39,6 +44,8 @@ struct Tab {
   std::wstring url;
 };
 std::map<int, Tab> g_tabs;
+std::map<std::wstring, CefRefPtr<CefRequestContext>> g_profile_contexts;
+std::wstring g_active_profile = L"default";
 
 int g_next_tab_id = 1;
 int g_active_tab_id = 0;
@@ -77,6 +84,100 @@ std::wstring UiFile(const wchar_t* file) {
   GetModuleFileNameW(nullptr, exe, MAX_PATH);
   const auto path = std::filesystem::path(exe).parent_path() / L"ui" / file;
   return L"file:///" + path.generic_wstring();
+}
+
+std::filesystem::path GetSkAiDataRoot() {
+  PWSTR local = nullptr;
+  if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_CREATE,
+                                 nullptr, &local)) || !local) {
+    return {};
+  }
+  const auto root = std::filesystem::path(local) / L"SkAi";
+  CoTaskMemFree(local);
+  return root;
+}
+
+std::wstring NormalizeProfileName(const std::wstring& raw_name) {
+  if (raw_name.empty() || raw_name.size() > 24) return {};
+  std::wstring name;
+  name.reserve(raw_name.size());
+  for (wchar_t ch : raw_name) {
+    if (ch >= L'A' && ch <= L'Z') {
+      name.push_back(static_cast<wchar_t>(ch - L'A' + L'a'));
+    } else if ((ch >= L'a' && ch <= L'z') ||
+               (ch >= L'0' && ch <= L'9') || ch == L'-' || ch == L'_') {
+      name.push_back(ch);
+    } else {
+      return {};
+    }
+  }
+  if (name.empty() || name == L"." || name == L"..") return {};
+  return name;
+}
+
+std::filesystem::path GetProfileDirectory(const std::wstring& name) {
+  const auto root = GetSkAiDataRoot();
+  if (root.empty()) return {};
+  return root / L"Profiles" / name;
+}
+
+CefRefPtr<CefRequestContext> GetOrCreateProfileContext(
+    const std::wstring& raw_name, bool create_if_missing) {
+  const auto name = NormalizeProfileName(raw_name);
+  if (name.empty()) return nullptr;
+
+  const auto existing = g_profile_contexts.find(name);
+  if (existing != g_profile_contexts.end()) return existing->second;
+
+  if (name == L"default") {
+    auto global_context = CefRequestContext::GetGlobalContext();
+    if (global_context) g_profile_contexts.emplace(name, global_context);
+    return global_context;
+  }
+
+  const auto directory = GetProfileDirectory(name);
+  if (directory.empty()) return nullptr;
+
+  std::error_code error;
+  if (!std::filesystem::exists(directory, error)) {
+    if (!create_if_missing) return nullptr;
+    error.clear();
+    std::filesystem::create_directories(directory / L"Cache", error);
+    if (error) return nullptr;
+  }
+
+  CefRequestContextSettings context_settings;
+  CefString(&context_settings.cache_path) = (directory / L"Cache").wstring();
+  context_settings.persist_session_cookies = true;
+  auto context = CefRequestContext::CreateContext(context_settings, nullptr);
+  if (context) g_profile_contexts.emplace(name, context);
+  return context;
+}
+
+void NotifyProfileError(const std::wstring& message) {
+  if (!g_ui_client || !g_ui_client->GetBrowser()) return;
+  auto value = CefValue::Create();
+  value->SetString(message);
+  const auto json = CefWriteJSON(value, JSON_WRITER_DEFAULT).ToWString();
+  const auto browser = g_ui_client->GetBrowser();
+  const auto frame = browser->GetMainFrame();
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.profileError&&window.skaiNative.profileError(" +
+          json + L");",
+      frame->GetURL(), 0);
+}
+
+void NotifyProfileChanged() {
+  if (!g_ui_client || !g_ui_client->GetBrowser()) return;
+  auto value = CefValue::Create();
+  value->SetString(g_active_profile);
+  const auto json = CefWriteJSON(value, JSON_WRITER_DEFAULT).ToWString();
+  const auto browser = g_ui_client->GetBrowser();
+  const auto frame = browser->GetMainFrame();
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.profileChanged&&window.skaiNative.profileChanged(" +
+          json + L");",
+      frame->GetURL(), 0);
 }
 
 std::filesystem::path GetManagedDownloadsDirectory() {
