@@ -809,17 +809,18 @@ void SkAiAiInstallModel(CefRefPtr<CefBrowser> browser) {
 }
 
 void SkAiAiSendChat(CefRefPtr<CefBrowser> browser,
+                    const std::wstring& request_id,
                     const std::wstring& openai_request_json) {
   if (openai_request_json.empty() ||
       openai_request_json.size() > kMaxRequestBytes ||
       openai_request_json.front() != L'{' ||
       openai_request_json.back() != L'}') {
     Notify(browser, L"localAiResult",
-           L"0," + JsonQuote(L"Некорректный формат запроса.") + L",true");
+           JsonQuote(request_id) + L"," + JsonQuote(L"Некорректный формат запроса.") + L",true");
     return;
   }
 
-  LaunchWorker([browser, request = openai_request_json]() {
+  LaunchWorker([browser, request_id, request = openai_request_json]() {
     if (g_shutting_down.load()) return;
     NotifyStatus(browser, L"loading", 0,
                  L"Запуск локальной модели на процессоре…");
@@ -828,7 +829,7 @@ void SkAiAiSendChat(CefRefPtr<CefBrowser> browser,
     std::wstring error_message;
     if (!EnsureServer(port, api_key, error_message)) {
       Notify(browser, L"localAiResult",
-             L"0," + JsonQuote(error_message) + L",true");
+             JsonQuote(request_id) + L"," + JsonQuote(error_message) + L",true");
       NotifyStatus(browser, L"error", 0, error_message);
       return;
     }
@@ -841,7 +842,7 @@ void SkAiAiSendChat(CefRefPtr<CefBrowser> browser,
       return;
     }
     Notify(browser, L"localAiResult",
-           L"0," + JsonQuote(answer) + L",false");
+           JsonQuote(request_id) + L"," + JsonQuote(answer) + L",false");
     NotifyStatus(browser, L"ready", 100,
                  L"Qwen 3.5 2B · локальный режим · CPU");
   });
