@@ -3,8 +3,9 @@
   "name": "Yandex Blind Start",
   "version": "0.2.0",
   "description": "Private start page with local Qwen assistant and configurable search.",
-  "permissions": [],
+  "permissions": ["declarativeNetRequest", "privacy", "storage"],
   "host_permissions": ["http://127.0.0.1:8765/*"],
+  "declarative_net_request": {"rule_resources": [{"id": "privacy_filters", "enabled": true, "path": "rules/privacy_filters.json"}]},
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://127.0.0.1:8765"
   },
