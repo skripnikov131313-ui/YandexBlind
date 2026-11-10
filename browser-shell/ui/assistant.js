@@ -13,7 +13,8 @@
  let modelState = "checking";
  let modelDetail = "Проверяем локальную модель…";
  let modelProgress = 0;
- let requestPending = false;
+ let requestPending = "";
+ let requestSequence = 0;
 
  try {
   mode = localStorage.getItem(modeKey) === "cloud" ? "cloud" : "local";
@@ -79,9 +80,12 @@
   }
   renderStatus();
  }
- function addMessage(role, text, pending = false) {
+ function addMessage(role, text, pending = false, requestId = "") {
   const item = { role, text };
-  if (pending) item.pending = true;
+  if (pending) {
+   item.pending = true;
+   item.requestId = requestId;
+  }
   messages.push(item);
   messages = messages.slice(-200);
   persistMessages();
@@ -115,36 +119,36 @@
    return;
   }
 
-  addMessage("assistant", "Обрабатываю запрос локально…", true);
-  requestPending = true;
+  const requestId = activeProfile + "-" + Date.now() + "-" + (++requestSequence);
+  addMessage("assistant", "Обрабатываю запрос локально…", true, requestId);
+  requestPending = requestId;
   $("#send").disabled = true;
   if (!window.skaiNative?.sendLocalAi) {
-   window.skaiNative?.localAiResult?.(0, "Нативный модуль локального ИИ не подключён.", true);
+   window.skaiNative?.localAiResult?.(requestId, "Нативный модуль локального ИИ не подключён.", true);
    return;
   }
-  window.skaiNative.sendLocalAi(JSON.stringify(makeLocalRequest()));
+  window.skaiNative.sendLocalAi(requestId, JSON.stringify(makeLocalRequest()));
  }
 
- function updatePendingResult(text, isError) {
-  requestPending = false;
+ function updatePendingResult(requestId, text, isError) {
+  const id = String(requestId || "");
+  if (!id || requestPending !== id) return;
+  requestPending = "";
   $("#send").disabled = false;
-  let pendingIndex = -1;
-  for (let index = messages.length - 1; index >= 0; index -= 1) {
-   if (messages[index]?.role === "assistant" && messages[index]?.pending) {
-    pendingIndex = index;
-    break;
-   }
-  }
+  const pendingIndex = messages.findIndex(item =>
+   item?.role === "assistant" && item?.pending && item?.requestId === id
+  );
   if (pendingIndex >= 0) {
    messages[pendingIndex].text = String(text || "Пустой ответ локальной модели.");
    delete messages[pendingIndex].pending;
-  } else {
-   messages.push({ role: "assistant", text: String(text || "") });
-   messages = messages.slice(-200);
+   delete messages[pendingIndex].requestId;
   }
   persistMessages();
   render();
-  if (isError) modelDetail = String(text || "Ошибка локальной модели.");
+  if (isError) {
+   modelDetail = String(text || "Ошибка локальной модели.");
+   renderStatus();
+  }
  }
 
  setMode(mode, false);
@@ -174,7 +178,7 @@
   renderStatus();
  };
  window.skaiNative.localAiResult = (requestId, text, isError) => {
-  updatePendingResult(String(text || ""), !!isError);
+  updatePendingResult(requestId, String(text || ""), !!isError);
  };
 
  window.addEventListener("storage", event => {
