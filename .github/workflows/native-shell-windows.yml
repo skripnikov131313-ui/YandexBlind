@@ -13,7 +13,7 @@ on:
 jobs:
   windows-x64:
     runs-on: windows-2025
-    timeout-minutes: 45
+    timeout-minutes: 90
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -66,6 +66,58 @@ jobs:
       - name: Build native shell
         run: cmake --build build/skai --config Release --parallel 2
 
+      - name: Build pinned llama.cpp CPU runtime
+        shell: pwsh
+        run: |
+          $llamaSource = Join-Path $env:RUNNER_TEMP "llama.cpp-v0.9.0"
+          $llamaBuild = Join-Path $env:RUNNER_TEMP "llama-build"
+          git clone --depth 1 --branch v0.9.0 --recursive https://github.com/ggml-org/llama.cpp.git $llamaSource
+          if ($LASTEXITCODE -ne 0) { throw "Could not fetch pinned llama.cpp v0.9.0 source." }
+
+          $cmakeArgs = @(
+            "-S", $llamaSource,
+            "-B", $llamaBuild,
+            "-A", "x64",
+            "-DLLAMA_BUILD_SERVER=ON",
+            "-DLLAMA_BUILD_COMMON=ON",
+            "-DLLAMA_BUILD_TOOLS=ON",
+            "-DLLAMA_BUILD_TESTS=OFF",
+            "-DLLAMA_BUILD_EXAMPLES=OFF",
+            "-DLLAMA_BUILD_APP=OFF",
+            "-DLLAMA_BUILD_UI=OFF",
+            "-DLLAMA_USE_PREBUILT_UI=OFF",
+            "-DLLAMA_SUBPROCESS=OFF",
+            "-DLLAMA_OPENSSL=OFF",
+            "-DGGML_NATIVE=OFF",
+            "-DGGML_SSE42=OFF",
+            "-DGGML_AVX=OFF",
+            "-DGGML_AVX2=OFF",
+            "-DGGML_OPENMP=OFF",
+            "-DGGML_CUDA=OFF",
+            "-DGGML_VULKAN=OFF",
+            "-DBUILD_SHARED_LIBS=ON"
+          )
+          & cmake @cmakeArgs
+          if ($LASTEXITCODE -ne 0) { throw "llama.cpp CMake configuration failed." }
+
+          cmake --build $llamaBuild --config Release --target llama-server --parallel 2
+          if ($LASTEXITCODE -ne 0) { throw "llama-server CPU build failed." }
+
+          $server = Get-ChildItem $llamaBuild -Filter "llama-server.exe" -Recurse -File |
+            Where-Object { $_.FullName -match "[\\/]Release[\\/]llama-server\.exe$" } |
+            Select-Object -First 1
+          if (!$server) { throw "llama-server.exe was not produced by the pinned build." }
+
+          $runtime = Join-Path $PWD "build/skai/bin/Release/runtime/llama"
+          New-Item -ItemType Directory -Force -Path $runtime | Out-Null
+          Copy-Item -Path (Join-Path $server.DirectoryName "*") -Destination $runtime -Recurse -Force
+
+          $packagedServer = Join-Path $runtime "llama-server.exe"
+          if (!(Test-Path $packagedServer)) { throw "Could not package llama-server.exe." }
+          & $packagedServer --version
+          if ($LASTEXITCODE -ne 0) { throw "Packaged llama-server could not start." }
+          Get-ChildItem $runtime -File | Select-Object Name, Length
+
       - name: Verify packaged runtime
         shell: pwsh
         run: |
@@ -82,7 +134,8 @@ jobs:
             "ui/assistant.css",
             "ui/assistant.js",
             "chrome_100_percent.pak",
-            "chrome_200_percent.pak"
+            "chrome_200_percent.pak",
+            "runtime/llama/llama-server.exe"
           )
           foreach ($item in $required) {
             $path = Join-Path $bin $item
