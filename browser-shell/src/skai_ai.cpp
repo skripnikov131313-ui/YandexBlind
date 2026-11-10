@@ -11,8 +11,6 @@
 #include <bcrypt.h>
 #include <shlobj.h>
 #include <knownfolders.h>
-#include <winsock2.h>
-#include <ws2tcpip.h>
 
 #include <algorithm>
 #include <array>
@@ -121,19 +119,6 @@ void NotifyStatus(CefRefPtr<CefBrowser> browser,
          JsonQuote(status) + L"," + std::to_wstring(percent) + L"," +
              JsonQuote(detail));
 }
-
-class WorkerGuard final {
- public:
-  WorkerGuard() {
-    std::lock_guard<std::mutex> lock(g_worker_mutex);
-    ++g_active_workers;
-  }
-  ~WorkerGuard() {
-    std::lock_guard<std::mutex> lock(g_worker_mutex);
-    if (g_active_workers > 0) --g_active_workers;
-    g_worker_condition.notify_all();
-  }
-};
 
 template <typename Fn>
 void LaunchWorker(Fn&& function) {
@@ -657,19 +642,6 @@ std::string ToUtf8(const std::wstring& value) {
   if (WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, value.data(),
           static_cast<int>(value.size()), output.data(), size,
           nullptr, nullptr) != size) return {};
-  return output;
-}
-
-std::wstring FromUtf8(const std::string& value) {
-  if (value.empty()) return {};
-  const int size = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-      value.data(), static_cast<int>(value.size()), nullptr, 0);
-  if (size <= 0) return L"";
-  std::wstring output(static_cast<std::size_t>(size), L'\0');
-  if (MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS,
-          value.data(), static_cast<int>(value.size()), output.data(), size) != size) {
-    return L"";
-  }
   return output;
 }
 
