@@ -8,6 +8,7 @@
 
 #include <windowsx.h>
 #include <filesystem>
+#include <cwchar>
 #include <fstream>
 #include <iterator>
 #include <map>
@@ -202,10 +203,10 @@ void LoadSitePermissionDecisions() {
   }
 }
 
-void SaveSitePermissionDecisions() {
+bool SaveSitePermissionDecisions() {
   const auto path = GetPermissionStorePath();
   if (path.empty()) {
-    return;
+    return false;
   }
 
   auto dictionary = CefDictionaryValue::Create();
@@ -217,9 +218,12 @@ void SaveSitePermissionDecisions() {
   value->SetDictionary(dictionary);
   const auto json = CefWriteJSON(value, JSON_WRITER_DEFAULT).ToString();
   std::ofstream file(path, std::ios::binary | std::ios::trunc);
-  if (file) {
-    file.write(json.data(), static_cast<std::streamsize>(json.size()));
+  if (!file) {
+    return false;
   }
+  file.write(json.data(), static_cast<std::streamsize>(json.size()));
+  file.flush();
+  return file.good();
 }
 
 std::wstring DescribePermissionRequest(std::uint32_t permissions,
@@ -796,7 +800,16 @@ void SkAiResolvePermission(std::uint64_t request_id, bool allow, bool remember) 
   g_pending_permissions.erase(it);
   if (remember && !request.permission_key.empty()) {
     g_site_permission_decisions[request.permission_key] = allow;
-    SaveSitePermissionDecisions();
+    if (!SaveSitePermissionDecisions()) {
+      g_site_permission_decisions.erase(request.permission_key);
+      if (g_ui_client && g_ui_client->GetBrowser()) {
+        const auto ui_browser = g_ui_client->GetBrowser();
+        const auto frame = ui_browser->GetMainFrame();
+        frame->ExecuteJavaScript(
+            L"window.skaiNative&&window.skaiNative.permissionStorageFailed&&window.skaiNative.permissionStorageFailed();",
+            frame->GetURL(), 0);
+      }
+    }
   }
   if (!request.media_request) {
     g_cef_prompt_to_request.erase(request.cef_prompt_id);
