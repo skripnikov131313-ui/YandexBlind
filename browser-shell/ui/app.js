@@ -501,7 +501,7 @@
 
   function restoreProfileSession() {
     if (internalViewType) closeInternalView();
-    $(".tab").forEach(tab => {
+    $$(".tab").forEach(tab => {
       if (Number(tab.dataset.tabId || 0) !== 0) tab.remove();
     });
     // Tab IDs are assigned by the native CEF host; there is no JS counter.
