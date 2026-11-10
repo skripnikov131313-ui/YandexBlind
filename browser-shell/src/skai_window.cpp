@@ -914,18 +914,16 @@ void SkAiNavigateActive(const std::wstring& url) {
   }
 }
 
-void SkAiBrowserAction(const std::wstring& action) {
-  if (g_close_requested) {
-    return;
-  }
+void SkAiBrowserAction(const std::wstring& action,
+                        const std::wstring& parameter) {
+  if (g_close_requested) return;
   const auto it = g_tabs.find(g_active_tab_id);
   const auto browser = it != g_tabs.end() && it->second.client
                            ? it->second.client->GetBrowser()
                            : nullptr;
-  if (!browser) {
-    return;
-  }
+  if (!browser) return;
 
+  const auto host = browser->GetHost();
   if (action == L"back" && browser->CanGoBack()) {
     browser->GoBack();
   } else if (action == L"forward" && browser->CanGoForward()) {
@@ -934,7 +932,44 @@ void SkAiBrowserAction(const std::wstring& action) {
     browser->Reload();
   } else if (action == L"stop") {
     browser->StopLoad();
+  } else if (action == L"find") {
+    if (parameter.empty()) {
+      host->StopFinding(true);
+    } else {
+      host->Find(parameter, true, false, false);
+    }
+  } else if (action == L"findNext") {
+    if (!parameter.empty()) host->Find(parameter, true, false, true);
+  } else if (action == L"findPrevious") {
+    if (!parameter.empty()) host->Find(parameter, false, false, true);
+  } else if (action == L"stopFind") {
+    host->StopFinding(true);
+  } else if (action == L"zoomIn") {
+    host->SetZoomLevel(std::clamp(host->GetZoomLevel() + 0.5, -3.0, 5.0));
+  } else if (action == L"zoomOut") {
+    host->SetZoomLevel(std::clamp(host->GetZoomLevel() - 0.5, -3.0, 5.0));
+  } else if (action == L"zoomReset") {
+    host->SetZoomLevel(0.0);
+  } else if (action == L"print") {
+    host->Print();
   }
+}
+
+void SkAiNotifyFindResult(int tab_id, int match_count,
+                          int active_match_ordinal, bool final_update) {
+  if (g_close_requested || tab_id != g_active_tab_id ||
+      !g_ui_client || !g_ui_client->GetBrowser()) {
+    return;
+  }
+  const auto ui_browser = g_ui_client->GetBrowser();
+  const auto frame = ui_browser->GetMainFrame();
+  if (!frame) return;
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.findResult&&"
+      L"window.skaiNative.findResult(" + std::to_wstring(match_count) + L"," +
+      std::to_wstring(active_match_ordinal) + L"," +
+      (final_update ? L"true" : L"false") + L");",
+      frame->GetURL(), 0);
 }
 
 void SkAiSetContentBounds(int x, int y, int width, int height) {
