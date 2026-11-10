@@ -2,14 +2,14 @@
 <html lang="ru">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="color-scheme" content="dark light"><meta name="theme-color" content="#101216">
+<meta name="color-scheme" content="dark light"><meta name="theme-color" content="#171923">
 <title>Sk/Ai — пространство без шума</title>
 <link rel="stylesheet" href="newtab.css"><script src="newtab.js" defer></script>
 </head>
 <body>
 <div class="grain"></div><div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
 <header class="topbar">
-  <a class="brand" href="#" aria-label="Sk/Ai"><span class="brand-mark"><i></i><i></i><i></i></span><span>Sk<span class="brand-period">/</span>Ai</span></a>
+  <a class="brand" href="#" aria-label="Sk/Ai"><span class="brand-mark"><i></i><i></i><i></i></span><span class="brand-word"><span class="brand-sk">Sk</span><span class="brand-slash">/</span><span class="brand-ai">Ai</span></span></a>
   <nav class="top-nav"><span class="nav-status"><i></i> PRIVATE BY DESIGN</span><button class="icon-btn" id="settings-open" aria-label="Настройки" title="Настройки"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 2.94-.08-.02a1.7 1.7 0 0 0-1.78.34l-.06.06h-3.4l-.02-.08a1.7 1.7 0 0 0-1.28-1.24l-.08-.02-2.94 1.7-.06-.06a1.7 1.7 0 0 0-1.88-.34l-.08.02-1.7-2.94.06-.06A1.7 1.7 0 0 0 5.1 15l-.02-.08v-3.4l.08-.02A1.7 1.7 0 0 0 6.4 10.2l.02-.08-1.7-2.94.06-.06a1.7 1.7 0 0 0 .34-1.88l-.02-.08 2.94-1.7.06.06a1.7 1.7 0 0 0 1.88.34l.08-.02h3.4l.02.08a1.7 1.7 0 0 0 1.28 1.24l.08.02 2.94-1.7.06.06a1.7 1.7 0 0 0 1.88.34l.08-.02 1.7 2.94-.06.06a1.7 1.7 0 0 0-.34 1.88l.02.08v3.4l-.08.02A1.7 1.7 0 0 0 19.4 15Z"/></svg></button>
 </nav>
 </header>
@@ -42,7 +42,7 @@
       <button class="feature-card" id="appearance-open">
         <div class="card-top"><span class="card-icon look-icon"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1.1a2 2 0 0 0 1.4-3.4 1.8 1.8 0 0 1 1.3-3.1H18a3 3 0 0 0 3-3c0-4.7-4-8.5-9-8.5Z"/><path d="M7.5 10h.01M10 6.8h.01M15 7.5h.01"/></svg></span><span class="card-arrow">↗</span></div>
         <div class="card-copy"><strong>Внешний вид</strong><span>Темы, ритм и анимации</span></div>
-        <div class="card-foot"><span class="foot-muted">GRAPHITE / PORCELAIN</span><span class="card-foot-arrow">ИЗМЕНИТЬ <b>→</b></span></div>
+        <div class="card-foot"><span class="foot-muted">SOFT AURORA / THEMES</span><span class="card-foot-arrow">ИЗМЕНИТЬ <b>→</b></span></div>
       </button>
     </div>
   </section>
@@ -64,7 +64,7 @@
   <aside class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="panel-header"><div><span class="panel-kicker">CONTROL CENTER</span><h2 id="settings-title">Настройки</h2></div><button class="close-btn" id="settings-close" aria-label="Закрыть">×</button></div>
     <section class="setting-group"><div class="setting-label">ПОИСК</div><label for="engine-select">Поисковая система</label><select id="engine-select"><option value="yandex">Яндекс</option><option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">DuckDuckGo</option><option value="brave">Brave Search</option><option value="startpage">Startpage</option></select><p class="setting-help">Применяется к поиску на стартовой странице. Поисковик адресной строки Chromium можно изменить в настройках браузера.</p></section>
-    <section class="setting-group"><div class="setting-label">ВНЕШНИЙ ВИД</div><label for="theme-select">Цветовая тема</label><select id="theme-select"><option value="dark">Graphite — тёмная</option><option value="light">Porcelain — светлая</option><option value="system">Системная</option></select><div class="switch-row"><span><b>Плавные анимации</b><small>Мягкие переходы и появления</small></span><label class="switch"><input id="motion-toggle" type="checkbox" checked><i></i></label></div></section>
+    <section class="setting-group"><div class="setting-label">ВНЕШНИЙ ВИД</div><label for="theme-select">Цветовая тема</label><select id="theme-select"><option value="system">Как в Windows</option><option value="dark">Soft Aurora — тёмная</option><option value="light">Soft Aurora — светлая</option></select><div class="switch-row"><span><b>Плавные анимации</b><small>Мягкие переходы и появления</small></span><label class="switch"><input id="motion-toggle" type="checkbox" checked><i></i></label></div></section>
     <section class="setting-group"><div class="setting-label">ЛОКАЛЬНЫЙ ИИ</div><div class="privacy-row"><span class="status-orb" id="settings-ai-dot"></span><span><b id="settings-ai-status">Qwen не отвечает</b><small>Локальная модель Qwen3.5 2B · CPU · без облачного API</small></span></div><p class="setting-help">ИИ работает на устройстве. Для поиска актуальной информации можно открыть обычный поиск; текст запроса отправится выбранной поисковой системе.</p></section>
     <section class="setting-group"><div class="setting-label">ПРИВАТНОСТЬ И ЗАЩИТА</div>
       <div class="switch-row"><span><b>Блокировать рекламу и трекеры</b><small>Фильтрация сетевых запросов по локальному списку правил</small></span><label class="switch"><input id="filter-toggle" type="checkbox" checked><i></i></label></div>
