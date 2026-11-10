@@ -16,6 +16,11 @@
   let providerIndex = 0;
   let mode = "local";
   let toastTimer = 0;
+  const conversationKey = "skai.conversation.v1";
+  const modeKey = "skai.assistant.mode.v1";
+  let conversation = [];
+  try { conversation = JSON.parse(localStorage.getItem(conversationKey) || "[]"); } catch (_) { conversation = []; }
+  try { mode = localStorage.getItem(modeKey) || "local"; } catch (_) {}
 
   function notify(message) {
     if (!toast) return;
@@ -46,9 +51,12 @@
     notify(browser.classList.contains("assistant-floating") ? "Режим отдельной панели (демо)" : "Помощник закреплён справа");
   });
 
-  $$(".mode-option").forEach(button => button.addEventListener("click", () => {
+  $(".mode-option").forEach(button => {
+    if (button.dataset.mode === mode) button.classList.add("active");
+    button.addEventListener("click", () => {
     mode = button.dataset.mode;
-    $$(".mode-option").forEach(item => item.classList.toggle("active", item === button));
+    try { localStorage.setItem(modeKey, mode); } catch (_) {}
+    $(".mode-option").forEach(item => item.classList.toggle("active", item === button));
     const note = $("#modelFootnote");
     if (note) note.textContent = mode === "local"
       ? "Работает на этом устройстве"
@@ -59,9 +67,13 @@
       badge.classList.toggle("cloud-badge", mode === "cloud");
     }
     notify(mode === "local" ? "Выбран локальный ИИ" : "Выбрано облако. Передача данных пока отключена.");
-  }));
+    });
+  });
 
   function addMessage(kind, value) {
+    conversation.push({ role: kind, text: value });
+    conversation = conversation.slice(-200);
+    try { localStorage.setItem(conversationKey, JSON.stringify(conversation)); } catch (_) {}
     const chat = $("#chatArea");
     $(".assistant-intro", chat)?.remove();
     $(".suggestion-list", chat)?.remove();
@@ -70,6 +82,16 @@
     message.textContent = value;
     chat.append(message);
     chat.scrollTop = chat.scrollHeight;
+  }
+  if (conversation.length) {
+    $(".assistant-intro", $("#chatArea"))?.remove();
+    $(".suggestion-list", $("#chatArea"))?.remove();
+    conversation.forEach(item => {
+      const message = document.createElement("div");
+      message.className = "chat-message " + (item.role === "user" ? "user" : "assistant");
+      message.textContent = item.text || "";
+      $("#chatArea").append(message);
+    });
   }
   function sendPrompt(value) {
     const prompt = value.trim();
