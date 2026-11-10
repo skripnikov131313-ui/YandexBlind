@@ -33,9 +33,11 @@ add_library(SkAi SHARED
   src/skai_app.cpp
   src/skai_client.cpp
   src/skai_window.cpp
+  src/skai_ai.cpp
   src/skai_app.h
   src/skai_client.h
   src/skai_window.h
+  src/skai_ai.h
 )
 
 target_include_directories(SkAi PRIVATE src "${CEF_INCLUDE_PATH}")
@@ -49,6 +51,9 @@ target_link_libraries(SkAi PRIVATE
   ${CEF_STANDARD_LIBS}
   shell32
   ole32
+  winhttp
+  bcrypt
+  ws2_32
 )
 
 target_compile_options(SkAi PRIVATE /W4 /permissive-)
