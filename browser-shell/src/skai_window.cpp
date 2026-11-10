@@ -180,7 +180,7 @@ void LoadSitePermissionDecisions() {
     return;
   }
 
-  const auto value = CefParseJSON(json, JSON_PARSER_RFC);
+  const auto value = CefParseJSON(json.data(), json.size(), JSON_PARSER_RFC);
   if (!value || value->GetType() != VTYPE_DICTIONARY) {
     return;
   }
@@ -845,7 +845,7 @@ void SkAiSendSitePermissionList() {
     const std::wstring mask_text = key.substr(last_separator + 1);
     wchar_t* end = nullptr;
     const unsigned long mask_value = std::wcstoul(mask_text.c_str(), &end, 10);
-    if (end == mask_text.c_str() || *end != L'\\0' ||
+    if (end == mask_text.c_str() || *end != L'\0' ||
         mask_value > UINT32_MAX) {
       continue;
     }
