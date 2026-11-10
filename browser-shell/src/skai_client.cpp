@@ -307,13 +307,12 @@ void SkAiClient::OnBeforeDownload(
   if (directory.empty()) {
     // Preserve user choice if the standard Downloads folder is unavailable.
     callback->Continue(SafeDownloadName(suggested_name.ToWString()), true);
-    return true;
+    return;
   }
 
   const auto path = MakeUniqueDownloadPath(
       directory, suggested_name.ToWString());
   callback->Continue(path.wstring(), false);
-  return true;
 }
 
 void SkAiClient::OnDownloadUpdated(
