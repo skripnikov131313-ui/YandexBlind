@@ -537,7 +537,7 @@ void SkAiNotifyDownloadState(CefRefPtr<CefDownloadItem> item,
   record.callback = in_progress ? callback : nullptr;
 
   auto dictionary = CefDictionaryValue::Create();
-  dictionary->SetInt("id", static_cast<int>(id));
+  dictionary->SetDouble("id", static_cast<double>(id));
   dictionary->SetString("url", item->GetURL());
   dictionary->SetString("fileName", item->GetSuggestedFileName());
   dictionary->SetString("path", record.path);
