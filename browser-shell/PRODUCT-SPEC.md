@@ -59,7 +59,7 @@ The mode selector belongs next to the assistant composer.
 
 ### Local AI
 - [~] Qwen 3.5 2B GGUF Q4_K_M model path, pinned Hugging Face file and SHA-256 verification are implemented in the native installer; Windows runtime validation is pending.
-- [~] Pinned llama.cpp v0.9.0 CPU-only server build and runtime packaging are wired into Windows CI; successful build and inference validation are pending.
+- [~] Pinned llama.cpp v0.9.0 CPU-only server build uses GGML dynamic backend loading and CPU variants from x64 baseline through SSE4.2, AVX and AVX2-capable profiles. Windows build and runtime selection validation are pending.
 - [~] CPU-only runtime uses a bounded 4,096-token context, one inference slot and a capped CPU thread count. Performance on an 8 GB Windows device still needs measurement.
 - [~] HTTPS model download to LocalAppData, incremental SHA-256 verification, atomic install, model status and local server health check are implemented in source. Resume, update and Windows validation remain open.
 - [~] Local chat requests use an ephemeral API key and a loopback-only llama-server; no cloud fallback is implemented. Network-capture and packaged runtime tests remain required.
