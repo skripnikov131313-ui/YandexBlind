@@ -34,6 +34,9 @@
   let themeMode = "system";
   try { themeMode = localStorage.getItem("skai.theme.mode.v1") || "system"; } catch (_) {}
   if (!["system", "dark", "light"].includes(themeMode)) themeMode = "system";
+  let reducedMotion = false;
+  try { reducedMotion = localStorage.getItem("skai.motion.reduced.v1") === "true"; } catch (_) {}
+  document.body.classList.toggle("reduced-motion", reducedMotion);
   let mode = "local";
   let toastTimer = 0;
   let activePageLoading = false;
@@ -321,6 +324,97 @@
     }
     window.skaiNative?.downloadAction(item.id, action);
   }
+  function renderSettingsContent(list) {
+    const group = (title, description) => {
+      const section = document.createElement("section");
+      section.className = "settings-group";
+      const heading = document.createElement("div");
+      heading.className = "settings-group-heading";
+      const name = document.createElement("b");
+      name.textContent = title;
+      const note = document.createElement("p");
+      note.textContent = description;
+      heading.append(name, note);
+      section.append(heading);
+      list.append(section);
+      return section;
+    };
+    const field = (container, labelText, helpText, control) => {
+      const row = document.createElement("div");
+      row.className = "settings-field";
+      const copy = document.createElement("div");
+      const label = document.createElement("b");
+      label.textContent = labelText;
+      const help = document.createElement("small");
+      help.textContent = helpText;
+      copy.append(label, help);
+      row.append(copy, control);
+      container.append(row);
+    };
+    const select = (items, value) => {
+      const control = document.createElement("select");
+      control.className = "settings-select";
+      items.forEach(item => {
+        const option = document.createElement("option");
+        option.value = item.value;
+        option.textContent = item.label;
+        control.append(option);
+      });
+      control.value = value;
+      return control;
+    };
+
+    const searchGroup = group("Поиск", "Поисковая система для адресной строки и стартовой страницы.");
+    const searchSelect = select(
+      providers.map((provider, index) => ({ value: String(index), label: provider.name })),
+      String(providerIndex)
+    );
+    searchSelect.addEventListener("change", () => {
+      providerIndex = Number(searchSelect.value);
+      try { localStorage.setItem("skai.search.provider.v1", String(providerIndex)); } catch (_) {}
+      syncProvider();
+      notify("Поисковая система: " + providers[providerIndex].name);
+    });
+    field(searchGroup, "Поисковая система", "Выбор применяется к поиску в браузере.", searchSelect);
+
+    const appearanceGroup = group("Внешний вид", "Оформление синхронизируется со всем интерфейсом Sk/Ai.");
+    const themeSelect = select([
+      { value: "system", label: "Как в Windows" },
+      { value: "dark", label: "Тёмная" },
+      { value: "light", label: "Светлая" }
+    ], themeMode);
+    themeSelect.addEventListener("change", () => {
+      themeMode = themeSelect.value;
+      try { localStorage.setItem("skai.theme.mode.v1", themeMode); } catch (_) {}
+      applyTheme();
+      notify(themeMode === "system" ? "Тема Windows" : themeMode === "light" ? "Светлая тема" : "Тёмная тема");
+    });
+    field(appearanceGroup, "Тема", "Автоматически следовать системной теме или выбрать вручную.", themeSelect);
+
+    const motionToggle = document.createElement("input");
+    motionToggle.type = "checkbox";
+    motionToggle.className = "settings-checkbox";
+    motionToggle.checked = reducedMotion;
+    motionToggle.addEventListener("change", () => {
+      reducedMotion = motionToggle.checked;
+      document.body.classList.toggle("reduced-motion", reducedMotion);
+      try { localStorage.setItem("skai.motion.reduced.v1", String(reducedMotion)); } catch (_) {}
+    });
+    field(appearanceGroup, "Уменьшить движение", "Отключить декоративные переходы и анимации.", motionToggle);
+
+    const privacyGroup = group("Приватность", "Текущий статус функций нативной версии браузера.");
+    const privacyNote = document.createElement("div");
+    privacyNote.className = "settings-note";
+    privacyNote.textContent = "Sk/Ai не добавляет собственную аналитику или телеметрию. Облачный ИИ пока отключён. Сайты и выбранная поисковая система получают обычные сетевые запросы, необходимые для загрузки страниц.";
+    privacyGroup.append(privacyNote);
+
+    const profileGroup = group("Профиль", "Данные браузера хранятся локально в профиле Windows.");
+    const profileNote = document.createElement("div");
+    profileNote.className = "settings-note";
+    profileNote.textContent = "Закладки, папки, история, история загрузок и последняя сессия хранятся в профиле Sk/Ai. Очистка cookies и данных сайтов будет добавлена отдельно.";
+    profileGroup.append(profileNote);
+  }
+
   function renderInternalView(type) {
     internalViewType = type;
     const view = $("#internalView");
@@ -332,6 +426,7 @@
     $("#internalViewDescription").textContent =
       type === "bookmarks" ? "Сохранённые страницы в вашем профиле" :
       type === "history" ? "Недавно посещённые страницы · хранится локально" :
+      type === "settings" ? "Настройте браузер и параметры приватности" :
       "Файлы, полученные через браузер · папка Загрузки/SkAi";
     const folderTools = $("#bookmarkFolderTools");
     if (folderTools) {
@@ -360,6 +455,12 @@
 
     const list = $("#internalViewList");
     list.replaceChildren();
+    if (type === "settings") {
+      $("#internalViewEmpty").hidden = true;
+      $("#internalViewFooter").replaceChildren();
+      renderSettingsContent(list);
+      return;
+    }
     const allItems = type === "bookmarks" ? bookmarks :
       type === "history" ? historyItems : downloads;
     const searchInput = $("#internalViewSearch");
@@ -553,6 +654,7 @@
   }
   $("#bookmarkButton")?.addEventListener("click", toggleBookmark);
   $("#historyNav")?.addEventListener("click", () => openInternalView("history"));
+  $("#settingsNav")?.addEventListener("click", () => openInternalView("settings"));
   $("#downloadsNav")?.addEventListener("click", () => openInternalView("downloads"));
   $("#downloadsButton")?.addEventListener("click", () => openInternalView("downloads"));
   $("#homeNav")?.addEventListener("click", () => {
