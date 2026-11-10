@@ -1,66 +1,45 @@
 # Sk/Ai
 
-Sk/Ai is a Windows x64 browser distribution built around Chromium-Gost, with a custom start page and a native Chromium side panel for its on-device Qwen assistant.
+Sk/Ai is being developed as a standalone Windows 11 x64 desktop browser. The native browser shell is a C++20 Win32 application embedding Chromium through CEF, with a custom Aurora Glass interface and an assistant workspace.
+
+## Current development branches
+
+- `feature/skai-native-shell`: the active native browser implementation. It includes the CEF/Win32 shell, native tab controller, address/search routing, navigation controls, docked assistant UI and a separate native assistant popup.
+- `feature/sk-ai-privacy-security`: the earlier Chromium extension-based prototype. It is retained as a reference for the previous assistant and privacy experiments; it is not the native browser runtime.
+
+The native shell is still under development. Source implementation, successful Windows compilation, Windows runtime testing and public release are tracked separately. Do not treat the current prototype as a released or fully functional daily browser.
 
 ## Product direction
 
-The intended layout is a split workspace: the current website or search page remains in the main browser area on the left; Sk/Ai Assistant is docked in the browser side panel on the right. It must not appear as a modal overlay over website content. Users can choose the side-panel position in Chromium's browser settings.
+- A custom Sk/Ai browser window, tab strip, toolbar and address/search bar.
+- Standard Chromium rendering and security through CEF.
+- Yandex, Google, Bing, DuckDuckGo, Brave Search and Startpage as selectable search providers.
+- An assistant docked at the right side of the browser, detachable into a separate topmost Windows window and redockable.
+- Soft Aurora visual language: dark graphite/navy, indigo-violet and mint/teal accents, with a coordinated light theme.
+- 8 GB RAM target and CPU-only local AI.
+- No project analytics SDK or telemetry endpoint.
+- Local AI planned around Qwen 3.5 2B GGUF Q4_K_M and llama.cpp. It is not connected in the native shell yet.
+- Cloud AI remains a safe placeholder. No prompt, page content or file is transmitted.
+- Standard public PKI/TLS and Chromium security. Russian GOST TLS and CryptoPro CSP are explicitly out of scope.
 
-The current repository is still a Chromium-Gost distribution plus an extension. The native tab strip, address bar, toolbar and window frame remain upstream Chromium UI; a fully custom Sk/Ai browser shell is a separate future engineering phase.
+## Native implementation
 
-## Current build contents
+See [browser-shell/ARCHITECTURE.md](browser-shell/ARCHITECTURE.md) for the CEF bootstrap architecture and Windows build instructions, and [browser-shell/PRODUCT-SPEC.md](browser-shell/PRODUCT-SPEC.md) for the full acceptance checklist.
 
-- Chromium-Gost 156.0.8078.88 (Windows x64), retaining upstream ГОСТ TLS / msspi support.
-- Sk/Ai start page with configurable search provider: Yandex, Google, Bing, DuckDuckGo, Brave Search or Startpage.
-- Native Chromium Side Panel extension page for Sk/Ai Assistant, opened from the browser action or Alt+Shift+S.
-- Local Qwen3.5-2B GGUF Q4_K_M model with llama.cpp CPU inference runtime, bound to 127.0.0.1.
-- On-demand current-page text transfer using activeTab and scripting, rather than permanent access to all sites. The user explicitly requests page reading from the panel; the toolbar action / shortcut is the permission-granting invocation.
-- Local file context for TXT, MD, CSV, LOG and JSON files (up to 300 KB).
-- Local assistant conversation persistence in the browser extension profile, with a New Chat control.
-- Soft Aurora themes, system/light/dark selection, Quiet Mist and Deep Space atmospheres, and reduced-motion option.
+The Windows Actions workflow downloads the pinned CEF package, verifies its archive hash, builds the native shell, checks the runtime package and performs a native-window smoke test. The project is not considered built until that workflow succeeds and the app is tested on Windows 11.
 
 ## Hardware target
 
-The default model targets Windows 11 x64 systems with 8 GB RAM and no discrete GPU. It runs on CPU. Performance depends on CPU generation and available memory; a 2B model is a compromise for short everyday text tasks and is not a substitute for a larger model for complex reasoning or long documents.
-
-The model is configured with a 2048-token context. Page and file content is truncated before inference to keep resource use bounded. DOCX and PDF text extraction are not implemented.
-
-## Assistant behavior
-
-- **Local** mode sends prompts and supported text context only to the bundled inference server at 127.0.0.1.
-- The default side panel is native browser UI docked alongside the current website; it is not a floating modal over the page.
-- The assistant can also detach into a separate popup window and be re-docked. In floating mode it can be moved, minimized, maximized and restored using normal window controls.
-- Always-on-top across all Windows applications is not implemented by the extension; it would require a native Windows companion.
-- The docked panel can remain available while switching tabs, according to Chromium's side-panel behavior.
-- Page content is read only after the user presses the explicit "Передать страницу" action. The extension uses temporary activeTab access instead of permanently reading every site.
-- Conversation history is stored locally in the browser profile and can be cleared with "Новый диалог".
-- **Cloud** mode is a safe placeholder. No cloud provider is connected; switching to it does not transmit prompts, page text, files or chat history.
-- Context does not disappear when switching Local / Cloud. A future cloud provider must request informed consent and show exactly which messages and attachments will leave the device.
+The target is Windows 11 x64 with 8 GB system RAM and no discrete GPU requirement. The Qwen 2B model is a planned compromise for short everyday text tasks; CPU speed and available memory will affect response time. Model integration and memory profiling remain open work.
 
 ## Privacy model
 
-- The project does not add an analytics SDK or a project telemetry endpoint.
-- The local model server listens on 127.0.0.1 only and is started by the launcher when model files are present.
-- The assistant does not send prompts or supported attached text to a cloud LLM in Local mode.
-- Persisted chat data is local to the browser profile; it is not currently encrypted by an application-specific layer. Users can clear the current conversation inside the panel or clear extension/browser data.
-- The launcher disables selected Chromium background reporting/sync components. This is not a guarantee of zero network traffic or anonymity.
-- Websites and the selected search provider receive ordinary network requests, including the user's IP address and request metadata needed to serve pages.
-- Certificate validation and Chromium security protections remain enabled.
-
-## Permissions
-
-The extension requests sidePanel, scripting, activeTab, storage, and its existing privacy/filtering permissions. It does not request permanent access to every website. Page text is retrieved only after a user action and only when Chromium has granted access to the active tab. Browser-internal pages and protected pages may not permit script injection.
-
-## GOST and CryptoPro CSP
-
-Chromium-Gost provides ГОСТ TLS through its upstream implementation. This project does not bundle, install, license or silently modify CryptoPro CSP. CSP presence, certificate-store behavior and compatibility must be validated on a real Windows 11 system with the required CryptoPro version and certificates.
-
-## Build and verification
-
-GitHub Actions uses a Windows runner to download and verify the Chromium-Gost archive and Qwen model, download the llama.cpp CPU runtime, and package a per-user installer with Inno Setup.
-
-The installer has not yet been verified on a real Windows 11 machine. The side-panel integration has been committed but still requires a successful Windows CI build and runtime test against this Chromium-Gost distribution.
+- No project analytics SDK or silent project telemetry.
+- Local mode must not send prompts or page content outside the device.
+- Cloud mode must remain disabled until an explicit provider is configured and the user approves exactly what will be transferred.
+- Chromium certificate validation, sandbox and Safe Browsing must remain enabled.
+- Website requests and requests to the selected search provider still expose normal network metadata such as the user's IP address.
 
 ## Third-party components
 
-Chromium-Gost/Chromium, llama.cpp and Qwen are third-party components. Their upstream notices and licenses apply. Verify the model repository's current license and notices before redistributing a release.
+CEF/Chromium, llama.cpp and Qwen are third-party components. Their upstream licenses and notices apply. Verify the model repository's current license and include required notices before redistribution.
