@@ -57,8 +57,10 @@
           updatedAt: Date.now()
         }
       });
+      return true;
     } catch (error) {
       toast("Не удалось сохранить локальный диалог: " + error.message);
+      return false;
     }
   }
 
@@ -305,7 +307,8 @@
     }
 
     button.disabled = true;
-    persistState().then(async () => {
+    persistState().then(async (saved) => {
+      if (!saved) throw new Error("Диалог не сохранён. Плавающее окно не открыто, чтобы не потерять контекст.");
       if (currentWindowId == null) throw new Error("Не удалось определить окно браузера.");
       parentWindowId = currentWindowId;
       await chrome.storage.local.set({
