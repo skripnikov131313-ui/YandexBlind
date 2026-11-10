@@ -80,6 +80,10 @@
   $("#nativeMinimize")?.addEventListener("click", () => window.skaiNative?.minimize());
   $("#nativeMaximize")?.addEventListener("click", () => window.skaiNative?.toggleMaximize());
   $("#nativeClose")?.addEventListener("click", () => window.skaiNative?.close());
+  $(".titlebar")?.addEventListener("mousedown", event => {
+    if (event.button !== 0 || event.target.closest("button, input, .tabs")) return;
+    window.skaiNative?.beginDrag();
+  });
 
   $("#assistantRail")?.addEventListener("click", showAssistant);
   $("#reopenAssistant")?.addEventListener("click", showAssistant);
