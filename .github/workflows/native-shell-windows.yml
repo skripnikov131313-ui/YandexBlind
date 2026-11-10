@@ -1,20 +1,17 @@
 name: Sk/Ai Native Shell
 
 on:
-  push:
-    branches:
-      - feature/skai-native-shell
-    paths:
-      - "browser-shell/**"
-      - ".github/workflows/native-shell-windows.yml"
   pull_request:
+    branches:
+      - main
     paths:
       - "browser-shell/**"
       - ".github/workflows/native-shell-windows.yml"
   workflow_dispatch:
 
-permissions:
-  contents: read
+concurrency:
+  group: skai-native-shell-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   windows-x64:
@@ -83,13 +80,49 @@ jobs:
             "icudtl.dat",
             "resources.pak",
             "ui/index.html",
-            "ui/assistant.html"
+            "ui/assistant.html",
+            "ui/assistant.css",
+            "ui/assistant.js",
+            "chrome_100_percent.pak",
+            "chrome_200_percent.pak"
           )
           foreach ($item in $required) {
             $path = Join-Path $bin $item
             if (!(Test-Path $path)) { throw "Required runtime file missing: $path" }
           }
+          if (!(Test-Path (Join-Path $bin "locales\en-US.pak"))) {
+            throw "CEF locale resources were not packaged."
+          }
           Get-ChildItem $bin -Force | Select-Object Name, Length
+
+      - name: Native window smoke test
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD "build/skai/bin/Release/SkAi.exe"
+          $process = Start-Process -FilePath $exe -PassThru
+          try {
+            $deadline = (Get-Date).AddSeconds(35)
+            $windowFound = $false
+            while ((Get-Date) -lt $deadline) {
+              Start-Sleep -Seconds 1
+              $process.Refresh()
+              if ($process.HasExited) {
+                throw "Sk/Ai exited early with code $($process.ExitCode)."
+              }
+              if ($process.MainWindowHandle -ne 0) {
+                $windowFound = $true
+                break
+              }
+            }
+            if (!$windowFound) {
+              throw "Sk/Ai did not create a visible native window within 35 seconds."
+            }
+          }
+          finally {
+            if (!$process.HasExited) {
+              Stop-Process -Id $process.Id -Force
+            }
+          }
 
       - name: Upload Windows x64 runtime
         uses: actions/upload-artifact@v4
