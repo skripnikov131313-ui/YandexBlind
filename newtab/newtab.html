@@ -1,16 +1,73 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light"><title>Yandex Blind</title><link rel="stylesheet" href="newtab.css"><script src="newtab.js" defer></script></head>
-<body><div class="glow g1"></div><div class="glow g2"></div>
-<header><a class="brand" href="#"><span class="symbol"><i></i><i></i><i></i></span>blind<span class="dot">.</span></a><div class="right"><span class="local"><b></b> ЛОКАЛЬНЫЙ ИНТЕРФЕЙС</span><button class="gear" id="settings-open" aria-label="Настройки">⚙</button></div></header>
-<main><section class="hero"><div class="eyebrow"><i></i> YOUR PRIVATE SPACE <i></i></div><h1>Меньше шума.<br><em>Больше смысла.</em></h1><p class="lead">Поиск, работа и интеллект — в одном пространстве.</p>
-<form id="search-form"><span class="magnify">⌕</span><input id="query" type="search" placeholder="Что будем искать?" autocomplete="off" spellcheck="false" aria-label="Поисковый запрос"><span class="engine" id="engine-label">Яндекс</span><button class="go" aria-label="Искать">↗</button></form>
-<div class="meta">ПОИСКОВАЯ СИСТЕМА <button id="engine-quick">Яндекс⌄</button><span></span> ENTER ДЛЯ ПОИСКА</div></section>
-<section class="space"><div class="section-label">ПРОСТРАНСТВО <i></i><small>01 / 02</small></div><div class="tiles">
-<button class="tile feature" id="ai-tile"><span class="tile-icon violet">✧</span><span><strong>Qwen AI</strong><small>Локальный интеллект · в разработке</small></span><b>↗</b></button>
-<button class="tile" id="privacy-tile"><span class="tile-icon green">◇</span><span><strong>Приватность</strong><small>Управление настройками</small></span><b>↗</b></button>
-<button class="tile" id="appearance-tile"><span class="tile-icon lilac">◐</span><span><strong>Внешний вид</strong><small>Тема и анимации</small></span><b>↗</b></button></div></section>
-<footer><span>YB / 0.2 CONCEPT BUILD</span><span>DESIGNED FOR FOCUS <b>·</b> BUILT FOR PRIVACY</span></footer></main>
-<div class="overlay" id="overlay" hidden><aside class="panel" role="dialog" aria-modal="true" aria-labelledby="settings-title"><div class="panel-head"><div><small>CONTROL CENTER</small><h2 id="settings-title">Настройки</h2></div><button class="close" id="settings-close" aria-label="Закрыть">×</button></div>
-<section class="group"><label class="group-title" for="engine-select">ПОИСК</label><span class="field-label">Поисковая система</span><select id="engine-select"><option value="yandex">Яндекс</option><option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">DuckDuckGo</option><option value="brave">Brave Search</option><option value="startpage">Startpage</option></select><p>Выбор применяется к поиску на стартовой странице. Адресная строка Chromium настраивается отдельно в параметрах браузера.</p></section>
-<section class="group"><div class="group-title">ИНТЕРФЕЙС</div><label class="field-label" for="theme-select">Оформление</label><select id="theme-select"><option value="dark">Graphite / Dark</option><option value="light">Porcelain / Light</option><option value="system">Как в системе</option></select><div class="toggle"><span><strong>Плавные анимации</strong><small>Переходы и мягкие появления</small></span><label class="switch"><input id="motion-toggle" type="checkbox" checked><i></i></label></div></section>
-<section class="group"><div class="group-title">ПРИВАТНОСТЬ</div><div class="status"><b></b><span><strong>Страница работает локально</strong><small>Настройки хранятся в профиле браузера. Поисковый запрос отправляется выбранной поисковой системе.</small></span></div></section><div class="panel-foot">Yandex Blind <i>·</i> интерфейсная сборка</div></aside></div><div class="toast" id="toast"></div></body></html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="dark light"><meta name="theme-color" content="#101216">
+<title>Yandex Blind — пространство без шума</title>
+<link rel="stylesheet" href="newtab.css"><script src="newtab.js" defer></script>
+</head>
+<body>
+<div class="grain"></div><div class="ambient ambient-a"></div><div class="ambient ambient-b"></div>
+<header class="topbar">
+  <a class="brand" href="#" aria-label="Yandex Blind"><span class="brand-mark"><i></i><i></i><i></i></span><span>blind<span class="brand-period">.</span></span></a>
+  <nav class="top-nav"><span class="nav-status"><i></i> PRIVATE BY DESIGN</span><button class="icon-btn" id="settings-open" aria-label="Настройки" title="Настройки"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .34 1.88l.06.06-1.7 2.94-.08-.02a1.7 1.7 0 0 0-1.78.34l-.06.06h-3.4l-.02-.08a1.7 1.7 0 0 0-1.28-1.24l-.08-.02-2.94 1.7-.06-.06a1.7 1.7 0 0 0-1.88-.34l-.08.02-1.7-2.94.06-.06A1.7 1.7 0 0 0 5.1 15l-.02-.08v-3.4l.08-.02A1.7 1.7 0 0 0 6.4 10.2l.02-.08-1.7-2.94.06-.06a1.7 1.7 0 0 0 .34-1.88l-.02-.08 2.94-1.7.06.06a1.7 1.7 0 0 0 1.88.34l.08-.02h3.4l.02.08a1.7 1.7 0 0 0 1.28 1.24l.08.02 2.94-1.7.06.06a1.7 1.7 0 0 0 1.88.34l.08-.02 1.7 2.94-.06.06a1.7 1.7 0 0 0-.34 1.88l.02.08v3.4l-.08.02A1.7 1.7 0 0 0 19.4 15Z"/></svg></button>
+</nav>
+</header>
+<main class="page">
+  <section class="hero">
+    <div class="overline"><span></span> YOUR SPACE. YOUR RULES. <span></span></div>
+    <h1>Интернет.<br><em>Без лишнего шума.</em></h1>
+    <p class="hero-copy">Чистое пространство для поиска, мыслей и работы.</p>
+    <form class="searchbar" id="search-form">
+      <svg class="search-icon" viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.5 4.5"/></svg>
+      <input id="query" type="search" placeholder="Найти что-то важное…" autocomplete="off" spellcheck="false" aria-label="Поисковый запрос">
+      <button type="button" class="engine-chip" id="engine-quick">Яндекс <span>⌄</span></button>
+      <button class="search-submit" aria-label="Искать"><svg viewBox="0 0 24 24"><path d="M5 12h13M12 5l7 7-7 7"/></svg></button>
+    </form>
+    <div class="search-hint"><span>ПОИСКОВАЯ СИСТЕМА <b id="engine-name">ЯНДЕКС</b></span><i></i><span>ENTER ДЛЯ ПОИСКА</span></div>
+  </section>
+  <section class="workbench">
+    <div class="section-head"><span>РАБОЧЕЕ ПРОСТРАНСТВО</span><i></i><small>01 — 03</small></div>
+    <div class="feature-grid">
+      <button class="feature-card ai-card" id="ai-open">
+        <div class="card-top"><span class="card-icon ai-icon"><svg viewBox="0 0 24 24"><path d="M12 2.8 14.2 9.8 21.2 12l-7 2.2-2.2 7-2.2-7-7-2.2 7-2.2L12 2.8Z"/><path d="m19 2 .7 2.3L22 5l-2.3.7L19 8l-.7-2.3L16 5l2.3-.7L19 2Z"/></svg></span><span class="card-arrow">↗</span></div>
+        <div class="card-copy"><strong>Qwen Intelligence</strong><span>Локальный ИИ · 0.8B</span></div>
+        <div class="card-foot"><span class="online-dot" id="ai-dot"></span><span id="ai-status">Проверка локального ядра…</span><span class="card-foot-arrow">ОТКРЫТЬ <b>→</b></span></div>
+      </button>
+      <button class="feature-card" id="privacy-open">
+        <div class="card-top"><span class="card-icon privacy-icon"><svg viewBox="0 0 24 24"><path d="M12 3 20 6v5.5c0 5-3.4 8-8 9.5-4.6-1.5-8-4.5-8-9.5V6l8-3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg></span><span class="card-arrow">↗</span></div>
+        <div class="card-copy"><strong>Приватность</strong><span>Контроль разрешений и данных</span></div>
+        <div class="card-foot"><span class="foot-muted">LOCAL FIRST</span><span class="card-foot-arrow">НАСТРОИТЬ <b>→</b></span></div>
+      </button>
+      <button class="feature-card" id="appearance-open">
+        <div class="card-top"><span class="card-icon look-icon"><svg viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18h1.1a2 2 0 0 0 1.4-3.4 1.8 1.8 0 0 1 1.3-3.1H18a3 3 0 0 0 3-3c0-4.7-4-8.5-9-8.5Z"/><path d="M7.5 10h.01M10 6.8h.01M15 7.5h.01"/></svg></span><span class="card-arrow">↗</span></div>
+        <div class="card-copy"><strong>Внешний вид</strong><span>Темы, ритм и анимации</span></div>
+        <div class="card-foot"><span class="foot-muted">GRAPHITE / PORCELAIN</span><span class="card-foot-arrow">ИЗМЕНИТЬ <b>→</b></span></div>
+      </button>
+    </div>
+  </section>
+  <footer><span>YB<span class="footer-slash">/</span>PRIVATE BROWSING EXPERIENCE</span><span>DESIGNED FOR FOCUS <b>·</b> BUILT FOR PRIVACY</span></footer>
+</main>
+
+<div class="scrim" id="ai-scrim" hidden>
+  <aside class="ai-panel" role="dialog" aria-modal="true" aria-labelledby="ai-title">
+    <div class="panel-header"><div class="panel-title-wrap"><span class="panel-kicker">ON-DEVICE INTELLIGENCE</span><h2 id="ai-title">Qwen <span>Assistant</span></h2></div><button class="close-btn" id="ai-close" aria-label="Закрыть">×</button></div>
+    <div class="model-strip"><span class="model-orb">✳</span><span><b>Qwen3.5 · 0.8B</b><small>Работает на этом устройстве</small></span><span class="local-badge"><i></i> LOCAL</span></div>
+    <div class="chat-area" id="chat-area"><div class="welcome" id="welcome"><div class="welcome-symbol">✳</div><h3>С чего начнём?</h3><p>Помогу разобраться с текстом, документом или идеей. Запросы обрабатываются локально.</p><div class="suggestions"><button data-prompt="Составь краткий и понятный план по теме: ">Составить план <span>↗</span></button><button data-prompt="Отредактируй этот текст, сохранив смысл и стиль: ">Улучшить текст <span>↗</span></button><button data-prompt="Кратко перескажи и выдели главное: ">Сделать выжимку <span>↗</span></button></div></div></div>
+    <div class="attachment" id="attachment" hidden><span>▤</span><span id="file-name"></span><button id="file-remove" aria-label="Удалить файл">×</button></div>
+    <div class="composer"><div class="composer-tools"><label class="attach-btn" for="file-input" title="Добавить текстовый файл">＋ <span>ФАЙЛ</span></label><input id="file-input" type="file" accept=".txt,.md,.csv,.log,.json"><span class="privacy-caption"><i></i> НЕ ПОКИДАЕТ УСТРОЙСТВО</span></div><textarea id="ai-prompt" rows="2" placeholder="Спросите о чём угодно…"></textarea><div class="composer-bottom"><span>Qwen · локальная модель</span><button id="ai-send" class="send-btn" aria-label="Отправить запрос"><svg viewBox="0 0 24 24"><path d="M4 12 20 4l-5 16-3-6-8-2Z"/><path d="m12 14 8-10"/></svg></button></div><p class="file-note">Поддерживаются TXT, MD, CSV, LOG и JSON. Содержимое файла передаётся только локальной модели.</p></div>
+  </aside>
+</div>
+
+<div class="scrim" id="settings-scrim" hidden>
+  <aside class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
+    <div class="panel-header"><div><span class="panel-kicker">CONTROL CENTER</span><h2 id="settings-title">Настройки</h2></div><button class="close-btn" id="settings-close" aria-label="Закрыть">×</button></div>
+    <section class="setting-group"><div class="setting-label">ПОИСК</div><label for="engine-select">Поисковая система</label><select id="engine-select"><option value="yandex">Яндекс</option><option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">DuckDuckGo</option><option value="brave">Brave Search</option><option value="startpage">Startpage</option></select><p class="setting-help">Применяется к поиску на стартовой странице. Поисковик адресной строки Chromium можно изменить в настройках браузера.</p></section>
+    <section class="setting-group"><div class="setting-label">ВНЕШНИЙ ВИД</div><label for="theme-select">Цветовая тема</label><select id="theme-select"><option value="dark">Graphite — тёмная</option><option value="light">Porcelain — светлая</option><option value="system">Системная</option></select><div class="switch-row"><span><b>Плавные анимации</b><small>Мягкие переходы и появления</small></span><label class="switch"><input id="motion-toggle" type="checkbox" checked><i></i></label></div></section>
+    <section class="setting-group"><div class="setting-label">ЛОКАЛЬНЫЙ ИИ</div><div class="privacy-row"><span class="status-orb" id="settings-ai-dot"></span><span><b id="settings-ai-status">Qwen не отвечает</b><small>Локальная модель Qwen3.5 0.8B · CPU · без облачного API</small></span></div><p class="setting-help">ИИ работает на устройстве. Для поиска актуальной информации можно открыть обычный поиск; текст запроса отправится выбранной поисковой системе.</p></section>
+    <section class="setting-group"><div class="setting-label">ПРИВАТНОСТЬ</div><div class="privacy-row"><span class="status-orb green"></span><span><b>Локальная стартовая страница</b><small>Не использует проектную аналитику. Сайты и поисковая система всё равно получают необходимые сетевые запросы.</small></span></div></section>
+    <div class="settings-foot">Yandex Blind <i>·</i> WINDOWS 11</div>
+  </aside>
+</div>
+<div class="toast" id="toast" role="status"></div>
+</body></html>
