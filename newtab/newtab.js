@@ -84,7 +84,7 @@
   };
   $("mode-local").addEventListener("click",()=>setAssistantMode("local"));
   $("mode-cloud").addEventListener("click",()=>setAssistantMode("cloud"));
-  const health=async()=>{try{const r=await fetch("http://127.0.0.1:8765/health",{cache:"no-store",signal:AbortSignal.timeout(1200)});aiOnline=r.ok}catch{aiOnline=false}const label=aiOnline?"Локальное ядро готово":"Локальное ядро запускается";if($("ai-status"))$("ai-status").textContent=label;if($("ai-dot"))$("ai-dot").classList.toggle("offline",!aiOnline);if($("settings-ai-status"))$("settings-ai-status").textContent=aiOnline?"Qwen готов к работе":"Qwen не отвечает";if($("settings-ai-dot"))$("settings-ai-dot").classList.toggle("green",aiOnline)};
+  const health=async()=>{try{const r=await fetch("http://127.0.0.1:8765/health",{cache:"no-store",signal:AbortSignal.timeout(1200)});aiOnline=r.ok}catch{aiOnline=false}if($("settings-ai-status"))$("settings-ai-status").textContent=aiOnline?"Qwen готов к работе":"Qwen не отвечает";if($("settings-ai-dot"))$("settings-ai-dot").classList.toggle("green",aiOnline)};
   const addMessage=(role,text,extra="")=>{const area=$("chat-area");$("welcome").hidden=true;const el=document.createElement("div");el.className="message "+role+(extra?" "+extra:"");const label=document.createElement("span");label.className="message-label";label.textContent=role==="user"?"ВЫ":"QWEN";el.append(label,document.createTextNode(text));area.append(el);area.scrollTop=area.scrollHeight;return el};
   const sendMessage=async()=>{
     if(busy)return;
