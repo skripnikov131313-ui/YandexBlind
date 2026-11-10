@@ -98,6 +98,7 @@ void SkAiNotifyTabState(int id,const std::wstring&t,const std::wstring&u,bool lo
  if(!g_ui_client||!g_ui_client->GetBrowser())return;auto j=[](const std::wstring&s){auto v=CefValue::Create();v->SetString(s);return CefWriteJSON(v,JSON_WRITER_DEFAULT).ToWString();};
  auto b=g_ui_client->GetBrowser();b->GetMainFrame()->ExecuteJavaScript(L"window.skaiNative&&window.skaiNative.updateTab("+std::to_wstring(id)+L","+j(t)+L","+j(u)+L","+(loading?L"true":L"false")+L");",b->GetMainFrame()->GetURL(),0);
 }
+void SkAiSetFloatingAssistantHandle(HWND hwnd){g_assistant_window=hwnd;if(IsWindow(hwnd)){SetWindowPos(hwnd,HWND_TOPMOST,0,0,480,760,SWP_NOMOVE|SWP_SHOWWINDOW);ShowWindow(hwnd,SW_SHOW);}}
 void SkAiToggleFloatingAssistant(){
  if(IsWindow(g_assistant_window)){ShowWindow(g_assistant_window,SW_HIDE);return;}
  CefWindowInfo wi;wi.SetAsPopup(nullptr,L"Sk/Ai Assistant");CefBrowserSettings s;
