@@ -4,7 +4,7 @@
   const $=id=>document.getElementById(id);
   const read=(k,d)=>{try{return localStorage.getItem("yb."+k)||d}catch{return d}};
   const write=(k,v)=>{try{localStorage.setItem("yb."+k,v)}catch{}};
-  let engine=engines[read("engine","yandex")]?read("engine","yandex"):"yandex",theme=read("theme","dark"),motion=read("motion","on")!=="off";
+  let engine=engines[read("engine","yandex")]?read("engine","yandex"):"yandex",theme=read("theme","system"),motion=read("motion","on")!=="off";
   let selectedFile=null,fileText="",busy=false,aiOnline=false,assistantMode=read("assistant-mode","local")==="cloud"?"cloud":"local";
   const conversation=[];
   const applyPrivacyControls=async()=>{
@@ -25,7 +25,7 @@
   };
   $("filter-toggle").addEventListener("change",e=>{write("filters",e.target.checked?"on":"off");applyPrivacyControls()});
   $("third-party-cookie-toggle").addEventListener("change",e=>{write("third-party-cookies",e.target.checked?"on":"off");applyPrivacyControls()});
-  const applyTheme=()=>{document.body.classList.toggle("light",theme==="light"||(theme==="system"&&matchMedia("(prefers-color-scheme: light)").matches));$("theme-select").value=theme};
+  const systemTheme=matchMedia("(prefers-color-scheme: light)");const applyTheme=()=>{document.body.classList.toggle("light",theme==="light"||(theme==="system"&&systemTheme.matches));$("theme-select").value=theme};systemTheme.addEventListener?.("change",()=>{if(theme==="system")applyTheme()});
   const applyMotion=()=>{document.body.classList.toggle("no-motion",!motion);$("motion-toggle").checked=motion};
   const updateEngine=()=>{$("engine-quick").innerHTML=engines[engine].name+" <span>⌄</span>";$("engine-name").textContent=engines[engine].name.toUpperCase();$("engine-select").value=engine;if(assistantMode==="web")$("ai-scrim").querySelector(".model-strip b").textContent=engines[engine].name};
   const show=(id)=>{$(id).hidden=false;document.body.style.overflow="hidden"};
