@@ -17,6 +17,11 @@ if(NOT DEFINED CEF_ROOT)
   endif()
 endif()
 
+# Normalize Windows drive paths before passing them into CEF helper macros.
+# CMake 4.x rejects sequences such as "\\a" when a helper interpolates a
+# native Windows path into a string/list expression.
+file(TO_CMAKE_PATH "${CEF_ROOT}" CEF_ROOT)
+
 # CEF 138+ uses the bootstrap architecture for the Chromium sandbox.
 # Do not build a regular EXE with the obsolete cef_sandbox.lib approach.
 set(USE_SANDBOX ON CACHE BOOL "Use the supported CEF Windows bootstrap sandbox" FORCE)
@@ -25,13 +30,16 @@ list(APPEND CMAKE_MODULE_PATH "${CEF_ROOT}/cmake")
 find_package(CEF REQUIRED)
 include("${CEF_ROOT}/cmake/cef_macros.cmake")
 
-add_subdirectory("${CEF_LIBCEF_DLL_WRAPPER_PATH}" libcef_dll_wrapper)
-
-# CEF 154's helper stores mixed Windows path separators in the library
-# locations. CMake 4.4+ parses backslashes in target properties as escapes
-# (for example, "\\a" in "D:\\a\\..."). Normalize before ADD_LOGICAL_TARGET.
+file(TO_CMAKE_PATH "${CEF_LIBCEF_DLL_WRAPPER_PATH}" CEF_LIBCEF_DLL_WRAPPER_PATH_NORMALIZED)
+file(TO_CMAKE_PATH "${CEF_INCLUDE_PATH}" CEF_INCLUDE_PATH_NORMALIZED)
+file(TO_CMAKE_PATH "${CEF_BINARY_DIR}" CEF_BINARY_DIR_NORMALIZED)
+file(TO_CMAKE_PATH "${CEF_RESOURCE_DIR}" CEF_RESOURCE_DIR_NORMALIZED)
+file(TO_CMAKE_PATH "${CEF_BINARY_FILES}" CEF_BINARY_FILES_NORMALIZED)
+file(TO_CMAKE_PATH "${CEF_RESOURCE_FILES}" CEF_RESOURCE_FILES_NORMALIZED)
 file(TO_CMAKE_PATH "${CEF_LIB_DEBUG}" CEF_LIB_DEBUG_NORMALIZED)
 file(TO_CMAKE_PATH "${CEF_LIB_RELEASE}" CEF_LIB_RELEASE_NORMALIZED)
+
+add_subdirectory("${CEF_LIBCEF_DLL_WRAPPER_PATH_NORMALIZED}" libcef_dll_wrapper)
 ADD_LOGICAL_TARGET("libcef_lib" "${CEF_LIB_DEBUG_NORMALIZED}" "${CEF_LIB_RELEASE_NORMALIZED}")
 
 add_library(SkAi SHARED
@@ -46,7 +54,7 @@ add_library(SkAi SHARED
   src/skai_ai.h
 )
 
-target_include_directories(SkAi PRIVATE src "${CEF_INCLUDE_PATH}")
+target_include_directories(SkAi PRIVATE src "${CEF_INCLUDE_PATH_NORMALIZED}")
 SET_LIBRARY_TARGET_PROPERTIES(SkAi)
 
 target_compile_definitions(SkAi PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN WINVER=0x0A00 _WIN32_WINNT=0x0A00)
@@ -71,9 +79,9 @@ set_target_properties(SkAi PROPERTIES
 )
 
 # bootstrap.exe loads SkAi.dll and passes the sandbox handle into RunWinMain.
-COPY_SINGLE_FILE(SkAi "${CEF_BINARY_DIR}/bootstrap.exe" "$<TARGET_FILE_DIR:SkAi>/SkAi.exe")
-COPY_FILES(SkAi "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "$<TARGET_FILE_DIR:SkAi>")
-COPY_FILES(SkAi "${CEF_RESOURCE_FILES}" "${CEF_RESOURCE_DIR}" "$<TARGET_FILE_DIR:SkAi>")
+COPY_SINGLE_FILE(SkAi "${CEF_BINARY_DIR_NORMALIZED}/bootstrap.exe" "$<TARGET_FILE_DIR:SkAi>/SkAi.exe")
+COPY_FILES(SkAi "${CEF_BINARY_FILES_NORMALIZED}" "${CEF_BINARY_DIR_NORMALIZED}" "$<TARGET_FILE_DIR:SkAi>")
+COPY_FILES(SkAi "${CEF_RESOURCE_FILES_NORMALIZED}" "${CEF_RESOURCE_DIR_NORMALIZED}" "$<TARGET_FILE_DIR:SkAi>")
 
 add_custom_command(TARGET SkAi POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
