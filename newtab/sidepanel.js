@@ -50,6 +50,7 @@
           fileText,
           fileName,
           mode,
+          parentWindowId,
           updatedAt: Date.now()
         }
       });
@@ -139,6 +140,7 @@
         $("file-label").textContent = fileName;
         $("attachment").hidden = false;
       }
+      parentWindowId = Number.isInteger(state.parentWindowId) ? state.parentWindowId : null;
       setMode(state.mode, false);
       renderHistory();
     } catch (error) {
@@ -274,41 +276,53 @@
     }
   }
 
-  async function toggleWindowMode() {
+  function toggleWindowMode() {
     const button = $("window-mode");
     if (busy) { toast("Дождись завершения ответа, затем меняй расположение панели."); return; }
-    button.disabled = true;
-    try {
-      const current = await chrome.windows.getCurrent();
-      const isFloating = new URLSearchParams(location.search).get("window") === "floating" || current.type === "popup";
-      await persistState();
 
-      if (!isFloating) {
-        const popup = await chrome.windows.create({
-          url: chrome.runtime.getURL("sidepanel.html?window=floating"),
-          type: "popup",
-          width: 440,
-          height: 760,
-          focused: true
-        });
-        if (chrome.sidePanel?.close && current.id != null) {
-          try { await chrome.sidePanel.close({ windowId: current.id }); } catch (error) {
-            console.debug("Side panel close is unavailable in this Chromium build:", error);
-          }
-        }
-        if (!popup?.id) toast("Не удалось открыть отдельное окно Sk/Ai.");
-      } else {
-        const browserWindow = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
-        if (browserWindow?.id == null) throw new Error("Не найдено обычное окно браузера для закрепления.");
-        if (!chrome.sidePanel?.open) throw new Error("Chromium не предоставляет API закреплённой панели.");
-        await chrome.sidePanel.open({ windowId: browserWindow.id });
-        await chrome.windows.remove(current.id);
+    if (isFloatingWindow) {
+      if (parentWindowId == null) {
+        toast("Не найдено исходное окно браузера. Закрой это окно и открой Sk/Ai из браузера.");
+        return;
       }
-    } catch (error) {
-      toast("Не удалось изменить расположение: " + error.message);
-    } finally {
-      button.disabled = false;
+      if (!chrome.sidePanel?.open) {
+        toast("В этой сборке Chromium нет API закреплённой панели.");
+        return;
+      }
+      // Invoke the user-gesture-only API synchronously from this button click.
+      button.disabled = true;
+      chrome.sidePanel.open({ windowId: parentWindowId }).then(async () => {
+        try { await chrome.windows.remove(currentWindowId); }
+        catch (error) { toast("Панель закреплена, но плавающее окно не удалось закрыть: " + error.message); }
+      }).catch((error) => {
+        toast("Не удалось закрепить панель: " + error.message);
+        button.disabled = false;
+      });
+      return;
     }
+
+    button.disabled = true;
+    persistState().then(async () => {
+      if (currentWindowId == null) throw new Error("Не удалось определить окно браузера.");
+      parentWindowId = currentWindowId;
+      await chrome.storage.local.set({
+        [STORAGE_KEY]: { history, pageContext, pageLabel, fileText, fileName, mode, parentWindowId, updatedAt: Date.now() }
+      });
+      const popup = await chrome.windows.create({
+        url: chrome.runtime.getURL("sidepanel.html?window=floating"),
+        type: "popup",
+        width: 440,
+        height: 760,
+        focused: true
+      });
+      if (chrome.sidePanel?.close) {
+        try { await chrome.sidePanel.close({ windowId: currentWindowId }); }
+        catch (error) { console.debug("Side panel close is unavailable:", error); }
+      }
+      if (!popup?.id) toast("Не удалось открыть отдельное окно Sk/Ai.");
+    }).catch((error) => {
+      toast("Не удалось открыть плавающее окно: " + error.message);
+    }).finally(() => { button.disabled = false; });
   }
 
   async function startNewChat() {
@@ -371,11 +385,13 @@
   });
 
   (async () => {
-    const isFloating = new URLSearchParams(location.search).get("window") === "floating";
-    document.body.classList.toggle("floating-window", isFloating);
-    $("window-mode").innerHTML = isFloating ? "▣ <span>ЗАКРЕПИТЬ</span>" : "↗ <span>ОКНО</span>";
-    $("window-mode").title = isFloating ? "Закрепить в правой панели браузера" : "Открыть отдельным плавающим окном";
-    $("window-mode").setAttribute("aria-label", isFloating ? "Закрепить в браузере" : "Открыть отдельным окном");
+    const currentWindow = await chrome.windows.getCurrent();
+    currentWindowId = currentWindow?.id ?? null;
+    isFloatingWindow = new URLSearchParams(location.search).get("window") === "floating" || currentWindow?.type === "popup";
+    document.body.classList.toggle("floating-window", isFloatingWindow);
+    $("window-mode").innerHTML = isFloatingWindow ? "▣ <span>ЗАКРЕПИТЬ</span>" : "↗ <span>ОКНО</span>";
+    $("window-mode").title = isFloatingWindow ? "Закрепить в правой панели браузера" : "Открыть отдельным плавающим окном";
+    $("window-mode").setAttribute("aria-label", isFloatingWindow ? "Закрепить в браузере" : "Открыть отдельным окном");
     applyAppearance();
     await restoreState();
     if (!history.length) setMode("local", false);
