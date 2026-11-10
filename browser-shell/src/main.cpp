@@ -11,6 +11,9 @@
 
 namespace {
 int RunSkAi(HINSTANCE instance, int show_command, void* sandbox_info) {
+  // Bootstrap owns the executable entry point, so establish DPI awareness
+  // here before CEF creates any native or renderer windows.
+  SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
   CefMainArgs args(instance);
   CefRefPtr<SkAiApp> app = new SkAiApp();
 
