@@ -100,7 +100,7 @@ void SkAiNotifyTabState(int id,const std::wstring&t,const std::wstring&u,bool lo
 }
 void SkAiSetFloatingAssistantHandle(HWND hwnd){g_assistant_window=hwnd;if(IsWindow(hwnd)){SetWindowPos(hwnd,HWND_TOPMOST,0,0,480,760,SWP_NOMOVE|SWP_SHOWWINDOW);ShowWindow(hwnd,SW_SHOW);}}
 void SkAiToggleFloatingAssistant(){
- if(IsWindow(g_assistant_window)){ShowWindow(g_assistant_window,SW_HIDE);return;}
+ if(IsWindow(g_assistant_window)){ShowWindow(g_assistant_window,SW_SHOW);SetWindowPos(g_assistant_window,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);return;}
  CefWindowInfo wi;wi.SetAsPopup(nullptr,L"Sk/Ai Assistant");CefBrowserSettings s;
  g_assistant_client=new SkAiClient(nullptr,-1,true);
  CefBrowserHost::CreateBrowser(wi,g_assistant_client,UiFile(L"assistant.html"),s,nullptr,nullptr);
