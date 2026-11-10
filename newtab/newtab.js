@@ -1,56 +1,38 @@
 (() => {
-  const engines = {
-    yandex: { name: "Яндекс", url: "https://yandex.ru/search/?text=" },
-    google: { name: "Google", url: "https://www.google.com/search?q=" },
-    bing: { name: "Bing", url: "https://www.bing.com/search?q=" },
-    duckduckgo: { name: "DuckDuckGo", url: "https://duckduckgo.com/?q=" },
-    brave: { name: "Brave Search", url: "https://search.brave.com/search?q=" },
-    startpage: { name: "Startpage", url: "https://www.startpage.com/sp/search?query=" }
+  "use strict";
+  const engines={yandex:{name:"Яндекс",url:"https://yandex.ru/search/?text="},google:{name:"Google",url:"https://www.google.com/search?q="},bing:{name:"Bing",url:"https://www.bing.com/search?q="},duckduckgo:{name:"DuckDuckGo",url:"https://duckduckgo.com/?q="},brave:{name:"Brave Search",url:"https://search.brave.com/search?q="},startpage:{name:"Startpage",url:"https://www.startpage.com/sp/search?query="}};
+  const $=id=>document.getElementById(id);
+  const read=(k,d)=>{try{return localStorage.getItem("yb."+k)||d}catch{return d}};
+  const write=(k,v)=>{try{localStorage.setItem("yb."+k,v)}catch{}};
+  let engine=engines[read("engine","yandex")]?read("engine","yandex"):"yandex",theme=read("theme","dark"),motion=read("motion","on")!=="off";
+  let selectedFile=null,fileText="",busy=false,aiOnline=false;
+  const applyTheme=()=>{document.body.classList.toggle("light",theme==="light"||(theme==="system"&&matchMedia("(prefers-color-scheme: light)").matches));$("theme-select").value=theme};
+  const applyMotion=()=>{document.body.classList.toggle("no-motion",!motion);$("motion-toggle").checked=motion};
+  const updateEngine=()=>{$("engine-quick").innerHTML=engines[engine].name+" <span>⌄</span>";$("engine-name").textContent=engines[engine].name.toUpperCase();$("engine-select").value=engine};
+  const show=(id)=>{$(id).hidden=false;document.body.style.overflow="hidden"};
+  const hide=(id)=>{$(id).hidden=true;if($("ai-scrim").hidden&&$("settings-scrim").hidden)document.body.style.overflow=""};
+  const toast=(s)=>{const el=$("toast");el.textContent=s;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2800)};
+  const openSettings=()=>{show("settings-scrim");$("theme-select").value=theme};
+  $("settings-open").addEventListener("click",openSettings);$("settings-close").addEventListener("click",()=>hide("settings-scrim"));
+  $("settings-scrim").addEventListener("click",e=>{if(e.target===$("settings-scrim"))hide("settings-scrim")});
+  $("ai-open").addEventListener("click",()=>{show("ai-scrim");$("ai-prompt").focus()});$("ai-close").addEventListener("click",()=>hide("ai-scrim"));
+  $("ai-scrim").addEventListener("click",e=>{if(e.target===$("ai-scrim"))hide("ai-scrim")});
+  $("privacy-open").addEventListener("click",openSettings);$("appearance-open").addEventListener("click",openSettings);$("engine-quick").addEventListener("click",openSettings);
+  document.addEventListener("keydown",e=>{if(e.key==="Escape"){hide("ai-scrim");hide("settings-scrim")}if((e.ctrlKey||e.metaKey)&&e.key===","){e.preventDefault();openSettings()}if(e.key==="/"&&!["INPUT","TEXTAREA"].includes(document.activeElement.tagName)){e.preventDefault();$("query").focus()}if((e.ctrlKey||e.metaKey)&&e.key==="Enter"&&!$("ai-scrim").hidden)sendMessage()});
+  $("search-form").addEventListener("submit",e=>{e.preventDefault();const q=$("query").value.trim();if(q)location.href=engines[engine].url+encodeURIComponent(q);else $("query").focus()});
+  $("engine-select").addEventListener("change",e=>{engine=e.target.value;write("engine",engine);updateEngine()});
+  $("theme-select").addEventListener("change",e=>{theme=e.target.value;write("theme",theme);applyTheme()});
+  $("motion-toggle").addEventListener("change",e=>{motion=e.target.checked;write("motion",motion?"on":"off");applyMotion()});
+  const health=async()=>{try{const r=await fetch("http://127.0.0.1:8765/health",{cache:"no-store",signal:AbortSignal.timeout(1200)});aiOnline=r.ok}catch{aiOnline=false}const label=aiOnline?"Локальное ядро готово":"Локальное ядро запускается";$("ai-status").textContent=label;$("ai-dot").classList.toggle("offline",!aiOnline);$("settings-ai-status").textContent=aiOnline?"Qwen готов к работе":"Qwen не отвечает";$("settings-ai-dot").classList.toggle("green",aiOnline)};
+  const addMessage=(role,text,extra="")=>{const area=$("chat-area");$("welcome").hidden=true;const el=document.createElement("div");el.className="message "+role+(extra?" "+extra:"");const label=document.createElement("span");label.className="message-label";label.textContent=role==="user"?"ВЫ":"QWEN";el.append(label,document.createTextNode(text));area.append(el);area.scrollTop=area.scrollHeight;return el};
+  const sendMessage=async()=>{if(busy)return;const prompt=$("ai-prompt").value.trim();if(!prompt&&!fileText)return;$("ai-prompt").value="";const full=(fileText?"Контекст из прикреплённого файла ("+(selectedFile?.name||"документ")+ "):\n"+fileText.slice(0,12000)+"\n\n":"")+prompt;addMessage("user",prompt||(selectedFile?"Проанализируй прикреплённый файл: "+selectedFile.name:""));const placeholder=addMessage("assistant","Подготавливаю ответ…");busy=true;$("ai-send").disabled=true;
+    try{const response=await fetch("http://127.0.0.1:8765/v1/chat/completions",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({model:"qwen-local",messages:[{role:"system",content:"Ты локальный помощник внутри браузера. Отвечай по-русски, ясно и по делу. Помогай с повседневными задачами, текстами и документами. Не выдумывай факты. Если пользователь приложил текст, используй его как контекст. Учитывай ограничение контекста и отвечай компактно."},{role:"user",content:full}],temperature:0.65,max_tokens:480,stream:false}),signal:AbortSignal.timeout(180000)});
+      if(!response.ok)throw new Error("Локальный движок вернул HTTP "+response.status);const data=await response.json();const answer=data.choices?.[0]?.message?.content||"Модель не вернула текстовый ответ.";placeholder.lastChild.textContent=answer;
+    }catch(err){placeholder.classList.add("error");placeholder.lastChild.textContent=err.name==="TimeoutError"?"Модель отвечает слишком долго. Попробуйте сократить запрос.":"Не удалось связаться с локальным Qwen. Проверьте, что модуль ИИ установлен и запущен. ("+err.message+")";}finally{busy=false;$("ai-send").disabled=false;$("chat-area").scrollTop=$("chat-area").scrollHeight;health()}
   };
-  const $ = id => document.getElementById(id);
-  const read = (key, fallback) => { try { return localStorage.getItem("yb." + key) || fallback; } catch { return fallback; } };
-  const write = (key, value) => { try { localStorage.setItem("yb." + key, value); } catch {} };
-  let engine = engines[read("engine", "yandex")] ? read("engine", "yandex") : "yandex";
-  let theme = read("theme", "dark");
-  let motion = read("motion", "on") !== "off";
-  const applyTheme = () => {
-    const light = theme === "light" || (theme === "system" && matchMedia("(prefers-color-scheme: light)").matches);
-    document.body.classList.toggle("light", light);
-    $("theme-select").value = theme;
-  };
-  const applyMotion = () => {
-    document.body.classList.toggle("no-motion", !motion);
-    $("motion-toggle").checked = motion;
-  };
-  const updateEngine = () => {
-    $("engine-label").textContent = engines[engine].name;
-    $("engine-quick").innerHTML = engines[engine].name + " <span>⌄</span>";
-    $("engine-select").value = engine;
-  };
-  const overlay = $("overlay");
-  const openSettings = () => { overlay.hidden = false; document.body.style.overflow = "hidden"; };
-  const closeSettings = () => { overlay.hidden = true; document.body.style.overflow = ""; };
-  $("settings-open").addEventListener("click", openSettings);
-  $("settings-close").addEventListener("click", closeSettings);
-  overlay.addEventListener("click", e => { if (e.target === overlay) closeSettings(); });
-  document.addEventListener("keydown", e => {
-    if (e.key === "Escape") closeSettings();
-    if ((e.ctrlKey || e.metaKey) && e.key === ",") { e.preventDefault(); openSettings(); }
-    if (e.key === "/" && !["INPUT","TEXTAREA"].includes(document.activeElement.tagName)) { e.preventDefault(); $("query").focus(); }
-  });
-  $("search-form").addEventListener("submit", e => {
-    e.preventDefault();
-    const q = $("query").value.trim();
-    if (!q) { $("query").focus(); return; }
-    location.href = engines[engine].url + encodeURIComponent(q);
-  });
-  $("engine-select").addEventListener("change", e => { engine = e.target.value; write("engine", engine); updateEngine(); });
-  $("engine-quick").addEventListener("click", openSettings);
-  $("theme-select").addEventListener("change", e => { theme = e.target.value; write("theme", theme); applyTheme(); });
-  $("motion-toggle").addEventListener("change", e => { motion = e.target.checked; write("motion", motion ? "on" : "off"); applyMotion(); });
-  $("appearance-tile").addEventListener("click", openSettings);
-  $("privacy-tile").addEventListener("click", openSettings);
-  $("ai-tile").addEventListener("click", () => showToast("Локальный модуль Qwen ещё не подключён."));
-  function showToast(message) { const el = $("toast"); el.textContent = message; el.classList.add("show"); setTimeout(() => el.classList.remove("show"), 2600); }
-  updateEngine(); applyTheme(); applyMotion(); $("query").focus({ preventScroll: true });
+  $("ai-send").addEventListener("click",sendMessage);$("ai-prompt").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage()}});
+  document.querySelectorAll(".suggestions button").forEach(b=>b.addEventListener("click",()=>{$("ai-prompt").value=b.dataset.prompt;$("ai-prompt").focus()}));
+  $("file-input").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>300000){toast("Файл больше 300 КБ. Разделите его на части.");e.target.value="";return}try{fileText=await file.text();selectedFile=file;$("file-name").textContent=file.name;$("attachment").hidden=false;toast("Файл добавлен в локальный контекст.")}catch{toast("Не удалось прочитать файл.")}});
+  const removeFile=()=>{selectedFile=null;fileText="";$("file-input").value="";$("attachment").hidden=true};$("file-remove").addEventListener("click",removeFile);
+  updateEngine();applyTheme();applyMotion();$("query").focus({preventScroll:true});health();setInterval(health,3500);
 })();
