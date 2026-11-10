@@ -271,6 +271,7 @@
   let lastDownloadPersistAt = 0;
   let internalViewType = "";
   const pendingPermissions = new Map();
+  let savedSitePermissions = [];
   try { bookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || "[]"); } catch (_) { bookmarks = []; }
   try { bookmarkFolders = JSON.parse(localStorage.getItem(bookmarkFoldersKey) || '["Без папки"]'); } catch (_) { bookmarkFolders = ["Без папки"]; }
   try { historyItems = JSON.parse(localStorage.getItem(historyKey) || "[]"); } catch (_) { historyItems = []; }
@@ -378,6 +379,44 @@
     }
     window.skaiNative?.downloadAction(item.id, action);
   }
+  function renderSavedSitePermissions() {
+    const root = $("#savedSitePermissions");
+    if (!root) return;
+    root.replaceChildren();
+    if (!savedSitePermissions.length) {
+      const empty = document.createElement("div");
+      empty.className = "settings-note";
+      empty.textContent = "Нет сохранённых решений. При первом запросе сайт спросит разрешение.";
+      root.append(empty);
+      return;
+    }
+
+    savedSitePermissions.forEach(permission => {
+      const row = document.createElement("div");
+      row.className = "site-permission-row";
+      const details = document.createElement("div");
+      details.className = "site-permission-meta";
+      const origin = document.createElement("b");
+      origin.textContent = permission.origin || "Неизвестный сайт";
+      const description = document.createElement("small");
+      description.textContent = (permission.media ? "Устройство: " : "Разрешение: ") +
+        (permission.description || "доступ к функции сайта");
+      const status = document.createElement("span");
+      status.className = permission.allow ? "permission-status allowed" : "permission-status denied";
+      status.textContent = permission.allow ? "Разрешено" : "Запрещено";
+      details.append(origin, description, status);
+      const revoke = document.createElement("button");
+      revoke.type = "button";
+      revoke.className = "library-remove";
+      revoke.textContent = "Сбросить";
+      revoke.addEventListener("click", () => {
+        window.skaiNative?.revokeSitePermission(permission.key);
+      });
+      row.append(details, revoke);
+      root.append(row);
+    });
+  }
+
   function renderSettingsContent(list) {
     const group = (title, description) => {
       const section = document.createElement("section");
@@ -461,6 +500,20 @@
     privacyNote.className = "settings-note";
     privacyNote.textContent = "Sk/Ai не добавляет собственную аналитику или телеметрию. Облачный ИИ пока отключён. Сайты и выбранная поисковая система получают обычные сетевые запросы, необходимые для загрузки страниц.";
     privacyGroup.append(privacyNote);
+
+    const sitePermissionGroup = group("Разрешения сайтов", "Решения, которые вы отметили как запомненные. Их можно отозвать в любой момент.");
+    window.skaiNative?.listSitePermissions();
+    const permissionList = document.createElement("div");
+    permissionList.className = "site-permission-list";
+    permissionList.id = "savedSitePermissions";
+    sitePermissionGroup.append(permissionList);
+    const refreshPermissions = document.createElement("button");
+    refreshPermissions.type = "button";
+    refreshPermissions.className = "settings-refresh";
+    refreshPermissions.textContent = "Обновить список";
+    refreshPermissions.addEventListener("click", () => window.skaiNative?.listSitePermissions());
+    sitePermissionGroup.append(refreshPermissions);
+    renderSavedSitePermissions();
 
     const profileGroup = group("Профиль", "Данные браузера хранятся локально в профиле Windows.");
     const profileNote = document.createElement("div");
@@ -797,6 +850,10 @@
       reload.title = activePageLoading ? "Остановить загрузку" : "Обновить страницу";
       reload.setAttribute("aria-label", reload.title);
     }
+  };
+  window.skaiNative.sitePermissionsUpdated = items => {
+    savedSitePermissions = Array.isArray(items) ? items : [];
+    renderSavedSitePermissions();
   };
   window.skaiNative.permissionRequested = request => {
     if (!request || request.id === undefined || request.id === null) return;
