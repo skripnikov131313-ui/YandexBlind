@@ -55,6 +55,7 @@ struct DownloadRecord {
 std::map<std::uint32_t, DownloadRecord> g_downloads;
 
 struct PendingPermission {
+  int tab_id = 0;
   std::wstring origin;
   std::wstring description;
   std::uint32_t requested_permissions = 0;
@@ -734,7 +735,7 @@ void SkAiNotifyNavigationState(int tab_id, bool can_go_back,
 }
 
 std::uint64_t SkAiRequestSitePermission(
-    const std::wstring& requesting_origin,
+    int tab_id, const std::wstring& requesting_origin,
     std::uint32_t requested_permissions,
     bool media_request,
     CefRefPtr<CefPermissionPromptCallback> prompt_callback,
@@ -765,6 +766,7 @@ std::uint64_t SkAiRequestSitePermission(
 
   const std::uint64_t request_id = g_next_permission_id++;
   PendingPermission request;
+  request.tab_id = tab_id;
   request.origin = requesting_origin;
   request.permission_key = permission_key;
   request.description =
@@ -776,7 +778,7 @@ std::uint64_t SkAiRequestSitePermission(
   request.media_callback = media_callback;
   g_pending_permissions.emplace(request_id, request);
 
-  if (!media_request && cef_prompt_id != 0) {
+  if (!media_request) {
     g_cef_prompt_to_request[cef_prompt_id] = request_id;
   }
 
@@ -796,7 +798,7 @@ void SkAiResolvePermission(std::uint64_t request_id, bool allow, bool remember) 
     g_site_permission_decisions[request.permission_key] = allow;
     SaveSitePermissionDecisions();
   }
-  if (request.cef_prompt_id != 0) {
+  if (!request.media_request) {
     g_cef_prompt_to_request.erase(request.cef_prompt_id);
   }
 
@@ -824,6 +826,29 @@ void SkAiDismissPermission(std::uint64_t cef_prompt_id) {
   g_cef_prompt_to_request.erase(mapping);
   g_pending_permissions.erase(request_id);
   NotifyPermissionDismissed(request_id);
+}
+
+void SkAiCancelPermissionsForTab(int tab_id) {
+  for (auto it = g_pending_permissions.begin();
+       it != g_pending_permissions.end();) {
+    if (it->second.tab_id != tab_id) {
+      ++it;
+      continue;
+    }
+
+    const auto request_id = it->first;
+    const auto request = it->second;
+    if (request.media_request) {
+      if (request.media_callback) request.media_callback->Cancel();
+    } else {
+      g_cef_prompt_to_request.erase(request.cef_prompt_id);
+      if (request.prompt_callback) {
+        request.prompt_callback->Continue(CEF_PERMISSION_RESULT_DISMISS);
+      }
+    }
+    it = g_pending_permissions.erase(it);
+    NotifyPermissionDismissed(request_id);
+  }
 }
 
 void SkAiCancelAllPermissions() {
