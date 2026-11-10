@@ -200,7 +200,8 @@
   window.skaiNative = window.skaiNative || {};
   window.skaiNative.addressChanged = url => { $("#addressInput").value = url; };
   window.skaiNative.navigationState = (id, canGoBack, canGoForward, isLoading) => {
-    const selected = id === 0 || $('.tab[data-tab-id="' + id + '']')?.classList.contains("active");
+    const tab = $('.tab[data-tab-id="' + id + '"]');
+    const selected = id === 0 || tab?.classList.contains("active");
     if (!selected) return;
     activePageLoading = !!isLoading;
     const back = $("#goBack");
