@@ -7,7 +7,8 @@
 #include <filesystem>
 
 int APIENTRY wWinMain(HINSTANCE instance,HINSTANCE,wchar_t*,int show){
- SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);\n CefMainArgs args(instance);auto app=new SkAiApp();
+ SetProcessDpiAwarenessContext(DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2);
+ CefMainArgs args(instance);auto app=new SkAiApp();
  int code=CefExecuteProcess(args,app,nullptr);if(code>=0)return code;
  CefSettings settings;
  settings.no_sandbox=false;
