@@ -65,6 +65,7 @@ class SkAiClient final : public CefClient,
   int tab_id_ = 0;
   bool ui_browser_ = false;
   bool closing_ = false;
+  bool close_sent_ = false;
   CefRefPtr<CefBrowser> browser_;
   IMPLEMENT_REFCOUNTING(SkAiClient);
 };
