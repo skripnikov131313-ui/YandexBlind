@@ -1,5 +1,6 @@
 #include "skai_client.h"
 #include "include/cef_parser.h"
+#include "include/cef_values.h"
 
 #include <string>
 
@@ -50,7 +51,9 @@ void SkAiClient::OnBeforeClose(CefRefPtr<CefBrowser>) {
 void SkAiClient::OnAddressChange(CefRefPtr<CefBrowser>,
     CefRefPtr<CefFrame> frame, const CefString& url) {
   if (!frame->IsMain()) return;
-  const CefString json = CefWriteJSON(CefV8Value::CreateString(url), JSON_WRITER_DEFAULT);
+  auto value = CefValue::Create();
+  value->SetString(url);
+  const CefString json = CefWriteJSON(value, JSON_WRITER_DEFAULT);
   const std::wstring script = L"window.skaiNative && window.skaiNative.addressChanged(" +
       json.ToWString() + L");";
   frame->ExecuteJavaScript(script, frame->GetURL(), 0);
