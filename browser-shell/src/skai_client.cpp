@@ -151,6 +151,9 @@ bool SkAiClient::OnProcessMessageReceived(
   }
 
   if (category == "tab") {
+    if (args->GetSize() < 3) {
+      return true;
+    }
     if (action == "new") {
       SkAiCreateTab(args->GetString(2).ToWString(), true);
     } else if (action == "activate") {
@@ -168,6 +171,7 @@ bool SkAiClient::OnProcessMessageReceived(
   }
 
   if (category == "download") {
+    if (args->GetSize() < 3) return true;
     std::uint32_t download_id = 0;
     if (TryParseDownloadId(args->GetString(2), download_id)) {
       SkAiDownloadAction(download_id, action.ToWString());
@@ -176,12 +180,14 @@ bool SkAiClient::OnProcessMessageReceived(
   }
 
   if (category == "downloadPath") {
+    if (args->GetSize() < 3) return true;
     SkAiOpenDownloadedFile(args->GetString(2).ToWString(),
                            action.ToWString());
     return true;
   }
 
   if (category == "layout") {
+    if (args->GetSize() < 2) return true;
     std::wistringstream stream(args->GetString(1).ToWString());
     int x = 0;
     int y = 0;
