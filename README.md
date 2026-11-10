@@ -24,7 +24,7 @@ GitHub Actions downloads the upstream Chromium-Gost archive, verifies its SHA-25
 
 - Chromium-Gost release: https://github.com/deemru/Chromium-Gost/releases/tag/156.0.8078.88
 - llama.cpp runtime release: https://github.com/ggml-org/llama.cpp/releases/tag/b12248
-- Qwen model: https://huggingface.co/ggml-org/Qwen3.5-2B-GGUF
+- Qwen model: https://huggingface.co/gguf/Qwen3.5-2B-GGUF
 
 ## Privacy model
 
