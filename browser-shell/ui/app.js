@@ -1099,7 +1099,7 @@
   window.skaiNative = window.skaiNative || {};
   window.skaiNative.addressChanged = url => { $("#addressInput").value = url; syncBookmarkButton(); };
   function persistBrowserSession() {
-    const tabs = $(".tab")
+    const tabs = $$(".tab")
       .filter(tab => Number(tab.dataset.tabId || 0) !== 0)
       .map(tab => ({
         title: $(".tab-name", tab)?.textContent || tab.title || "",
