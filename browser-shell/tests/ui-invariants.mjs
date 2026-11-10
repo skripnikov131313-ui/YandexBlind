@@ -127,12 +127,12 @@ assert.match(
 );
 assert.match(
   clientSource,
-  /SkAiAiSendChat\(browser, args->GetString\(2\)\.ToWString\(\)\)/,
+  /SkAiAiSendChat\(browser, args->GetString\(2\)\.ToWString\(\),\s*args->GetString\(3\)\.ToWString\(\)\)/,
   "CEF browser commands must route local chat into the native AI module."
 );
 assert.match(
   bridgeSource,
-  /skaiNative\.sendLocalAi=function\(request\)\{aiAction\("send",String\(request\)\)\}/,
+  /skaiNative\.sendLocalAi=function\(requestId,request\)\{aiAction\("send",String\(requestId\),String\(request\)\)\}/,
   "The renderer bridge must expose the native local chat action."
 );
 assert.match(
@@ -157,18 +157,34 @@ assert.match(
 );
 assert.match(
   source,
-  /window\.skaiNative\.sendLocalAi\(JSON\.stringify\(payload\)\)/,
+  /window\.skaiNative\.sendLocalAi\(requestId, JSON\.stringify\(payload\)\)/,
   "The docked assistant must send local requests through the native bridge."
 );
 assert.match(
   assistantSource,
-  /window\.skaiNative\.sendLocalAi\(JSON\.stringify\(makeLocalRequest\(\)\)\)/,
+  /window\.skaiNative\.sendLocalAi\(requestId, JSON\.stringify\(makeLocalRequest\(\)\)\)/,
   "The floating assistant must use the same native local inference bridge."
 );
 assert.match(
   source,
   /Облачный провайдер пока не подключён\. Запрос и контекст не отправлены\./,
   "Cloud mode must remain non-transmitting until a provider and consent flow exist."
+);
+
+assert.match(
+  source,
+  /localAiPendingId = requestId/,
+  "The docked assistant must correlate each completion to its request."
+);
+assert.match(
+  source,
+  /localAiPendingId = ""/,
+  "Profile changes must discard the previous pending response identity."
+);
+assert.match(
+  assistantSource,
+  /requestPending !== id/,
+  "The floating assistant must ignore stale completions."
 );
 
 process.stdout.write("Sk/Ai UI invariants: OK\n");
