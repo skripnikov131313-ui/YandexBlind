@@ -1,0 +1,137 @@
+diff --git a/chrome/browser/ui/color/BUILD.gn b/chrome/browser/ui/color/BUILD.gn
+index 000000000000..111111111111 100644
+--- a/chrome/browser/ui/color/BUILD.gn
++++ b/chrome/browser/ui/color/BUILD.gn
+@@ -40,6 +40,8 @@ source_set("mixers") {
+     "omnibox_color_mixer.h",
+     "product_specifications_color_mixer.cc",
+     "product_specifications_color_mixer.h",
++    "skai_color_mixer.cc",
++    "skai_color_mixer.h",
+     "tab_group_color_ids.h",
+     "tab_strip_color_mixer.cc",
+     "tab_strip_color_mixer.h",
+diff --git a/chrome/browser/ui/color/chrome_color_mixers.cc b/chrome/browser/ui/color/chrome_color_mixers.cc
+index 000000000000..111111111111 100644
+--- a/chrome/browser/ui/color/chrome_color_mixers.cc
++++ b/chrome/browser/ui/color/chrome_color_mixers.cc
+@@ -22,6 +22,7 @@
+ #include "chrome/browser/ui/color/omnibox_color_mixer.h"
+ #include "chrome/browser/ui/color/product_specifications_color_mixer.h"
++#include "chrome/browser/ui/color/skai_color_mixer.h"
+ #include "chrome/browser/ui/color/tab_strip_color_mixer.h"
+ #include "ui/color/color_provider_utils.h"
+ 
+@@ -86,6 +87,7 @@ void AddChromeColorMixers(ui::ColorProvider* provider,
+   // Must be the last one in order to override other mixer colors.
+   AddNativeChromeColorMixer(provider, key);
++  AddSkAiColorMixer(provider, key);
+ 
+   if (key.custom_theme) {
+     key.custom_theme->AddColorMixers(provider, key);
+diff --git a/chrome/browser/ui/color/skai_color_mixer.h b/chrome/browser/ui/color/skai_color_mixer.h
+new file mode 100644
+--- /dev/null
++++ b/chrome/browser/ui/color/skai_color_mixer.h
+@@ -0,0 +1,16 @@
++// Copyright 2026 The Sk/Ai Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#ifndef CHROME_BROWSER_UI_COLOR_SKAI_COLOR_MIXER_H_
++#define CHROME_BROWSER_UI_COLOR_SKAI_COLOR_MIXER_H_
++
++#include "ui/color/color_provider_key.h"
++
++namespace ui {
++class ColorProvider;
++}
++
++void AddSkAiColorMixer(ui::ColorProvider* provider,
++                       const ui::ColorProviderKey& key);
++
++#endif  // CHROME_BROWSER_UI_COLOR_SKAI_COLOR_MIXER_H_
+diff --git a/chrome/browser/ui/color/skai_color_mixer.cc b/chrome/browser/ui/color/skai_color_mixer.cc
+new file mode 100644
+--- /dev/null
++++ b/chrome/browser/ui/color/skai_color_mixer.cc
+@@ -0,0 +1,62 @@
++// Copyright 2026 The Sk/Ai Authors
++// Use of this source code is governed by a BSD-style license that can be
++// found in the LICENSE file.
++
++#include "chrome/browser/ui/color/skai_color_mixer.h"
++
++#include "chrome/browser/ui/color/chrome_color_id.h"
++#include "third_party/skia/include/core/SkColor.h"
++#include "ui/color/color_id.h"
++#include "ui/color/color_mixer.h"
++#include "ui/color/color_provider.h"
++
++void AddSkAiColorMixer(ui::ColorProvider* provider,
++                       const ui::ColorProviderKey& key) {
++  const bool dark_mode =
++      key.color_mode == ui::ColorProviderKey::ColorMode::kDark;
++
++  const SkColor window =
++      dark_mode ? SkColorSetRGB(0x17, 0x19, 0x23)
++                : SkColorSetRGB(0xF3, 0xF2, 0xF7);
++  const SkColor surface =
++      dark_mode ? SkColorSetRGB(0x22, 0x25, 0x33)
++                : SkColorSetRGB(0xFF, 0xFF, 0xFF);
++  const SkColor elevated =
++      dark_mode ? SkColorSetRGB(0x2B, 0x2F, 0x40)
++                : SkColorSetRGB(0xF8, 0xF7, 0xFC);
++  const SkColor text =
++      dark_mode ? SkColorSetRGB(0xF3, 0xF1, 0xFA)
++                : SkColorSetRGB(0x28, 0x28, 0x3A);
++  const SkColor muted =
++      dark_mode ? SkColorSetRGB(0xB0, 0xAF, 0xC2)
++                : SkColorSetRGB(0x74, 0x74, 0x8A);
++  const SkColor dim =
++      dark_mode ? SkColorSetRGB(0x85, 0x86, 0x9E)
++                : SkColorSetRGB(0x99, 0x99, 0xAA);
++  const SkColor border =
++      dark_mode ? SkColorSetRGB(0x3B, 0x3D, 0x50)
++                : SkColorSetRGB(0xDE, 0xDC, 0xE9);
++
++  ui::ColorMixer& mixer = provider->AddMixer();
++
++  mixer[ui::kColorFrameActive] = {window};
++  mixer[ui::kColorFrameInactive] = {window};
++  mixer[kColorFrameCaptionActive] = {text};
++  mixer[kColorFrameCaptionInactive] = {muted};
++
++  mixer[kColorToolbar] = {surface};
++  mixer[kColorToolbarBackgroundSubtleEmphasis] = {elevated};
++  mixer[kColorToolbarBackgroundSubtleEmphasisHovered] = {elevated};
++  mixer[kColorToolbarButtonIconDefault] = {muted};
++  mixer[kColorToolbarButtonIconHovered] = {text};
++  mixer[kColorToolbarButtonIconDisabled] = {dim};
++  mixer[kColorToolbarButtonIcon] = {muted};
++  mixer[kColorToolbarButtonText] = {muted};
++  mixer[kColorToolbarTextDefault] = {muted};
++  mixer[kColorToolbarSeparatorDefault] = {border};
++
++  mixer[kColorLocationBarBackground] = {elevated};
++  mixer[kColorLocationBarBackgroundHovered] = {elevated};
++  mixer[kColorLocationBarBorder] = {border};
++  mixer[kColorOmniboxText] = {text};
++  mixer[kColorOmniboxTextDimmed] = {muted};
++
++  mixer[kColorTabBackgroundActiveFrameActive] = {surface};
++  mixer[kColorTabBackgroundActiveFrameInactive] = {surface};
++  mixer[kColorTabBackgroundInactiveFrameActive] = {window};
++  mixer[kColorTabBackgroundInactiveFrameInactive] = {window};
++  mixer[kColorTabBackgroundInactiveHoverFrameActive] = {elevated};
++  mixer[kColorTabBackgroundInactiveHoverFrameInactive] = {elevated};
++  mixer[kColorTabForegroundActiveFrameActive] = {text};
++  mixer[kColorTabForegroundActiveFrameInactive] = {text};
++  mixer[kColorTabForegroundInactiveFrameActive] = {muted};
++  mixer[kColorTabForegroundInactiveFrameInactive] = {muted};
++  mixer[kColorTabDividerFrameActive] = {border};
++  mixer[kColorTabDividerFrameInactive] = {border};
++
++  mixer[kColorBookmarkBarBackground] = {surface};
++  mixer[kColorBookmarkBarForeground] = {muted};
++}
