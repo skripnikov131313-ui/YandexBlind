@@ -31,6 +31,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Node.js for UI prototype checks
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate browser UI prototype JavaScript
+        shell: pwsh
+        run: node --check native-shell/ui-prototype/app.js
+
       - name: Validate PowerShell scripts and design tokens
         shell: pwsh
         run: ./native-shell/validate.ps1
