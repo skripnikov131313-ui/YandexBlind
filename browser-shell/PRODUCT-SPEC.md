@@ -22,7 +22,7 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [~] Back, forward, reload and stop controls.
 - [ ] Session restore and crash recovery.
 - [ ] Bookmarks with folders, editing and persistence.
-- [ ] Browsing history with search and clearing controls.
+- [~] Local browsing history: capture completed native CEF navigations, search, remove individual entries and clear all. Persistence and navigation capture still require Windows runtime validation.
 - [ ] Downloads with progress, open, show-in-folder and remove.
 - [ ] Extension manager and documented compatibility policy.
 - [ ] Multiple profiles and isolated profile data.
@@ -46,6 +46,7 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [~] Floating-window minimize, maximize, restore, close and native topmost behavior.
 - [~] Redock the assistant into the browser panel.
 - [~] Conversation and Local/Cloud mode persistence scaffolding.
+- [~] Local bookmarks/history use the CEF UI profile storage; data is capped at 2,000 recent history entries.
 - [ ] Verified cross-window and cross-session chat synchronization.
 - [ ] Multiple named conversations and search.
 - [ ] Explicit page-content transfer after a user action.
@@ -119,6 +120,6 @@ The mode selector belongs next to the assistant composer.
 
 ## Current milestone
 
-Native C++/Win32 + CEF shell with tab/navigation controls and an independent assistant popup is implemented in source. The current CEF build uses the post-CEF-138 bootstrap architecture and explicitly refuses to start without the sandbox handle.
+Native C++/Win32 + CEF shell with tabs/navigation controls, an independent assistant popup, and local bookmarks/history screens is implemented in source. The current CEF build uses the post-CEF-138 bootstrap architecture and explicitly refuses to start without the sandbox handle.
 
-JavaScript syntax checks pass locally. The Windows workflow has been created and is currently queued by GitHub Actions; it has not yet produced a successful build artifact. No Windows runtime behavior is claimed as tested. Next gate: complete Windows CI build and native-window smoke test. After that: harden profile/session storage, implement core browser services (bookmarks/history/downloads/permissions), then integrate local AI.
+JavaScript syntax and HTML-to-JS element-reference checks pass in the repository inspection. The Windows workflow has not yet produced a successful build artifact; its latest run is queued and no Windows compile/runtime result is claimed. No Windows runtime behavior is claimed as tested. Next gate: complete Windows CI build and native-window smoke test. After that: harden profile/session storage, implement core browser services (bookmarks/history/downloads/permissions), then integrate local AI.
