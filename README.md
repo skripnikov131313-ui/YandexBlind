@@ -28,8 +28,10 @@ The model is configured with a 2048-token context. Page and file content is trun
 ## Assistant behavior
 
 - **Local** mode sends prompts and supported text context only to the bundled inference server at 127.0.0.1.
-- The side panel is native browser UI docked alongside the current website; it is not a floating modal over the page.
-- The side panel can remain available while switching tabs, according to Chromium's side-panel behavior.
+- The default side panel is native browser UI docked alongside the current website; it is not a floating modal over the page.
+- The assistant can also detach into a separate popup window and be re-docked. In floating mode it can be moved, minimized, maximized and restored using normal window controls.
+- Always-on-top across all Windows applications is not implemented by the extension; it would require a native Windows companion.
+- The docked panel can remain available while switching tabs, according to Chromium's side-panel behavior.
 - Page content is read only after the user presses the explicit "Передать страницу" action. The extension uses temporary activeTab access instead of permanently reading every site.
 - Conversation history is stored locally in the browser profile and can be cleared with "Новый диалог".
 - **Cloud** mode is a safe placeholder. No cloud provider is connected; switching to it does not transmit prompts, page text, files or chat history.
