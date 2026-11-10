@@ -65,4 +65,110 @@ assert.match(
   "Profile switching must close the detached assistant."
 );
 
+const aiSource = readFileSync(
+  new URL("../src/skai_ai.cpp", import.meta.url),
+  "utf8"
+);
+const aiHeaderSource = readFileSync(
+  new URL("../src/skai_ai.h", import.meta.url),
+  "utf8"
+);
+const clientSource = readFileSync(
+  new URL("../src/skai_client.cpp", import.meta.url),
+  "utf8"
+);
+const bridgeSource = readFileSync(
+  new URL("../src/skai_app.cpp", import.meta.url),
+  "utf8"
+);
+const cmakeSource = readFileSync(
+  new URL("../CMakeLists.txt", import.meta.url),
+  "utf8"
+);
+const workflowSource = readFileSync(
+  new URL("../../.github/workflows/native-shell-windows.yml", import.meta.url),
+  "utf8"
+);
+
+assert.match(
+  aiSource,
+  /qwen3\.5-2b-Q4_K_M\.gguf/,
+  "The local model filename must be pinned."
+);
+assert.match(
+  aiSource,
+  /9a3d0aa6c920f096441139b6a254542da855223fdad06855ea00c6c087fd713d/,
+  "The verified model SHA-256 must remain pinned."
+);
+assert.match(
+  aiSource,
+  /https:\/\/|kModelUrlHost\[\] = L"huggingface\.co"/,
+  "The model downloader must use HTTPS."
+);
+assert.match(
+  aiSource,
+  /--host 127\.0\.0\.1/,
+  "The inference server must bind only to loopback."
+);
+assert.doesNotMatch(
+  aiSource,
+  /--host 0\.0\.0\.0/,
+  "The inference server must never bind to all network interfaces."
+);
+assert.match(
+  aiSource,
+  /WINHTTP_ACCESS_TYPE_NO_PROXY/,
+  "Requests to the local inference endpoint must bypass proxies."
+);
+assert.match(
+  aiSource,
+  /BCRYPT_SHA256_ALGORITHM/,
+  "The native installer must verify the model with Windows SHA-256."
+);
+assert.match(
+  clientSource,
+  /SkAiAiSendChat\(browser, args->GetString\(2\)\.ToWString\(\)\)/,
+  "CEF browser commands must route local chat into the native AI module."
+);
+assert.match(
+  bridgeSource,
+  /skaiNative\.sendLocalAi=function\(request\)\{aiAction\("send",String\(request\)\)\}/,
+  "The renderer bridge must expose the native local chat action."
+);
+assert.match(
+  aiHeaderSource,
+  /void SkAiAiShutdown\(\)/,
+  "The local runtime must have a shutdown entry point."
+);
+assert.match(
+  cmakeSource,
+  /src\/skai_ai\.cpp/,
+  "The native local AI implementation must be part of the executable target."
+);
+assert.match(
+  workflowSource,
+  /Build pinned llama\.cpp CPU runtime/,
+  "Windows CI must build the pinned local inference runtime."
+);
+assert.match(
+  workflowSource,
+  /runtime\/llama\/llama-server\.exe/,
+  "The Windows package must include llama-server.exe."
+);
+assert.match(
+  source,
+  /window\.skaiNative\.sendLocalAi\(JSON\.stringify\(payload\)\)/,
+  "The docked assistant must send local requests through the native bridge."
+);
+assert.match(
+  assistantSource,
+  /window\.skaiNative\.sendLocalAi\(JSON\.stringify\(makeLocalRequest\(\)\)\)/,
+  "The floating assistant must use the same native local inference bridge."
+);
+assert.match(
+  source,
+  /Облачный провайдер пока не подключён\. Запрос и контекст не отправлены\./,
+  "Cloud mode must remain non-transmitting until a provider and consent flow exist."
+);
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");
