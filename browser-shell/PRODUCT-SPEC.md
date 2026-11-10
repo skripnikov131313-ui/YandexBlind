@@ -27,7 +27,8 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [ ] Extension manager and documented compatibility policy.
 - [~] Multiple named profiles with separate CEF request contexts/cache directories; UI state is namespaced per profile. Windows runtime isolation and profile-switch lifecycle still require validation.
 - [ ] Import/export of bookmarks and settings.
-- [ ] Find-in-page, print, zoom, fullscreen and developer tools.
+- [~] Find-in-page via CEF FindHandler, previous/next match navigation, print and zoom controls are wired to the active native browser. Windows runtime testing remains pending.
+- [ ] Fullscreen and developer tools.
 - [~] CEF permission prompts for camera, microphone, screen/audio capture, geolocation, notifications, clipboard and other supported permission types. Explicit allow/deny, optional remember-per-origin-and-type, saved decision list and revoke. Windows runtime validation and integration with a full permissions/settings database remain open.
 
 ## 2. Search
