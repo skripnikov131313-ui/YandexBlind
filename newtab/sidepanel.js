@@ -9,6 +9,9 @@
 
   let mode = "local";
   let busy = false;
+  let currentWindowId = null;
+  let parentWindowId = null;
+  let isFloatingWindow = false;
   let pageContext = "";
   let pageLabel = "Контекст не передан";
   let fileText = "";
