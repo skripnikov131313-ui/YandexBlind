@@ -714,12 +714,17 @@ void SkAiActivateTab(int tab_id) {
   if (g_close_requested) {
     return;
   }
-  if (tab_id != 0 && !g_tabs.contains(tab_id)) {
-    return;
+  if (tab_id != 0) {
+    const auto target = g_tabs.find(tab_id);
+    if (target == g_tabs.end() || target->second.closing ||
+        target->second.profile != g_active_profile) {
+      return;
+    }
   }
 
   for (auto& [id, tab] : g_tabs) {
-    tab.active = (id == tab_id);
+    tab.active = (id == tab_id && !tab.closing &&
+                  tab.profile == g_active_profile);
   }
   g_active_tab_id = tab_id;
   LayoutChildren();
@@ -738,7 +743,14 @@ void SkAiOnTabClosed(int tab_id) {
   g_tabs.erase(tab_id);
 
   if (!g_close_requested && g_active_tab_id == tab_id) {
-    g_active_tab_id = g_tabs.empty() ? 0 : g_tabs.rbegin()->first;
+    int fallback_tab = 0;
+    for (auto it = g_tabs.rbegin(); it != g_tabs.rend(); ++it) {
+      if (it->second.profile == g_active_profile && !it->second.closing) {
+        fallback_tab = it->first;
+        break;
+      }
+    }
+    g_active_tab_id = fallback_tab;
     SkAiActivateTab(g_active_tab_id);
   } else if (!g_close_requested) {
     SendTabSnapshot();
@@ -749,13 +761,20 @@ void SkAiOnTabClosed(int tab_id) {
 
 void SkAiCloseTab(int tab_id) {
   const auto it = g_tabs.find(tab_id);
-  if (it == g_tabs.end() || g_close_requested) {
+  if (it == g_tabs.end() || g_close_requested || it->second.closing) {
     return;
   }
 
+  it->second.closing = true;
+  it->second.active = false;
   if (it->second.client) {
     it->second.client->RequestClose();
   }
+  if (g_active_tab_id == tab_id) {
+    g_active_tab_id = 0;
+  }
+  LayoutChildren();
+  SendTabSnapshot();
 }
 
 void SkAiNavigateActive(const std::wstring& url) {
