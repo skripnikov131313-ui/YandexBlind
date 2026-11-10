@@ -15,6 +15,7 @@ The native shell is still under development. Source implementation, successful W
 - Standard Chromium rendering and security through CEF.
 - Yandex, Google, Bing, DuckDuckGo, Brave Search and Startpage as selectable search providers.
 - Local bookmark folders with editable titles, browsing history and a persistent downloads library; downloads are stored in `Downloads/SkAi`.
+- Native CEF site-permission prompts with explicit allow/deny, optional remembered choices per origin and permission type, and revoke controls in Settings.
 - An assistant docked at the right side of the browser, detachable into a separate topmost Windows window and redockable.
 - Soft Aurora visual language: dark graphite/navy, indigo-violet and mint/teal accents, with a coordinated light theme.
 - 8 GB RAM target and CPU-only local AI.
