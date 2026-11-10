@@ -32,7 +32,7 @@ jobs:
           Invoke-WebRequest -Uri $url -OutFile $archive
           $actual = (Get-FileHash -Path $archive -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($actual -ne $expected) {
-            throw "SHA-256 mismatch. Expected $expected, got $actual"
+            throw "Chromium-Gost SHA-256 mismatch. Expected $expected, got $actual"
           }
           $target = Join-Path $PWD "dist\upstream\expanded"
           Expand-Archive -Path $archive -DestinationPath $target -Force
@@ -43,6 +43,33 @@ jobs:
           "Verified upstream version: $version (Windows x64 ZIP)" | Out-File "dist\UPSTREAM.txt" -Encoding utf8
           "SHA256: $actual" | Out-File "dist\UPSTREAM.txt" -Append -Encoding utf8
 
+      - name: Download local Qwen runtime and model
+        shell: pwsh
+        run: |
+          $runtimeTag = "b12208"
+          $runtimeAsset = "llama-$runtimeTag-bin-win-cpu-x64.zip"
+          $runtimeUrl = "https://github.com/ggml-org/llama.cpp/releases/download/$runtimeTag/$runtimeAsset"
+          New-Item -ItemType Directory -Force -Path "dist\llama", "dist\payload\AI\models" | Out-Null
+          $runtimeZip = Join-Path $PWD "dist\llama\$runtimeAsset"
+          Invoke-WebRequest -Uri $runtimeUrl -OutFile $runtimeZip
+          Expand-Archive -Path $runtimeZip -DestinationPath "dist\llama\expanded" -Force
+          $server = Get-ChildItem -Path "dist\llama\expanded" -Filter "llama-server.exe" -File -Recurse | Select-Object -First 1
+          if (-not $server) { throw "llama-server.exe was not found in the official CPU runtime archive." }
+          Copy-Item -Path (Join-Path $server.Directory.FullName "*") -Destination "dist\payload\AI" -Recurse -Force
+          if (-not (Test-Path "dist\payload\AI\llama-server.exe")) { throw "Could not stage llama-server.exe." }
+
+          $modelName = "Qwen3.5-0.8B-Q4_0.gguf"
+          $modelUrl = "https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF/resolve/main/$modelName"
+          $modelPath = "dist\payload\AI\models\$modelName"
+          Invoke-WebRequest -Uri $modelUrl -OutFile $modelPath
+          $expectedModelSha = "57d1997790d1744fba5b40a7317df71ea5e2acee28c47e78f0cce39c0703f8cf"
+          $actualModelSha = (Get-FileHash -Path $modelPath -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actualModelSha -ne $expectedModelSha) {
+            throw "Qwen model SHA-256 mismatch. Expected $expectedModelSha, got $actualModelSha"
+          }
+          "Qwen3.5-0.8B Q4_0 SHA256: $actualModelSha" | Out-File "dist\payload\AI\MODEL.txt" -Encoding utf8
+          "llama.cpp runtime: $runtimeTag (Windows x64 CPU)" | Out-File "dist\payload\AI\RUNTIME.txt" -Encoding utf8
+
       - name: Prepare Yandex Blind files
         shell: pwsh
         run: |
@@ -51,6 +78,13 @@ jobs:
           Copy-Item "newtab\*" "dist\payload\NewTab" -Recurse -Force
           Copy-Item "installer\YandexBlind.vbs" "dist\payload\YandexBlind.vbs" -Force
           Copy-Item "dist\UPSTREAM.txt" "dist\payload\UPSTREAM.txt" -Force
+          @"
+          Yandex Blind bundles llama.cpp as a local inference runtime.
+          Runtime source: https://github.com/ggml-org/llama.cpp
+          Model: Qwen3.5-0.8B-GGUF (Q4_0), Apache-2.0
+          Model source: https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF
+          The AI server binds only to 127.0.0.1 and is launched only while the browser is open.
+          "@ | Out-File "dist\payload\AI\THIRD_PARTY_NOTICES.txt" -Encoding utf8
 
       - name: Install Inno Setup
         shell: pwsh
