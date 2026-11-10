@@ -23,7 +23,7 @@ class SkAiClient final : public CefClient,
   CefRefPtr<CefDisplayHandler> GetDisplayHandler() override { return this; }
   CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
   CefRefPtr<CefDownloadHandler> GetDownloadHandler() override { return this; }
-  bool OnBeforeDownload(CefRefPtr<CefBrowser> browser,
+  void OnBeforeDownload(CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefDownloadItem> download_item, const CefString& suggested_name,
       CefRefPtr<CefBeforeDownloadCallback> callback) override;
   void OnDownloadUpdated(CefRefPtr<CefBrowser> browser,
