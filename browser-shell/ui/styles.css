@@ -55,3 +55,10 @@ body[data-theme=light] .internal-view-header p,body[data-theme=light] .library-o
 body[data-theme=light] .library-row{background:rgba(169,185,225,.17);border-color:rgba(75,95,157,.13)}
 body[data-theme=light] .library-open{color:#293758}
 @media(max-width:700px){.internal-view{margin:15px auto;padding:18px;border-radius:17px}.library-row{align-items:stretch}.library-remove{padding:8px}.internal-view-header{margin-bottom:18px}}
+
+
+.internal-view-search-wrap{margin:-8px 0 18px}
+.internal-view-search{width:100%;height:42px;padding:0 14px;border:1px solid rgba(178,194,255,.18);border-radius:11px;outline:none;background:rgba(10,18,42,.34);color:#edf2ff;font:11px "Segoe UI",sans-serif}
+.internal-view-search:focus{border-color:rgba(102,222,209,.65);box-shadow:0 0 0 3px rgba(72,198,185,.1)}
+.internal-view-search::placeholder{color:#9caacb}
+body[data-theme=light] .internal-view-search{background:rgba(255,255,255,.72);color:#273453;border-color:rgba(75,95,157,.18)}
