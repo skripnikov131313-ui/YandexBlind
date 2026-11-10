@@ -22,6 +22,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Set up Node.js for extension validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate extension manifest and JavaScript
+        shell: pwsh
+        run: |
+          Get-Content -Raw "newtab/manifest.json" | ConvertFrom-Json | Out-Null
+          node --check "newtab/background.js"
+          node --check "newtab/newtab.js"
+          node --check "newtab/sidepanel.js"
+
       - name: Download and verify Chromium-Gost x64 ZIP
         shell: pwsh
         run: |
