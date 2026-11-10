@@ -24,6 +24,8 @@ try {
     $targets = @(
         "chrome/browser/ui/color/BUILD.gn",
         "chrome/browser/ui/color/chrome_color_mixers.cc",
+        "chrome/browser/ui/views/toolbar/toolbar_view.h",
+        "chrome/browser/ui/views/toolbar/BUILD.gn",
         "chrome/browser/ui/tabs/tab_style.cc",
         "chrome/browser/ui/views/toolbar/toolbar_view.cc",
         "chrome/app/theme/chromium/BRANDING"
