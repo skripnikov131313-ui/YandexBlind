@@ -11,6 +11,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <shellapi.h>
 
 namespace {
 constexpr wchar_t kClass[] = L"SkAi.NativeBrowserWindow";
@@ -42,6 +43,12 @@ bool g_close_requested = false;
 bool g_finish_close_posted = false;
 int g_pending_browser_creates = 0;
 int g_pending_browser_closes = 0;
+
+struct DownloadRecord {
+  std::wstring path;
+  CefRefPtr<CefDownloadItemCallback> callback;
+};
+std::map<uint32_t, DownloadRecord> g_downloads;
 
 std::wstring UiFile(const wchar_t* file) {
   wchar_t exe[MAX_PATH]{};
@@ -503,6 +510,97 @@ void SkAiNotifyTabFavicon(int tab_id, const std::wstring& icon_url) {
       L"window.skaiNative&&window.skaiNative.updateFavicon(" +
           std::to_wstring(tab_id) + L"," + json + L");",
       frame->GetURL(), 0);
+}
+
+void SkAiNotifyDownloadState(CefRefPtr<CefDownloadItem> item,
+                             CefRefPtr<CefDownloadItemCallback> callback) {
+  if (g_close_requested || !item || !item->IsValid()) {
+    return;
+  }
+
+  const uint32_t id = item->GetId();
+  const bool in_progress = item->IsInProgress();
+  const bool paused = item->IsPaused();
+  const bool complete = item->IsComplete();
+  const bool canceled = item->IsCanceled();
+  const bool interrupted = item->IsInterrupted();
+
+  std::wstring state = L"pending";
+  if (complete) state = L"complete";
+  else if (canceled) state = L"cancelled";
+  else if (interrupted) state = L"interrupted";
+  else if (paused) state = L"paused";
+  else if (in_progress) state = L"active";
+
+  auto& record = g_downloads[id];
+  record.path = item->GetFullPath().ToWString();
+  record.callback = in_progress ? callback : nullptr;
+
+  auto dictionary = CefDictionaryValue::Create();
+  dictionary->SetInt("id", static_cast<int>(id));
+  dictionary->SetString("url", item->GetURL());
+  dictionary->SetString("fileName", item->GetSuggestedFileName());
+  dictionary->SetString("path", record.path);
+  dictionary->SetString("state", state);
+  dictionary->SetString("mimeType", item->GetMimeType());
+  dictionary->SetInt("percent", item->GetPercentComplete());
+  dictionary->SetDouble("receivedBytes",
+                        static_cast<double>(item->GetReceivedBytes()));
+  dictionary->SetDouble("totalBytes",
+                        static_cast<double>(item->GetTotalBytes()));
+  dictionary->SetDouble("speedBytesPerSec",
+                        static_cast<double>(item->GetCurrentSpeed()));
+
+  auto value = CefValue::Create();
+  value->SetDictionary(dictionary);
+  const auto json = CefWriteJSON(value, JSON_WRITER_DEFAULT).ToWString();
+
+  if (!g_ui_client || !g_ui_client->GetBrowser()) {
+    return;
+  }
+  const auto browser = g_ui_client->GetBrowser();
+  const auto frame = browser->GetMainFrame();
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.downloadUpdated&&window.skaiNative.downloadUpdated(" +
+          json + L");",
+      frame->GetURL(), 0);
+}
+
+void SkAiDownloadAction(uint32_t download_id, const std::wstring& action) {
+  const auto it = g_downloads.find(download_id);
+  if (it == g_downloads.end()) {
+    return;
+  }
+
+  if (action == L"pause" && it->second.callback) {
+    it->second.callback->Pause();
+    return;
+  }
+  if (action == L"resume" && it->second.callback) {
+    it->second.callback->Resume();
+    return;
+  }
+  if (action == L"cancel" && it->second.callback) {
+    it->second.callback->Cancel();
+    return;
+  }
+
+  if (it->second.path.empty()) {
+    return;
+  }
+  std::error_code error;
+  if (!std::filesystem::exists(it->second.path, error) || error) {
+    return;
+  }
+
+  if (action == L"open") {
+    ShellExecuteW(nullptr, L"open", it->second.path.c_str(), nullptr, nullptr,
+                  SW_SHOWNORMAL);
+  } else if (action == L"show") {
+    const std::wstring arguments = L"/select,\"" + it->second.path + L"\"";
+    ShellExecuteW(nullptr, L"open", L"explorer.exe", arguments.c_str(), nullptr,
+                  SW_SHOWNORMAL);
+  }
 }
 
 void SkAiToggleFloatingAssistant() {
