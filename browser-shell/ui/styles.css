@@ -133,7 +133,7 @@ body[data-theme=light] .permission-remember{color:#5c6b8a}
 .permission-status{font-size:9px;font-weight:700}
 .permission-status.allowed{color:#65d9b8}
 .permission-status.denied{color:#efabbd}
-.settings-refresh{height:34px;padding:0 12px;border:1px solid rgba(178,194,255,.18);border-radius:9px;background:rgba(255,255,255,.05);color:#cbd6ef;font-size:10px}
+.settings-refresh{height:34px;padding:0 12px;border:1px solid rgba(178,194,255,.18);border-radius:9px;background:rgba(255,255,255,.05);color:#cbd6ef;font-size:10px}.settings-actions-row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding-top:4px}.settings-actions-row .settings-refresh{min-width:145px}body[data-theme=light] .settings-actions-row .settings-refresh{color:#31405f}
 .settings-refresh:hover{border-color:rgba(107,219,206,.44);background:rgba(57,163,154,.12)}
 body[data-theme=light] .site-permission-row{background:rgba(170,187,228,.14);border-color:rgba(75,95,157,.14)}
 body[data-theme=light] .site-permission-meta b{color:#293758}
