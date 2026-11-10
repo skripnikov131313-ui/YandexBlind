@@ -118,3 +118,8 @@ body[data-theme=light] .permission-prompt-card{background:rgba(245,249,255,.98);
 body[data-theme=light] .permission-prompt-card>b{color:#273454}
 body[data-theme=light] .permission-prompt-card p{color:#455777}
 body[data-theme=light] .permission-prompt-card small{color:#71809c}
+
+
+.permission-remember{display:flex;align-items:center;gap:7px;margin-top:10px;color:#c0cce5;font-size:9px;line-height:1.4}
+.permission-remember input{width:14px;height:14px;margin:0;accent-color:#58d7c4}
+body[data-theme=light] .permission-remember{color:#5c6b8a}
