@@ -25,8 +25,14 @@ list(APPEND CMAKE_MODULE_PATH "${CEF_ROOT}/cmake")
 find_package(CEF REQUIRED)
 include("${CEF_ROOT}/cmake/cef_macros.cmake")
 
-add_subdirectory(${CEF_LIBCEF_DLL_WRAPPER_PATH} libcef_dll_wrapper)
-ADD_LOGICAL_TARGET("libcef_lib" "${CEF_LIB_DEBUG}" "${CEF_LIB_RELEASE}")
+add_subdirectory("${CEF_LIBCEF_DLL_WRAPPER_PATH}" libcef_dll_wrapper)
+
+# CEF 154's helper stores mixed Windows path separators in the library
+# locations. CMake 4.4+ parses backslashes in target properties as escapes
+# (for example, "\\a" in "D:\\a\\..."). Normalize before ADD_LOGICAL_TARGET.
+file(TO_CMAKE_PATH "${CEF_LIB_DEBUG}" CEF_LIB_DEBUG_NORMALIZED)
+file(TO_CMAKE_PATH "${CEF_LIB_RELEASE}" CEF_LIB_RELEASE_NORMALIZED)
+ADD_LOGICAL_TARGET("libcef_lib" "${CEF_LIB_DEBUG_NORMALIZED}" "${CEF_LIB_RELEASE_NORMALIZED}")
 
 add_library(SkAi SHARED
   src/main.cpp
