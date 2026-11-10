@@ -1,6 +1,8 @@
 #pragma once
 #include <windows.h>
 #include "include/cef_client.h"
+#include "include/cef_frame.h"
+#include "include/cef_process_message.h"
 #include "include/cef_life_span_handler.h"
 
 class SkAiClient final : public CefClient, public CefLifeSpanHandler {
