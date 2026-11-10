@@ -264,7 +264,7 @@ void SkAiClient::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
 
   // A browser may finish its asynchronous creation after the user has
   // requested application shutdown. Register and close it before touching UI.
-  if (SkAiOnBrowserCreated()) {
+  if (SkAiOnBrowserCreated() || closing_) {
     RequestClose();
     return;
   }
@@ -284,10 +284,11 @@ void SkAiClient::OnAfterCreated(CefRefPtr<CefBrowser> browser) {
 }
 
 void SkAiClient::RequestClose() {
-  if (closing_ || !browser_) {
+  closing_ = true;
+  if (!browser_ || close_sent_) {
     return;
   }
-  closing_ = true;
+  close_sent_ = true;
   browser_->GetHost()->CloseBrowser(false);
 }
 
