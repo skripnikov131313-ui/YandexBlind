@@ -625,6 +625,115 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wparam,
 }
 }  // namespace
 
+void SkAiSendProfileList() {
+  if (g_close_requested) return;
+
+  const auto profiles_root = GetSkAiDataRoot() / L"Profiles";
+  std::error_code error;
+  std::filesystem::create_directories(
+      profiles_root / L"default" / L"Cache", error);
+  if (error) {
+    NotifyProfileError(L"Не удалось открыть каталог профилей Sk/Ai.");
+    return;
+  }
+
+  std::vector<std::wstring> names{L"default"};
+  error.clear();
+  for (const auto& entry : std::filesystem::directory_iterator(profiles_root, error)) {
+    if (error || !entry.is_directory()) continue;
+    const auto name = NormalizeProfileName(entry.path().filename().wstring());
+    if (!name.empty() &&
+        std::find(names.begin(), names.end(), name) == names.end()) {
+      names.push_back(name);
+    }
+  }
+  std::sort(names.begin(), names.end());
+
+  auto list = CefListValue::Create();
+  std::size_t index = 0;
+  for (const auto& name : names) {
+    auto item = CefDictionaryValue::Create();
+    item->SetString("name", name);
+    item->SetBool("active", name == g_active_profile);
+    list->SetDictionary(index++, item);
+  }
+
+  auto value = CefValue::Create();
+  value->SetList(list);
+  const auto json = CefWriteJSON(value, JSON_WRITER_DEFAULT).ToWString();
+  if (!g_ui_client || !g_ui_client->GetBrowser()) return;
+  const auto browser = g_ui_client->GetBrowser();
+  const auto frame = browser->GetMainFrame();
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.profilesUpdated&&window.skaiNative.profilesUpdated(" +
+          json + L");",
+      frame->GetURL(), 0);
+}
+
+void SkAiCreateProfile(const std::wstring& raw_name) {
+  if (g_close_requested) return;
+  const auto name = NormalizeProfileName(raw_name);
+  if (name.empty() || name == L"default") {
+    NotifyProfileError(L"Имя профиля: латинские буквы, цифры, дефис или подчёркивание. Имя default зарезервировано.");
+    return;
+  }
+
+  const auto directory = GetProfileDirectory(name);
+  std::error_code error;
+  if (directory.empty() || std::filesystem::exists(directory, error) || error) {
+    NotifyProfileError(L"Профиль с таким именем уже существует или каталог недоступен.");
+    return;
+  }
+
+  std::filesystem::create_directories(directory / L"Cache", error);
+  if (error || !GetOrCreateProfileContext(name, false)) {
+    NotifyProfileError(L"Не удалось создать изолированный профиль.");
+    return;
+  }
+  SkAiSendProfileList();
+}
+
+void SkAiSwitchProfile(const std::wstring& raw_name) {
+  if (g_close_requested) return;
+  const auto name = NormalizeProfileName(raw_name);
+  if (name.empty()) {
+    NotifyProfileError(L"Некорректное имя профиля.");
+    return;
+  }
+
+  const auto request_context = GetOrCreateProfileContext(name, false);
+  if (!request_context) {
+    NotifyProfileError(L"Профиль не найден или его данные недоступны.");
+    SkAiSendProfileList();
+    return;
+  }
+
+  if (name == g_active_profile) {
+    NotifyProfileChanged();
+    SkAiSendProfileList();
+    return;
+  }
+
+  // Pending permission callbacks belong to the previous profile and must
+  // never be stored using the newly selected profile path.
+  SkAiCancelAllPermissions();
+  g_site_permission_decisions.clear();
+  g_permission_store_loaded = false;
+  g_active_profile = name;
+  g_active_tab_id = 0;
+
+  for (auto& [id, tab] : g_tabs) {
+    tab.active = false;
+    tab.closing = true;
+    if (tab.client) tab.client->RequestClose();
+  }
+
+  LayoutChildren();
+  SendTabSnapshot();
+  NotifyProfileChanged();
+  SkAiSendProfileList();
+}
+
 bool SkAiOnBrowserCreated() {
   if (g_pending_browser_creates > 0) {
     --g_pending_browser_creates;
