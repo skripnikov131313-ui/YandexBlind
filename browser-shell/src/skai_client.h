@@ -31,6 +31,7 @@ class SkAiClient final : public CefClient,
   CefRefPtr<CefBrowser> GetBrowser() const { return browser_; }
   int tab_id() const { return tab_id_; }
   bool is_ui_browser() const { return ui_browser_; }
+  bool is_ui_browser() const { return ui_browser_; }
  private:
   HWND host_window_ = nullptr;
   int tab_id_ = 0;
