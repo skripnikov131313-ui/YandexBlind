@@ -41,6 +41,8 @@ add_library(SkAi SHARED
 target_include_directories(SkAi PRIVATE src "${CEF_INCLUDE_PATH}")
 SET_LIBRARY_TARGET_PROPERTIES(SkAi)
 
+target_compile_definitions(SkAi PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+
 target_link_libraries(SkAi PRIVATE
   libcef_lib
   libcef_dll_wrapper
@@ -59,7 +61,8 @@ set_target_properties(SkAi PROPERTIES
 
 # bootstrap.exe loads SkAi.dll and passes the sandbox handle into RunWinMain.
 COPY_SINGLE_FILE(SkAi "${CEF_BINARY_DIR}/bootstrap.exe" "$<TARGET_FILE_DIR:SkAi>/SkAi.exe")
-COPY_FILES(SkAi "${CEF_BINARY_FILES}" "${CEF_RESOURCE_FILES}")
+COPY_FILES(SkAi "${CEF_BINARY_FILES}" "${CEF_BINARY_DIR}" "$<TARGET_FILE_DIR:SkAi>")
+COPY_FILES(SkAi "${CEF_RESOURCE_FILES}" "${CEF_RESOURCE_DIR}" "$<TARGET_FILE_DIR:SkAi>")
 
 add_custom_command(TARGET SkAi POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E copy_directory
