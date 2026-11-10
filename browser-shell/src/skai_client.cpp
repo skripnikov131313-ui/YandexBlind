@@ -6,6 +6,7 @@
 
 #include <cerrno>
 #include <climits>
+#include <cstdint>
 #include <cwchar>
 #include <sstream>
 #include <string>
