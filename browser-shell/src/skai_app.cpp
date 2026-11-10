@@ -21,6 +21,9 @@ class SkAiV8Bridge final : public CefV8Handler {
     } else if(name=="downloadAction") {
       if(a.size()<2 || !a[0]->IsString() || !a[1]->IsString()){exception="Download arguments required";return true;}
       p->SetString(0,"download");p->SetString(1,a[1]->GetStringValue());p->SetString(2,a[0]->GetStringValue());
+    } else if(name=="downloadPathAction") {
+      if(a.size()<2 || !a[0]->IsString() || !a[1]->IsString()){exception="Download path arguments required";return true;}
+      p->SetString(0,"downloadPath");p->SetString(1,a[1]->GetStringValue());p->SetString(2,a[0]->GetStringValue());
     } else if(name=="tabAction") {
       if(a.size()<2){exception="Tab arguments required";return true;}
       p->SetString(0,"tab");p->SetString(1,a[0]->GetStringValue());p->SetString(2,a[1]->GetStringValue());
@@ -42,7 +45,7 @@ void SkAiApp::OnWebKitInitialized() {
     (function(){
       native function windowAction(); native function assistantAction();
       native function navigate(); native function browserAction();
-      native function tabAction(); native function downloadAction(); native function layoutAction(); native function dragWindow();
+      native function tabAction(); native function downloadAction(); native function downloadPathAction(); native function layoutAction(); native function dragWindow();
       skaiNative.minimize=function(){windowAction("minimize")};
       skaiNative.toggleMaximize=function(){windowAction("toggleMaximize")};
       skaiNative.close=function(){windowAction("close")};
@@ -56,6 +59,7 @@ void SkAiApp::OnWebKitInitialized() {
       skaiNative.activateTab=function(v){tabAction("activate",String(v))};
       skaiNative.closeTab=function(v){tabAction("close",String(v))};
       skaiNative.downloadAction=function(id,action){downloadAction(String(id),String(action))};
+      skaiNative.openDownloadedFile=function(path,action){downloadPathAction(String(path),String(action))};
       skaiNative.setContentBounds=function(x,y,w,h){layoutAction([x,y,w,h].join(","))};
       skaiNative.toggleFloatingAssistant=function(){assistantAction("toggle")};
     })();
