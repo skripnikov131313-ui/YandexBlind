@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Yandex Blind Start",
+  "name": "Sk/Ai Start",
   "version": "0.2.0",
-  "description": "Private start page with local Qwen assistant and configurable search.",
+  "description": "Privacy-focused start page with local Qwen assistant, tracker filtering and configurable search.",
   "permissions": ["declarativeNetRequest", "privacy", "storage"],
   "host_permissions": ["http://127.0.0.1:8765/*"],
   "declarative_net_request": {"rule_resources": [{"id": "privacy_filters", "enabled": true, "path": "rules/privacy_filters.json"}]},
