@@ -216,6 +216,16 @@
     chat.scrollTop = chat.scrollHeight;
   }
   renderConversation();
+  window.addEventListener("storage", event => {
+    if (event.key === conversationKey) {
+      conversation = readProfileArray(conversationKey);
+      renderConversation();
+    }
+    if (event.key === modeKey) {
+      mode = event.newValue === "cloud" ? "cloud" : "local";
+      applyAssistantMode();
+    }
+  });
   function sendPrompt(value) {
     const prompt = value.trim();
     if (!prompt) return;
