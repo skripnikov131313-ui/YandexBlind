@@ -11,3 +11,4 @@ void SkAiBrowserAction(const std::wstring& action);
 void SkAiSetContentBounds(int x,int y,int width,int height);
 void SkAiNotifyTabState(int tab_id,const std::wstring& title,const std::wstring& url,bool loading);
 void SkAiToggleFloatingAssistant();
+void SkAiSetFloatingAssistantHandle(HWND hwnd);
