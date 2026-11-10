@@ -262,7 +262,6 @@ std::wstring DescribePermissionRequest(std::uint32_t permissions,
     add(CEF_PERMISSION_TYPE_CLIPBOARD, L"буфер обмена");
     add(CEF_PERMISSION_TYPE_TOP_LEVEL_STORAGE_ACCESS, L"доступ к хранилищу");
     add(CEF_PERMISSION_TYPE_DISK_QUOTA, L"квота диска");
-    add(CEF_PERMISSION_TYPE_LOCAL_FONTS, L"системные шрифты");
     add(CEF_PERMISSION_TYPE_GEOLOCATION, L"геолокация");
     add(CEF_PERMISSION_TYPE_CAMERA_STREAM, L"камера");
     add(CEF_PERMISSION_TYPE_MIC_STREAM, L"микрофон");
@@ -275,7 +274,6 @@ std::wstring DescribePermissionRequest(std::uint32_t permissions,
     add(CEF_PERMISSION_TYPE_IDLE_DETECTION, L"состояние активности");
     add(CEF_PERMISSION_TYPE_LOCAL_NETWORK, L"локальная сеть");
     add(CEF_PERMISSION_TYPE_LOOPBACK_NETWORK, L"локальные подключения");
-    add(CEF_PERMISSION_TYPE_CAMERA_PAN_TILT_ZOOM, L"управление камерой");
     add(CEF_PERMISSION_TYPE_PROTECTED_MEDIA_IDENTIFIER, L"защищённые медиа");
     add(CEF_PERMISSION_TYPE_REGISTER_PROTOCOL_HANDLER, L"регистрация обработчика протокола");
     add(CEF_PERMISSION_TYPE_VR_SESSION, L"VR-сессия");
@@ -962,15 +960,19 @@ void SkAiCancelPermissionsForTab(int tab_id) {
 }
 
 void SkAiCancelAllPermissions() {
-  for (auto& [request_id, request] : g_pending_permissions) {
+  // Detach state before invoking CEF callbacks. CEF may synchronously emit
+  // dismissal notifications while callbacks are being completed.
+  auto pending = std::move(g_pending_permissions);
+  g_pending_permissions.clear();
+  g_cef_prompt_to_request.clear();
+
+  for (auto& [request_id, request] : pending) {
     if (request.media_request) {
       if (request.media_callback) request.media_callback->Cancel();
     } else if (request.prompt_callback) {
       request.prompt_callback->Continue(CEF_PERMISSION_RESULT_DENY);
     }
   }
-  g_pending_permissions.clear();
-  g_cef_prompt_to_request.clear();
 }
 
 void SkAiSetFloatingAssistantHandle(HWND hwnd) {
