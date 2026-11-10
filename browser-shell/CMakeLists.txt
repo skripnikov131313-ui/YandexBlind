@@ -41,7 +41,7 @@ add_library(SkAi SHARED
 target_include_directories(SkAi PRIVATE src "${CEF_INCLUDE_PATH}")
 SET_LIBRARY_TARGET_PROPERTIES(SkAi)
 
-target_compile_definitions(SkAi PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN)
+target_compile_definitions(SkAi PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN WINVER=0x0A00 _WIN32_WINNT=0x0A00)
 
 target_link_libraries(SkAi PRIVATE
   libcef_lib
