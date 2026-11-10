@@ -5,6 +5,7 @@
 #include "include/cef_download_handler.h"
 #include "include/cef_download_item.h"
 #include "include/cef_permission_handler.h"
+#include "include/cef_request_context.h"
 
 HWND SkAiCreateMainWindow(HINSTANCE instance, int show_command);
 
@@ -51,3 +52,7 @@ void SkAiCancelPermissionsForTab(int tab_id);
 
 void SkAiSendSitePermissionList();
 void SkAiRevokeSitePermission(const std::wstring& permission_key);
+
+void SkAiSendProfileList();
+void SkAiCreateProfile(const std::wstring& name);
+void SkAiSwitchProfile(const std::wstring& name);
