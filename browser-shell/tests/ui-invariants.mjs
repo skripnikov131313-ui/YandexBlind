@@ -147,6 +147,26 @@ assert.match(
 );
 assert.match(
   workflowSource,
+  /-DGGML_BACKEND_DL=ON/,
+  "llama.cpp must use its dynamic CPU backend loader."
+);
+assert.match(
+  workflowSource,
+  /-DGGML_CPU_ALL_VARIANTS=ON/,
+  "llama.cpp must package runtime-selected CPU optimization variants."
+);
+assert.match(
+  workflowSource,
+  /ggml-cpu-sse42\.dll/,
+  "The package must include the SSE4.2 CPU backend."
+);
+assert.match(
+  workflowSource,
+  /ggml-cpu-x64\.dll/,
+  "The package must retain the generic x64 CPU fallback backend."
+);
+assert.match(
+  workflowSource,
   /Build pinned llama\.cpp CPU runtime/,
   "Windows CI must build the pinned local inference runtime."
 );
