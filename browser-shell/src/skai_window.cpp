@@ -84,6 +84,9 @@ LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lpa
       }
       DestroyWindow(window);
       return 0;
+    case WM_APP + 11:
+      DestroyWindow(window);
+      return 0;
     case WM_DESTROY:
       g_tabs.clear();
       g_ui_client = nullptr;
@@ -125,7 +128,7 @@ void SkAiOnTabClosed(int tab_id) {
   g_tabs.erase(tab_id);
   if (g_active_tab_id == tab_id) {
     g_active_tab_id = g_tabs.empty() ? 0 : g_tabs.rbegin()->first;
-    if (g_active_tab_id) SkAiActivateTab(g_active_tab_id);
+    SkAiActivateTab(g_active_tab_id);
   }
   SendTabSnapshot();
 }
