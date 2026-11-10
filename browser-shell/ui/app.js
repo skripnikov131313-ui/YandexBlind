@@ -134,6 +134,7 @@
   $("#nativeMinimize")?.addEventListener("click", () => window.skaiNative?.minimize());
   $("#nativeMaximize")?.addEventListener("click", () => window.skaiNative?.toggleMaximize());
   $("#nativeClose")?.addEventListener("click", () => window.skaiNative?.close());
+  $("#profileButton")?.addEventListener("click", () => openInternalView("settings"));
   $(".titlebar")?.addEventListener("mousedown", event => {
     if (event.button !== 0 || event.target.closest("button, input, .tabs")) return;
     window.skaiNative?.beginDrag();
@@ -996,6 +997,25 @@
       reload.setAttribute("aria-label", reload.title);
     }
   };
+  window.skaiNative.profilesUpdated = profiles => {
+    knownProfiles = Array.isArray(profiles)
+      ? profiles.filter(item => item && typeof item.name === "string")
+      : [];
+    refreshProfileControls();
+    if (profileStartupResolved) return;
+
+    const nativeActive = knownProfiles.find(item => item.active)?.name || "default";
+    const requested = activeProfileName;
+    profileStartupResolved = true;
+    if (requested !== nativeActive &&
+        knownProfiles.some(item => item.name === requested)) {
+      window.skaiNative?.switchProfile(requested);
+      return;
+    }
+    completeProfileSwitch(nativeActive);
+  };
+  window.skaiNative.profileChanged = name => completeProfileSwitch(name);
+  window.skaiNative.profileError = message => notify(String(message || "Не удалось выполнить операцию с профилем"));
   window.skaiNative.permissionStorageFailed = () => {
     notify("Не удалось сохранить настройки разрешений в профиле Windows");
   };
@@ -1191,8 +1211,5 @@
   $(".rail-toggle")?.addEventListener("click", cycleTheme);
   $(".rail-item.moon")?.addEventListener("click", cycleTheme);
 
-  if (sessionToRestore.length) {
-    const restore = sessionToRestore.slice();
-    restore.forEach(item => createTab(item.url));
-  }
+  window.skaiNative?.listProfiles();
 })();
