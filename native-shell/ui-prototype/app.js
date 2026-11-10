@@ -154,7 +154,6 @@
         <div class="subpage-cards">${cards}</div>
         <button class="back-home" type="button" data-action="home"><svg><use href="#i-back"/></svg>На главную</button>
       </section>`;
-    $$(".page-card").forEach(card => card.addEventListener("click", () => handleAction(card.dataset.action)));
   }
 
   function openAssistant() {
