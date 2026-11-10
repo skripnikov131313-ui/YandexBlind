@@ -448,3 +448,16 @@ html[data-theme="light"] .back-home { background: rgba(255,255,255,.65); color: 
   .browser-body.panel-mobile-open .workspace { display: none; }
   .browser-body.panel-mobile-open .assistant-panel.is-visible { grid-column: 1; display: flex; }
 }
+
+.workspace {
+  background-image:
+    linear-gradient(180deg, rgba(13, 22, 48, .08), rgba(9, 23, 48, .22)),
+    url("./aurora-wallpaper.svg");
+  background-size: cover;
+  background-position: center;
+}
+html[data-theme="light"] .workspace {
+  background-image:
+    linear-gradient(180deg, rgba(241, 240, 250, .2), rgba(213, 228, 239, .25)),
+    url("./aurora-wallpaper.svg");
+}
