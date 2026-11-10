@@ -115,7 +115,7 @@ void SkAiCreateTab(const std::wstring& url, bool activate) {
   SendTabSnapshot();
 }
 void SkAiActivateTab(int tab_id) {
-  if (!g_tabs.contains(tab_id)) return;
+  if (tab_id != 0 && !g_tabs.contains(tab_id)) return;
   for (auto& [id, tab] : g_tabs) tab.active = id == tab_id;
   g_active_tab_id = tab_id;
   LayoutChildren();
