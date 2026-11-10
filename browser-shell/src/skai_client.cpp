@@ -300,13 +300,13 @@ void SkAiClient::OnLoadingStateChange(
   }
 }
 
-void SkAiClient::OnBeforeDownload(
+bool SkAiClient::OnBeforeDownload(
     CefRefPtr<CefBrowser> /*browser*/,
     CefRefPtr<CefDownloadItem> download_item,
     const CefString& suggested_name,
     CefRefPtr<CefBeforeDownloadCallback> callback) {
   if (!callback || !download_item || !download_item->IsValid()) {
-    return;
+    return false;
   }
 
   const auto directory = GetSkAiDownloadsDirectory();
