@@ -6,6 +6,24 @@
   const write=(k,v)=>{try{localStorage.setItem("yb."+k,v)}catch{}};
   let engine=engines[read("engine","yandex")]?read("engine","yandex"):"yandex",theme=read("theme","dark"),motion=read("motion","on")!=="off";
   let selectedFile=null,fileText="",busy=false,aiOnline=false,assistantMode=read("assistant-mode","local")==="web"?"web":"local";
+  const applyPrivacyControls=async()=>{
+    const filtersOn=read("filters","on")!=="off";
+    const thirdPartyOn=read("third-party-cookies","on")!=="off";
+    $("filter-toggle").checked=filtersOn;
+    $("third-party-cookie-toggle").checked=thirdPartyOn;
+    try{
+      if(chrome?.declarativeNetRequest){
+        if(filtersOn) await chrome.declarativeNetRequest.updateEnabledRulesets({enableRulesetIds:["privacy_filters"],disableRulesetIds:[]});
+        else await chrome.declarativeNetRequest.updateEnabledRulesets({enableRulesetIds:[],disableRulesetIds:["privacy_filters"]});
+      }
+      if(chrome?.privacy?.websites?.thirdPartyCookiesAllowed){
+        await chrome.privacy.websites.thirdPartyCookiesAllowed.set({value:!thirdPartyOn});
+      }
+      $("filter-status").textContent="Фильтры: "+(filtersOn?"включены":"выключены")+" · сторонние cookie: "+(thirdPartyOn?"ограничены":"разрешены");
+    }catch(err){$("filter-status").textContent="Не удалось применить системную настройку: "+err.message;}
+  };
+  $("filter-toggle").addEventListener("change",e=>{write("filters",e.target.checked?"on":"off");applyPrivacyControls()});
+  $("third-party-cookie-toggle").addEventListener("change",e=>{write("third-party-cookies",e.target.checked?"on":"off");applyPrivacyControls()});
   const applyTheme=()=>{document.body.classList.toggle("light",theme==="light"||(theme==="system"&&matchMedia("(prefers-color-scheme: light)").matches));$("theme-select").value=theme};
   const applyMotion=()=>{document.body.classList.toggle("no-motion",!motion);$("motion-toggle").checked=motion};
   const updateEngine=()=>{$("engine-quick").innerHTML=engines[engine].name+" <span>⌄</span>";$("engine-name").textContent=engines[engine].name.toUpperCase();$("engine-select").value=engine;if(assistantMode==="web")$("ai-scrim").querySelector(".model-strip b").textContent=engines[engine].name};
@@ -36,5 +54,5 @@
   document.querySelectorAll(".suggestions button").forEach(b=>b.addEventListener("click",()=>{$("ai-prompt").value=b.dataset.prompt;$("ai-prompt").focus()}));
   $("file-input").addEventListener("change",async e=>{const file=e.target.files?.[0];if(!file)return;if(file.size>300000){toast("Файл больше 300 КБ. Разделите его на части.");e.target.value="";return}try{fileText=await file.text();selectedFile=file;$("file-name").textContent=file.name;$("attachment").hidden=false;toast("Файл добавлен в локальный контекст.")}catch{toast("Не удалось прочитать файл.")}});
   const removeFile=()=>{selectedFile=null;fileText="";$("file-input").value="";$("attachment").hidden=true};$("file-remove").addEventListener("click",removeFile);
-  updateEngine();applyTheme();applyMotion();setAssistantMode(assistantMode);$("query").focus({preventScroll:true});health();setInterval(health,3500);
+  updateEngine();applyTheme();applyMotion();applyPrivacyControls();setAssistantMode(assistantMode);$("query").focus({preventScroll:true});health();setInterval(health,3500);
 })();
