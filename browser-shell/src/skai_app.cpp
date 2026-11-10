@@ -18,6 +18,10 @@ class SkAiV8Bridge final : public CefV8Handler {
       if(a.empty()||!a[0]->IsString()){exception="Value required";return true;}
       p->SetString(0,name=="navigate"?"navigate":"browser");
       p->SetString(1,a[0]->GetStringValue());
+      if(name=="browserAction" && a.size()>1) {
+        if(!a[1]->IsString()){exception="Browser action parameter must be a string";return true;}
+        p->SetString(2,a[1]->GetStringValue());
+      }
     } else if(name=="downloadAction") {
       if(a.size()<2 || !a[0]->IsString() || !a[1]->IsString()){exception="Download arguments required";return true;}
       p->SetString(0,"download");p->SetString(1,a[1]->GetStringValue());p->SetString(2,a[0]->GetStringValue());
@@ -82,6 +86,7 @@ void SkAiApp::OnWebKitInitialized() {
       skaiNative.forward=function(){browserAction("forward")};
       skaiNative.reload=function(){browserAction("reload")};
       skaiNative.stop=function(){browserAction("stop")};
+      skaiNative.browserAction=function(action,parameter){browserAction(String(action),String(parameter||""))};
       skaiNative.newTab=function(v){tabAction("new",String(v||"about:blank"))};
       skaiNative.activateTab=function(v){tabAction("activate",String(v))};
       skaiNative.closeTab=function(v){tabAction("close",String(v))};
