@@ -424,10 +424,14 @@ void SkAiNotifyTabState(int tab_id, const std::wstring& title,
   }
 
   const auto tab = g_tabs.find(tab_id);
+  std::wstring effective_title = title;
+  std::wstring effective_url = url;
   if (tab != g_tabs.end()) {
     if (!title.empty()) tab->second.title = title;
     if (!url.empty()) tab->second.url = url;
     tab->second.is_loading = loading;
+    if (effective_title.empty()) effective_title = tab->second.title;
+    if (effective_url.empty()) effective_url = tab->second.url;
   }
 
   if (!g_ui_client || !g_ui_client->GetBrowser()) {
@@ -444,8 +448,8 @@ void SkAiNotifyTabState(int tab_id, const std::wstring& title,
   const auto frame = browser->GetMainFrame();
   frame->ExecuteJavaScript(
       L"window.skaiNative&&window.skaiNative.updateTab(" +
-          std::to_wstring(tab_id) + L"," + json_string(title) + L"," +
-          json_string(url) + L"," + (loading ? L"true" : L"false") + L");",
+          std::to_wstring(tab_id) + L"," + json_string(effective_title) + L"," +
+          json_string(effective_url) + L"," + (loading ? L"true" : L"false") + L");",
       frame->GetURL(), 0);
 }
 
