@@ -1,6 +1,6 @@
 # Chromium source patches
 
-Place reviewed, version-pinned unified Git patches here:
+Place reviewed, version-pinned unified Git patches here. Files are applied in lexical order to pristine upstream Chromium 156.0.8078.88.
 
 - 0001-skai-native-color-pipeline.patch
 - 0002-skai-native-branding.patch
@@ -9,12 +9,10 @@ Place reviewed, version-pinned unified Git patches here:
 - 0005-skai-browser-frame.patch
 - 0006-skai-docked-assistant.patch
 
-Patches are applied in lexical order after the pinned upstream Chromium-Gost preparation step and before GN generation.
-
 Rules:
-- Every patch targets the pinned Chromium source tag in native-shell/README.md.
-- Test with git apply --check before applying.
-- Keep GOST/msspi/BoringSSL files outside the Sk/Ai patch series.
-- Add or update Chromium browser/UI unit and browser tests with each behavior patch.
-- Never patch out certificate validation, sandboxing, Safe Browsing or origin isolation.
-- The first source milestone compiles an unmodified Chromium-Gost baseline; no Sk/Ai native UI patch is claimed to exist yet.
+- Every patch targets the clean upstream Chromium source tag pinned in native-shell/README.md.
+- CI runs git apply --check and applies the entire ordered patch series to an unmodified Chromium source fixture.
+- Keep each patch small and reviewable; compile-test native C++ changes before treating them as implemented.
+- Do not patch out certificate validation, TLS verification, sandboxing, Safe Browsing or site isolation.
+- No GOST, msspi or CryptoPro integration is in scope.
+- A passing patch apply-check is not a compiled browser.
