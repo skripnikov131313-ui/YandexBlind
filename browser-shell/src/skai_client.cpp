@@ -203,7 +203,7 @@ bool SkAiClient::OnProcessMessageReceived(
     if (args->GetSize() < 3) return true;
     std::uint64_t request_id = 0;
     if (TryParsePermissionId(args->GetString(2), request_id)) {
-      SkAiResolvePermission(request_id, action == "allow");
+      SkAiResolvePermission(request_id, action == "allow", args->GetBool(3));
     }
     return true;
   }
