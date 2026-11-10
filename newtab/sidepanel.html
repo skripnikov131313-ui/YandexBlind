@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="dark light">
+  <title>Sk/Ai Intelligence</title>
+  <link rel="stylesheet" href="sidepanel.css">
+  <script src="sidepanel.js" defer></script>
+</head>
+<body>
+  <div class="aurora aurora-one"></div><div class="aurora aurora-two"></div>
+  <header class="top">
+    <a class="brand" href="newtab.html" target="_blank" rel="noreferrer"><span class="brand-mark">✳</span><span>Sk<span>/</span>Ai</span></a>
+    <span class="eyebrow">BROWSER INTELLIGENCE</span>
+    <button id="window-mode" class="window-mode" title="Открыть отдельным окном" aria-label="Открыть отдельным окном">↗ <span>ОКНО</span></button>
+    <button id="window-minimize" class="window-control" title="Свернуть окно" aria-label="Свернуть окно">−</button>
+    <button id="window-maximize" class="window-control" title="Развернуть окно" aria-label="Развернуть окно">□</button>
+    <button id="new-chat" class="icon-button" title="Новый диалог" aria-label="Новый диалог">＋</button>
+  </header>
+  <section class="model">
+    <div class="model-icon">✳</div>
+    <div class="model-copy"><strong>Qwen 3.5 · 2B</strong><small id="engine-status">Проверяем локальное ядро…</small></div>
+    <span class="state"><i id="state-dot"></i><b id="state-label">LOCAL</b></span>
+  </section>
+  <div class="context-bar">
+    <div class="context-info"><span class="context-symbol">⌁</span><div><b id="page-title">Текущая вкладка</b><small id="page-host">Контекст не передан</small></div></div>
+    <button id="read-page" class="context-button">ПЕРЕДАТЬ СТРАНИЦУ <span>↗</span></button>
+  </div>
+  <main id="chat" class="chat">
+    <div class="welcome" id="welcome">
+      <div class="welcome-orb">✳</div>
+      <p class="kicker">YOUR LOCAL INTELLIGENCE</p>
+      <h1>Думай шире.<br><em>Оставайся здесь.</em></h1>
+      <p class="welcome-copy">Обсуждай страницы, разбирай тексты и исследуй идеи, не покидая текущую вкладку.</p>
+      <div class="prompts">
+        <button data-prompt="Кратко перескажи главное на текущей странице.">Сделай выжимку <span>↗</span></button>
+        <button data-prompt="Объясни сложные моменты на текущей странице простыми словами.">Объясни проще <span>↗</span></button>
+        <button data-prompt="Проверь аргументы и найди слабые места в тексте страницы.">Проверь аргументы <span>↗</span></button>
+      </div>
+    </div>
+  </main>
+  <section class="composer-wrap">
+    <div id="attachment" class="attachment" hidden><span id="file-label"></span><button id="remove-file" aria-label="Убрать файл">×</button></div>
+    <div class="composer">
+      <textarea id="prompt" rows="2" placeholder="Спросите о странице или задаче…"></textarea>
+      <div class="composer-tools">
+        <div class="tools-left">
+          <label class="attach" for="file">＋ ФАЙЛ</label><input id="file" type="file" accept=".txt,.md,.csv,.log,.json">
+          <div class="mode-switch" role="group" aria-label="Режим ИИ">
+            <button id="local-mode" class="selected">✳ Локальный</button>
+            <button id="cloud-mode">☁ Облако</button>
+          </div>
+        </div>
+        <button id="send" class="send" aria-label="Отправить">↑</button>
+      </div>
+    </div>
+    <p class="privacy" id="privacy"><i></i> ЗАПРОСЫ ОСТАЮТСЯ НА УСТРОЙСТВЕ</p>
+    <p class="footnote" id="footnote">Qwen работает локально. Облачный провайдер пока не подключён.</p>
+  </section>
+  <div id="toast" class="toast" role="status"></div>
+</body>
+</html>

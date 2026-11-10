@@ -6,7 +6,7 @@ Set fso = CreateObject("Scripting.FileSystemObject")
 base = fso.GetParentFolderName(WScript.ScriptFullName)
 
 browser = """" & base & "\Browser\chrome.exe" & """"
-profile = """" & shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\YandexBlind\Profile" & """"
+profile = """" & shell.ExpandEnvironmentStrings("%LOCALAPPDATA%") & "\SkAi\Profile" & """"
 aiServer = base & "\AI\llama-server.exe"
 aiModel = base & "\AI\models\qwen3.5-2b-Q4_K_M.gguf"
 
