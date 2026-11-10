@@ -319,7 +319,7 @@
   }
   function toggleBookmark() {
     const url = $("#addressInput")?.value || "";
-    if (!/^https?:\/\//i.test(url)) return;
+    if (!/^https?:\/\//i.test(url)) {
       notify("Сначала откройте веб-страницу");
       return;
     }
