@@ -9,6 +9,9 @@ on:
       - ".github/workflows/native-shell-windows.yml"
   workflow_dispatch:
 
+concurrency:
+  group: skai-native-shell-${{ github.head_ref || github.ref }}
+  cancel-in-progress: false
 
 jobs:
   windows-x64:
@@ -73,6 +76,10 @@ jobs:
           $llamaBuild = Join-Path $env:RUNNER_TEMP "llama-build"
           git clone --depth 1 --branch v0.9.0 --recursive https://github.com/ggml-org/llama.cpp.git $llamaSource
           if ($LASTEXITCODE -ne 0) { throw "Could not fetch pinned llama.cpp v0.9.0 source." }
+          $llamaCommit = (git -C $llamaSource rev-parse HEAD).Trim()
+          if ($llamaCommit -ne "cd959bae99ff4bed22bef2604f45241c09bbb8c8") {
+            throw "llama.cpp tag v0.9.0 resolved to an unexpected commit: $llamaCommit"
+          }
 
           $cmakeArgs = @(
             "-S", $llamaSource,
