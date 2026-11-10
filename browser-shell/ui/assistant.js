@@ -34,7 +34,9 @@
    node.className = "chat-message " + (item.role === "user" ? "user" : "assistant");
    if (item.pending) {
     node.classList.add("pending");
-    node.textContent = "Запрос был прерван при закрытии браузера.";
+    node.textContent = item.requestId === requestPending
+     ? (item.text || "Обрабатываю запрос локально…")
+     : "Запрос был прерван при закрытии браузера.";
    } else {
     node.textContent = item.text || "";
    }
@@ -120,8 +122,8 @@
   }
 
   const requestId = activeProfile + "-" + Date.now() + "-" + (++requestSequence);
-  addMessage("assistant", "Обрабатываю запрос локально…", true, requestId);
   requestPending = requestId;
+  addMessage("assistant", "Обрабатываю запрос локально…", true, requestId);
   $("#send").disabled = true;
   if (!window.skaiNative?.sendLocalAi) {
    window.skaiNative?.localAiResult?.(requestId, "Нативный модуль локального ИИ не подключён.", true);
