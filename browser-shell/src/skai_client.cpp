@@ -199,6 +199,23 @@ bool SkAiClient::OnProcessMessageReceived(
     return true;
   }
 
+  if (category == "profilesList") {
+    SkAiSendProfileList();
+    return true;
+  }
+
+  if (category == "profileCreate") {
+    if (args->GetSize() < 3) return true;
+    SkAiCreateProfile(args->GetString(2).ToWString());
+    return true;
+  }
+
+  if (category == "profileSwitch") {
+    if (args->GetSize() < 3) return true;
+    SkAiSwitchProfile(args->GetString(2).ToWString());
+    return true;
+  }
+
   if (category == "permissionsList") {
     SkAiSendSitePermissionList();
     return true;
