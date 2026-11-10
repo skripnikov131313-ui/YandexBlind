@@ -33,6 +33,10 @@ jobs:
         shell: pwsh
         run: ./native-shell/validate.ps1
 
+      - name: Apply-check Sk/Ai patch against Chromium-Gost source tag
+        shell: pwsh
+        run: ./native-shell/validate-patch.ps1
+
   baseline-build:
     name: Compile Chromium-Gost source baseline
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_build }}
