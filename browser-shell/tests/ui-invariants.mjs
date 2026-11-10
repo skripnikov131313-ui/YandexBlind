@@ -278,4 +278,32 @@ assert.match(
   "Both CEF debug and release library paths must be normalized."
 );
 
+
+const bookmarkTransferStart = source.indexOf('schema: "skai.bookmarks"');
+assert.notEqual(
+  bookmarkTransferStart,
+  -1,
+  "Bookmark export must use the versioned Sk/Ai JSON schema."
+);
+assert.match(
+  source,
+  /payload\.schema !== "skai\.bookmarks" \|\| payload\.version !== 1/,
+  "Bookmark import must reject unknown schemas and versions."
+);
+assert.match(
+  source,
+  /file\.size > 5 \* 1024 \* 1024/,
+  "Bookmark import must reject oversized files."
+);
+assert.match(
+  source,
+  /existingUrls\.has\(url\)/,
+  "Bookmark import must deduplicate existing URLs."
+);
+assert.match(
+  source,
+  /!["']http:|https:/,
+  "Bookmark import must restrict URLs to HTTP and HTTPS."
+);
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");
