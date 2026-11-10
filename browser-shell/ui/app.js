@@ -106,7 +106,8 @@
     const looksLikeUrl = /^(https?:\/\/|localhost(?::\d+)?|[\w-]+\.[a-z]{2,})(\/.*)?$/i.test(query);
     const target = looksLikeUrl ? (/^https?:\/\//i.test(query) ? query : "https://" + query) : providers[providerIndex].url(query);
     $("#addressInput").value = target;
-    notify("Навигация станет доступна после подключения Chromium");
+    if (window.skaiNative?.navigate) window.skaiNative.navigate(target);
+    else notify("Браузерное ядро не подключено");
   }
   $("#homeSearch")?.addEventListener("keydown", event => {
     if (event.key === "Enter") search(event.currentTarget.value);
@@ -135,40 +136,80 @@
   window.skaiNative = window.skaiNative || {};
   window.skaiNative.addressChanged = url => { $("#addressInput").value = url; };
 
+  let tabSequence = 1;
   function activateTab(tab) {
     $$(".tab").forEach(item => {
       const active = item === tab;
       item.classList.toggle("active", active);
       item.setAttribute("aria-selected", String(active));
     });
+    const id = Number(tab.dataset.tabId || 0);
+    window.skaiNative?.activateTab(id);
+    $("#pageArea")?.classList.toggle("site-active", id !== 0);
+    updateContentBounds();
   }
   function bindTab(tab) {
     tab.addEventListener("click", event => {
       if (event.target.closest(".tab-close")) {
         event.stopPropagation();
-        const wasActive = tab.classList.contains("active");
+        const id = Number(tab.dataset.tabId || 0);
+        if (id === 0) { notify("Стартовая вкладка остаётся открытой"); return; }
+        window.skaiNative?.closeTab(id);
         tab.remove();
-        if (wasActive) {
-          const remaining = $$(".tab");
-          if (remaining.length) activateTab(remaining[remaining.length - 1]);
-        }
+        const remaining = $$(".tab");
+        if (remaining.length) activateTab(remaining[remaining.length - 1]);
         return;
       }
       activateTab(tab);
     });
   }
-  $$(".tab").forEach(bindTab);
-  $("#newTab")?.addEventListener("click", () => {
+  function createTab(url = "about:blank") {
     const tab = document.createElement("button");
-    tab.className = "tab active";
+    tab.className = "tab";
+    tab.dataset.tabId = String(tabSequence++);
     tab.setAttribute("role", "tab");
-    tab.setAttribute("aria-selected", "true");
+    tab.setAttribute("aria-selected", "false");
     tab.innerHTML = '<span class="tab-favicon">◉</span><span class="tab-name">Новая вкладка</span><span class="tab-close">×</span>';
-    $$(".tab").forEach(item => item.classList.remove("active"));
     $("#tabs").append(tab);
     bindTab(tab);
-    notify("Новая вкладка (демо)");
-  });
+    window.skaiNative?.newTab(url);
+    activateTab(tab);
+  }
+  const homeTab = $(".tab");
+  if (homeTab) { homeTab.dataset.tabId = "0"; bindTab(homeTab); }
+  $("#newTab")?.addEventListener("click", () => createTab("about:blank"));
+  window.skaiNative = window.skaiNative || {};
+  window.skaiNative.addressChanged = url => { $("#addressInput").value = url; };
+  window.skaiNative.syncTabs = tabs => {
+    tabs.forEach(info => {
+      const tab = $('.tab[data-tab-id="' + info.id + '"]');
+      if (!tab) return;
+      $(".tab-name", tab).textContent = info.title || "Новая вкладка";
+      if (info.active) activateTab(tab);
+    });
+  };
+  window.skaiNative.updateTab = (id, title, url, loading) => {
+    const tab = $('.tab[data-tab-id="' + id + '"]');
+    if (!tab) return;
+    $(".tab-name", tab).textContent = title || "Новая вкладка";
+    tab.title = url || "";
+    tab.classList.toggle("loading", !!loading);
+    if (tab.classList.contains("active")) $("#addressInput").value = url || "";
+  };
+  function updateContentBounds() {
+    const area = $("#pageArea");
+    if (!area || !window.skaiNative?.setContentBounds) return;
+    const rect = area.getBoundingClientRect();
+    const scale = window.devicePixelRatio || 1;
+    window.skaiNative.setContentBounds(
+      Math.round(rect.left * scale), Math.round(rect.top * scale),
+      Math.round(rect.width * scale), Math.round(rect.height * scale)
+    );
+  }
+  const boundsObserver = new ResizeObserver(updateContentBounds);
+  boundsObserver.observe($("#pageArea"));
+  window.addEventListener("resize", updateContentBounds);
+  requestAnimationFrame(updateContentBounds);
   $(".rail-toggle")?.addEventListener("click", () => {
     document.body.dataset.theme = document.body.dataset.theme === "light" ? "dark" : "light";
   });
