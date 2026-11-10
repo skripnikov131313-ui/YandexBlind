@@ -36,7 +36,7 @@ bool TryParsePermissionId(const CefString& input, std::uint64_t& permission_id) 
   wchar_t* end = nullptr;
   errno = 0;
   const unsigned long long parsed = std::wcstoull(value.c_str(), &end, 10);
-  if (errno == ERANGE || end == value.c_str() || *end != L'\\0') {
+  if (errno == ERANGE || end == value.c_str() || *end != L'\0') {
     return false;
   }
   permission_id = static_cast<std::uint64_t>(parsed);
@@ -200,7 +200,7 @@ bool SkAiClient::OnProcessMessageReceived(
   }
 
   if (category == "permission") {
-    if (args->GetSize() < 3) return true;
+    if (args->GetSize() < 4) return true;
     std::uint64_t request_id = 0;
     if (TryParsePermissionId(args->GetString(2), request_id)) {
       SkAiResolvePermission(request_id, action == "allow", args->GetBool(3));
@@ -289,6 +289,7 @@ void SkAiClient::OnBeforeClose(CefRefPtr<CefBrowser> /*browser*/) {
   browser_ = nullptr;
 
   if (!ui_browser_) {
+    SkAiCancelPermissionsForTab(tab_id_);
     SkAiOnTabClosed(tab_id_);
   } else if (tab_id_ == -1) {
     SkAiOnAssistantClosed();
@@ -369,7 +370,7 @@ bool SkAiClient::OnRequestMediaAccessPermission(
     return false;
   }
 
-  return SkAiRequestSitePermission(requesting_origin.ToWString(),
+  return SkAiRequestSitePermission(tab_id_, requesting_origin.ToWString(),
                                    requested_permissions, true, nullptr,
                                    callback) != 0;
 }
@@ -382,7 +383,7 @@ bool SkAiClient::OnShowPermissionPrompt(
     return false;
   }
 
-  return SkAiRequestSitePermission(requesting_origin.ToWString(),
+  return SkAiRequestSitePermission(tab_id_, requesting_origin.ToWString(),
                                    requested_permissions, false, callback,
                                    nullptr, prompt_id) != 0;
 }
