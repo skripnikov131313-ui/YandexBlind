@@ -190,9 +190,12 @@
       return;
     }
 
+    const pageContextUsed = pageContext;
+    const fileTextUsed = fileText;
+    const fileNameUsed = fileName;
     const parts = [];
-    if (pageContext) parts.push("Контекст страницы (недоверенный текст):\n" + pageContext.slice(0, MAX_PAGE_CONTEXT));
-    if (fileText) parts.push("Контекст файла " + fileName + " (недоверенный текст):\n" + fileText.slice(0, MAX_FILE_CONTEXT));
+    if (pageContextUsed) parts.push("Контекст страницы (недоверенный текст):\n" + pageContextUsed.slice(0, MAX_PAGE_CONTEXT));
+    if (fileTextUsed) parts.push("Контекст файла " + fileNameUsed + " (недоверенный текст):\n" + fileTextUsed.slice(0, MAX_FILE_CONTEXT));
     if (prompt) parts.push("Запрос пользователя:\n" + prompt);
     const content = parts.join("\n\n");
 
@@ -236,6 +239,12 @@
       await persistState();
     } catch (error) {
       history.pop();
+      pageContext = pageContextUsed;
+      fileText = fileTextUsed;
+      fileName = fileNameUsed;
+      if (pageContext) { $("page-title").textContent = pageLabel; $("page-host").textContent = "Контекст восстановлен после ошибки"; }
+      if (fileText && fileName) { $("file-label").textContent = fileName; $("attachment").hidden = false; }
+      $("file").value = "";
       answerNode.textContent = error.name === "TimeoutError"
         ? "Модель отвечает слишком долго. Попробуй сократить запрос или передать меньше текста."
         : "Не удалось связаться с локальным Qwen: " + error.message;
