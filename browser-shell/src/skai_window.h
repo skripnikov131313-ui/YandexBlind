@@ -14,7 +14,10 @@ void SkAiActivateTab(int tab_id);
 void SkAiCloseTab(int tab_id);
 void SkAiOnTabClosed(int tab_id);
 void SkAiNavigateActive(const std::wstring& url);
-void SkAiBrowserAction(const std::wstring& action);
+void SkAiBrowserAction(const std::wstring& action,
+                        const std::wstring& parameter = L"");
+void SkAiNotifyFindResult(int tab_id, int match_count,
+                          int active_match_ordinal, bool final_update);
 void SkAiSetContentBounds(int x, int y, int width, int height);
 
 void SkAiNotifyTabState(int tab_id, const std::wstring& title,
