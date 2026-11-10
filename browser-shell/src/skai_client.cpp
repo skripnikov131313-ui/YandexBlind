@@ -338,6 +338,40 @@ void SkAiClient::OnDownloadUpdated(
   SkAiNotifyDownloadState(download_item, callback);
 }
 
+bool SkAiClient::OnRequestMediaAccessPermission(
+    CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> /*frame*/,
+    const CefString& requesting_origin, uint32_t requested_permissions,
+    CefRefPtr<CefMediaAccessCallback> callback) {
+  if (ui_browser_) {
+    return false;
+  }
+
+  return SkAiRequestSitePermission(requesting_origin.ToWString(),
+                                   requested_permissions, true, nullptr,
+                                   callback) != 0;
+}
+
+bool SkAiClient::OnShowPermissionPrompt(
+    CefRefPtr<CefBrowser> /*browser*/, uint64_t prompt_id,
+    const CefString& requesting_origin, uint32_t requested_permissions,
+    CefRefPtr<CefPermissionPromptCallback> callback) {
+  if (ui_browser_) {
+    return false;
+  }
+
+  return SkAiRequestSitePermission(requesting_origin.ToWString(),
+                                   requested_permissions, false, callback,
+                                   nullptr, prompt_id) != 0;
+}
+
+void SkAiClient::OnDismissPermissionPrompt(
+    CefRefPtr<CefBrowser> /*browser*/, uint64_t prompt_id,
+    cef_permission_request_result_t /*result*/) {
+  if (!ui_browser_) {
+    SkAiDismissPermission(prompt_id);
+  }
+}
+
 void SkAiClient::OnTitleChange(CefRefPtr<CefBrowser> /*browser*/,
                                const CefString& title) {
   if (ui_browser_ || !browser_) {
