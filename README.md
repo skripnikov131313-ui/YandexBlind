@@ -6,7 +6,7 @@ Yandex Blind is a Windows 11 x64 browser distribution built around Chromium-Gost
 
 - Chromium-Gost 156.0.8078.88 (x64), retaining its upstream ГОСТ TLS / msspi implementation.
 - Custom Yandex Blind start page with configurable search provider (Yandex, Google, Bing, DuckDuckGo, Brave Search, Startpage).
-- Local Qwen3.5-0.8B-Instruct model in GGUF Q4_0 format (about 563 MB).
+- Local Qwen3.5-2B model in GGUF Q4_K_M format (about 1.31 GB).
 - llama.cpp CPU inference runtime, launched silently and bound to 127.0.0.1 only.
 - Integrated assistant panel with text-file context for TXT, MD, CSV, LOG and JSON files.
 - Dark/light/system themes, reduced-motion option, and dedicated browser profile.
@@ -24,7 +24,7 @@ GitHub Actions downloads the upstream Chromium-Gost archive, verifies its SHA-25
 
 - Chromium-Gost release: https://github.com/deemru/Chromium-Gost/releases/tag/156.0.8078.88
 - llama.cpp runtime release: https://github.com/ggml-org/llama.cpp/releases/tag/b12248
-- Qwen model: https://huggingface.co/ggml-org/Qwen3.5-0.8B-GGUF
+- Qwen model: https://huggingface.co/ggml-org/Qwen3.5-2B-GGUF
 
 ## Privacy model
 
@@ -41,4 +41,4 @@ Chromium-Gost provides ГОСТ TLS through its upstream msspi integration. This
 
 ## Third-party components
 
-Chromium-Gost/Chromium, llama.cpp and Qwen are third-party components. Their upstream notices and licenses apply. Qwen3.5-0.8B-GGUF is published under Apache-2.0; see the model repository for full terms.
+Chromium-Gost/Chromium, llama.cpp and Qwen are third-party components. Their upstream notices and licenses apply. Qwen3.5-2B-GGUF is published under Apache-2.0; see the model repository for full terms.
