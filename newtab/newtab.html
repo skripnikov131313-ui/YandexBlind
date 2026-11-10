@@ -1,36 +1,16 @@
 <!doctype html>
-<html lang="ru">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Yandex Blind</title>
-  <style>
-    :root { color-scheme: light dark; font-family: "Segoe UI", Arial, sans-serif; }
-    * { box-sizing: border-box; }
-    body { margin: 0; min-height: 100vh; display: grid; place-items: center; background: #f4f6f8; color: #202124; }
-    main { width: min(680px, calc(100% - 40px)); margin-top: -8vh; text-align: center; }
-    .brand { font-size: clamp(34px, 7vw, 54px); font-weight: 650; letter-spacing: -2px; margin-bottom: 30px; }
-    .brand span { color: #e53935; }
-    form { display: flex; padding: 7px; gap: 8px; border: 1px solid #d9dde2; border-radius: 14px; background: white; box-shadow: 0 5px 22px #18223012; }
-    input { min-width: 0; flex: 1; border: 0; outline: 0; padding: 13px 15px; font-size: 17px; color: #202124; background: transparent; }
-    button { border: 0; border-radius: 10px; padding: 0 22px; background: #fc3f1d; color: white; font-size: 15px; font-weight: 600; cursor: pointer; }
-    .hint { margin-top: 18px; color: #737b84; font-size: 13px; }
-    @media (prefers-color-scheme: dark) {
-      body { background: #202124; color: #f1f3f4; }
-      form { background: #303134; border-color: #4a4d50; }
-      input { color: #f1f3f4; }
-      .hint { color: #aeb4ba; }
-    }
-  </style>
-</head>
-<body>
-  <main>
-    <div class="brand">Yandex <span>Blind</span></div>
-    <form action="https://yandex.ru/search/" method="get">
-      <input name="text" type="search" placeholder="Поиск в Яндексе" aria-label="Поиск в Яндексе" autofocus>
-      <button type="submit">Найти</button>
-    </form>
-    <div class="hint">Поиск открывается на yandex.ru</div>
-  </main>
-</body>
-</html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light"><title>Yandex Blind</title><link rel="stylesheet" href="newtab.css"><script src="newtab.js" defer></script></head>
+<body><div class="glow g1"></div><div class="glow g2"></div>
+<header><a class="brand" href="#"><span class="symbol"><i></i><i></i><i></i></span>blind<span class="dot">.</span></a><div class="right"><span class="local"><b></b> ЛОКАЛЬНЫЙ ИНТЕРФЕЙС</span><button class="gear" id="settings-open" aria-label="Настройки">⚙</button></div></header>
+<main><section class="hero"><div class="eyebrow"><i></i> YOUR PRIVATE SPACE <i></i></div><h1>Меньше шума.<br><em>Больше смысла.</em></h1><p class="lead">Поиск, работа и интеллект — в одном пространстве.</p>
+<form id="search-form"><span class="magnify">⌕</span><input id="query" type="search" placeholder="Что будем искать?" autocomplete="off" spellcheck="false" aria-label="Поисковый запрос"><span class="engine" id="engine-label">Яндекс</span><button class="go" aria-label="Искать">↗</button></form>
+<div class="meta">ПОИСКОВАЯ СИСТЕМА <button id="engine-quick">Яндекс⌄</button><span></span> ENTER ДЛЯ ПОИСКА</div></section>
+<section class="space"><div class="section-label">ПРОСТРАНСТВО <i></i><small>01 / 02</small></div><div class="tiles">
+<button class="tile feature" id="ai-tile"><span class="tile-icon violet">✧</span><span><strong>Qwen AI</strong><small>Локальный интеллект · в разработке</small></span><b>↗</b></button>
+<button class="tile" id="privacy-tile"><span class="tile-icon green">◇</span><span><strong>Приватность</strong><small>Управление настройками</small></span><b>↗</b></button>
+<button class="tile" id="appearance-tile"><span class="tile-icon lilac">◐</span><span><strong>Внешний вид</strong><small>Тема и анимации</small></span><b>↗</b></button></div></section>
+<footer><span>YB / 0.2 CONCEPT BUILD</span><span>DESIGNED FOR FOCUS <b>·</b> BUILT FOR PRIVACY</span></footer></main>
+<div class="overlay" id="overlay" hidden><aside class="panel" role="dialog" aria-modal="true" aria-labelledby="settings-title"><div class="panel-head"><div><small>CONTROL CENTER</small><h2 id="settings-title">Настройки</h2></div><button class="close" id="settings-close" aria-label="Закрыть">×</button></div>
+<section class="group"><label class="group-title" for="engine-select">ПОИСК</label><span class="field-label">Поисковая система</span><select id="engine-select"><option value="yandex">Яндекс</option><option value="google">Google</option><option value="bing">Bing</option><option value="duckduckgo">DuckDuckGo</option><option value="brave">Brave Search</option><option value="startpage">Startpage</option></select><p>Выбор применяется к поиску на стартовой странице. Адресная строка Chromium настраивается отдельно в параметрах браузера.</p></section>
+<section class="group"><div class="group-title">ИНТЕРФЕЙС</div><label class="field-label" for="theme-select">Оформление</label><select id="theme-select"><option value="dark">Graphite / Dark</option><option value="light">Porcelain / Light</option><option value="system">Как в системе</option></select><div class="toggle"><span><strong>Плавные анимации</strong><small>Переходы и мягкие появления</small></span><label class="switch"><input id="motion-toggle" type="checkbox" checked><i></i></label></div></section>
+<section class="group"><div class="group-title">ПРИВАТНОСТЬ</div><div class="status"><b></b><span><strong>Страница работает локально</strong><small>Настройки хранятся в профиле браузера. Поисковый запрос отправляется выбранной поисковой системе.</small></span></div></section><div class="panel-foot">Yandex Blind <i>·</i> интерфейсная сборка</div></aside></div><div class="toast" id="toast"></div></body></html>
