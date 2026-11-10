@@ -84,6 +84,7 @@ The first milestone is reproducible source preparation and baseline build. The f
 - [x] First Sk/Ai ColorProvider patch added for Chromium 156 (exact-source apply-check passed in CI).
 - [x] Native product branding patch added (Sk/Ai product and installer names; next CI apply-check pending).
 - [x] Native tab corner radii and toolbar / omnibox spacing refinement added (CI apply-check pending).
+- [x] Native C++ Assistant toolbar button added; it opens the stable Sk/Ai extension entry in Chromium's docked Side Panel (CI apply-check pending).
 - [ ] Native docked assistant registration.
 - [ ] Floating Windows assistant and Always-on-Top option.
 - [ ] Windows 11 integration and performance validation.
