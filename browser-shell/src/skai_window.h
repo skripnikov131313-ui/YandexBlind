@@ -1,6 +1,8 @@
 #pragma once
 #include <windows.h>
 #include <string>
+#include "include/cef_download_handler.h"
+#include "include/cef_download_item.h"
 
 HWND SkAiCreateMainWindow(HINSTANCE instance, int show_command);
 
@@ -26,3 +28,7 @@ void SkAiSetFloatingAssistantHandle(HWND hwnd);
 bool SkAiOnBrowserCreated();
 void SkAiOnUiClosed();
 void SkAiOnAssistantClosed();
+
+void SkAiNotifyDownloadState(CefRefPtr<CefDownloadItem> item,
+                             CefRefPtr<CefDownloadItemCallback> callback);
+void SkAiDownloadAction(uint32_t download_id, const std::wstring& action);
