@@ -30,7 +30,7 @@ args = " --user-data-dir=" & profile & " --load-extension=""" & base & "\NewTab"
        " --no-first-run --disable-metrics --disable-metrics-reporting" & _
        " --disable-background-networking --disable-component-update --disable-domain-reliability" & _
        " --disable-sync --disable-breakpad --disable-crash-reporter --disable-background-mode" & _
-       " --disable-default-apps https://ya.ru"
+       " --disable-default-apps chrome://newtab/"
 
 ' Keep the launcher alive while the browser is open.
 shell.Run browser & args, 1, True
