@@ -748,9 +748,25 @@ std::uint64_t SkAiRequestSitePermission(
     return 0;
   }
 
+  LoadSitePermissionDecisions();
+  const std::wstring permission_key = MakePermissionDecisionKey(
+      requesting_origin, requested_permissions, media_request);
+  const auto saved = g_site_permission_decisions.find(permission_key);
+  if (saved != g_site_permission_decisions.end()) {
+    if (media_request) {
+      if (saved->second) media_callback->Continue(requested_permissions);
+      else media_callback->Cancel();
+    } else {
+      prompt_callback->Continue(saved->second
+          ? CEF_PERMISSION_RESULT_ACCEPT : CEF_PERMISSION_RESULT_DENY);
+    }
+    return 1;
+  }
+
   const std::uint64_t request_id = g_next_permission_id++;
   PendingPermission request;
   request.origin = requesting_origin;
+  request.permission_key = permission_key;
   request.description =
       DescribePermissionRequest(requested_permissions, media_request);
   request.requested_permissions = requested_permissions;
@@ -768,7 +784,7 @@ std::uint64_t SkAiRequestSitePermission(
   return request_id;
 }
 
-void SkAiResolvePermission(std::uint64_t request_id, bool allow) {
+void SkAiResolvePermission(std::uint64_t request_id, bool allow, bool remember) {
   const auto it = g_pending_permissions.find(request_id);
   if (it == g_pending_permissions.end()) {
     return;
@@ -776,6 +792,10 @@ void SkAiResolvePermission(std::uint64_t request_id, bool allow) {
 
   PendingPermission request = it->second;
   g_pending_permissions.erase(it);
+  if (remember && !request.permission_key.empty()) {
+    g_site_permission_decisions[request.permission_key] = allow;
+    SaveSitePermissionDecisions();
+  }
   if (request.cef_prompt_id != 0) {
     g_cef_prompt_to_request.erase(request.cef_prompt_id);
   }
