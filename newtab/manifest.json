@@ -1,9 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Yandex Blind New Tab",
-  "version": "0.1.0",
-  "description": "Local new-tab page with Yandex search.",
-  "chrome_url_overrides": {
-    "newtab": "newtab.html"
-  }
+  "name": "Yandex Blind Start",
+  "version": "0.2.0",
+  "description": "Private start page with local Qwen assistant and configurable search.",
+  "permissions": [],
+  "host_permissions": ["http://127.0.0.1:8765/*"],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://127.0.0.1:8765"
+  },
+  "chrome_url_overrides": {"newtab": "newtab.html"}
 }
