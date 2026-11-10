@@ -1,195 +1,114 @@
 #include "skai_window.h"
 #include "include/cef_browser.h"
 #include "include/cef_client.h"
-#include "include/cef_task.h"
 #include "include/cef_values.h"
 #include "include/cef_parser.h"
 #include "skai_client.h"
-
 #include <filesystem>
 #include <map>
 #include <string>
-#include <vector>
 
 namespace {
-constexpr wchar_t kWindowClass[] = L"SkAi.NativeBrowserWindow";
-constexpr UINT kLayoutMessage = WM_APP + 20;
-HWND g_window = nullptr;
+constexpr wchar_t kClass[]=L"SkAi.NativeBrowserWindow";
+constexpr UINT kLayout=WM_APP+20;
+HWND g_window=nullptr;
+HWND g_assistant_window=nullptr;
 CefRefPtr<SkAiClient> g_ui_client;
-struct BrowserTab {
-  int id = 0;
-  CefRefPtr<SkAiClient> client;
-  bool active = false;
-};
-std::map<int, BrowserTab> g_tabs;
-int g_next_tab_id = 1;
-int g_active_tab_id = 0;
-RECT g_content_bounds{0, 100, 800, 600};
-
-std::wstring UiStartPage() {
-  wchar_t executable[MAX_PATH]{};
-  GetModuleFileNameW(nullptr, executable, MAX_PATH);
-  const auto path = std::filesystem::path(executable).parent_path() / L"ui" / L"index.html";
-  return L"file:///" + path.generic_wstring();
+CefRefPtr<SkAiClient> g_assistant_client;
+struct Tab{int id;CefRefPtr<SkAiClient> client;bool active=false;};
+std::map<int,Tab> g_tabs;
+int g_next=1,g_active=0;
+RECT g_bounds{0,100,800,600};
+std::wstring UiFile(const wchar_t* file){
+ wchar_t exe[MAX_PATH]{};GetModuleFileNameW(nullptr,exe,MAX_PATH);
+ auto path=std::filesystem::path(exe).parent_path()/L"ui"/file;
+ return L"file:///"+path.generic_wstring();
 }
-void LayoutChildren() {
-  if (!IsWindow(g_window)) return;
-  for (auto& [id, tab] : g_tabs) {
-    const auto browser = tab.client ? tab.client->GetBrowser() : nullptr;
-    if (!browser) continue;
-    const HWND child = browser->GetHost()->GetWindowHandle();
-    if (!child) continue;
-    const int width = g_content_bounds.right - g_content_bounds.left;
-    const int height = g_content_bounds.bottom - g_content_bounds.top;
-    SetWindowPos(child, tab.active ? HWND_TOP : HWND_BOTTOM,
-      g_content_bounds.left, g_content_bounds.top, width, height,
-      SWP_NOACTIVATE | (tab.active ? 0 : SWP_NOZORDER));
-    ShowWindow(child, tab.active ? SW_SHOW : SW_HIDE);
-    browser->GetHost()->WasHidden(!tab.active);
-  }
+void Layout(){
+ if(!IsWindow(g_window))return;
+ for(auto&[id,t]:g_tabs){auto b=t.client?t.client->GetBrowser():nullptr;if(!b)continue;
+  HWND child=b->GetHost()->GetWindowHandle();if(!child)continue;
+  SetWindowPos(child,t.active?HWND_TOP:HWND_BOTTOM,g_bounds.left,g_bounds.top,
+   g_bounds.right-g_bounds.left,g_bounds.bottom-g_bounds.top,SWP_NOACTIVATE|(t.active?0:SWP_NOZORDER));
+  ShowWindow(child,t.active?SW_SHOW:SW_HIDE);b->GetHost()->WasHidden(!t.active);
+ }
 }
-void SendTabSnapshot() {
-  if (!g_ui_client || !g_ui_client->GetBrowser()) return;
-  std::wstring json = L"[";
-  bool first = true;
-  for (const auto& [id, tab] : g_tabs) {
-    if (!first) json += L",";
-    first = false;
-    json += L"{\"id\":" + std::to_wstring(id) +
-      L",\"active\":" + (tab.active ? L"true" : L"false") +
-      L",\"title\":\"Вкладка " + std::to_wstring(id) + L"\"}";
-  }
-  json += L"]";
-  const std::wstring script = L"window.skaiNative&&window.skaiNative.syncTabs(" + json + L");";
-  g_ui_client->GetBrowser()->GetMainFrame()->ExecuteJavaScript(script,
-      g_ui_client->GetBrowser()->GetMainFrame()->GetURL(), 0);
+void Snapshot(){
+ if(!g_ui_client||!g_ui_client->GetBrowser())return;
+ std::wstring j=L"[";
+ for(auto it=g_tabs.begin();it!=g_tabs.end();++it){
+  if(it!=g_tabs.begin())j+=L",";
+  auto v=CefValue::Create();v->SetString(L"Вкладка "+std::to_wstring(it->first));
+  j+=L"{\"id\":"+std::to_wstring(it->first)+L",\"active\":"+(it->second.active?L"true":L"false")+L",\"title\":"+CefWriteJSON(v,JSON_WRITER_DEFAULT).ToWString()+L"}";
+ }
+ j+=L"]";auto b=g_ui_client->GetBrowser();b->GetMainFrame()->ExecuteJavaScript(L"window.skaiNative&&window.skaiNative.syncTabs("+j+L");",b->GetMainFrame()->GetURL(),0);
 }
-LRESULT CALLBACK WindowProc(HWND window, UINT message, WPARAM wparam, LPARAM lparam) {
-  switch (message) {
-    case WM_SIZE:
-      LayoutChildren();
-      return 0;
-    case kLayoutMessage:
-      LayoutChildren();
-      return 0;
-    case WM_ERASEBKGND:
-      return 1;
-    case WM_CLOSE:
-      for (auto& [id, tab] : g_tabs)
-        if (tab.client && tab.client->GetBrowser())
-          tab.client->GetBrowser()->GetHost()->CloseBrowser(false);
-      if (g_ui_client && g_ui_client->GetBrowser()) {
-        g_ui_client->GetBrowser()->GetHost()->CloseBrowser(false);
-        return 0;
-      }
-      DestroyWindow(window);
-      return 0;
-    case WM_APP + 11:
-      DestroyWindow(window);
-      return 0;
-    case WM_DESTROY:
-      g_tabs.clear();
-      g_ui_client = nullptr;
-      PostQuitMessage(0);
-      return 0;
-    default:
-      return DefWindowProcW(window, message, wparam, lparam);
-  }
+LRESULT CALLBACK Proc(HWND h,UINT m,WPARAM w,LPARAM l){
+ switch(m){
+ case WM_SIZE:Layout();return 0;
+ case kLayout:Layout();return 0;
+ case WM_NCHITTEST:{
+  const LRESULT hit=DefWindowProcW(h,m,w,l);if(hit!=HTCLIENT)return hit;
+  POINT p{GET_X_LPARAM(l),GET_Y_LPARAM(l)};ScreenToClient(h,&p);
+  RECT r{};GetClientRect(h,&r);const int edge=8;
+  const bool left=p.x<edge,right=p.x>=r.right-edge,top=p.y<edge,bottom=p.y>=r.bottom-edge;
+  if(top&&left)return HTTOPLEFT;if(top&&right)return HTTOPRIGHT;if(bottom&&left)return HTBOTTOMLEFT;if(bottom&&right)return HTBOTTOMRIGHT;
+  if(left)return HTLEFT;if(right)return HTRIGHT;if(top)return HTTOP;if(bottom)return HTBOTTOM;return HTCLIENT;
+ }
+ case WM_ERASEBKGND:return 1;
+ case WM_CLOSE:
+  for(auto&[id,t]:g_tabs)if(t.client&&t.client->GetBrowser())t.client->GetBrowser()->GetHost()->CloseBrowser(false);
+  if(g_ui_client&&g_ui_client->GetBrowser()){g_ui_client->GetBrowser()->GetHost()->CloseBrowser(false);return 0;}
+  DestroyWindow(h);return 0;
+ case WM_APP+11:
+  if(h==g_assistant_window){g_assistant_window=nullptr;g_assistant_client=nullptr;return 0;}
+  DestroyWindow(h);return 0;
+ case WM_DESTROY:
+  if(h==g_window){g_tabs.clear();g_ui_client=nullptr;PostQuitMessage(0);}
+  return 0;
+ default:return DefWindowProcW(h,m,w,l);
+ }
 }
-} // namespace
-
-void SkAiCreateTab(const std::wstring& url, bool activate) {
-  if (!g_window) return;
-  const int id = g_next_tab_id++;
-  BrowserTab tab;
-  tab.id = id;
-  tab.active = activate;
-  tab.client = new SkAiClient(g_window, id, false);
-  if (activate) {
-    for (auto& [existing_id, existing] : g_tabs) existing.active = false;
-    g_active_tab_id = id;
-  }
-  g_tabs.emplace(id, tab);
-  CefWindowInfo info;
-  RECT bounds = g_content_bounds;
-  info.SetAsChild(g_window, bounds);
-  CefBrowserSettings settings;
-  CefBrowserHost::CreateBrowser(info, tab.client, url, settings, nullptr, nullptr);
-  SendTabSnapshot();
 }
-void SkAiActivateTab(int tab_id) {
-  if (tab_id != 0 && !g_tabs.contains(tab_id)) return;
-  for (auto& [id, tab] : g_tabs) tab.active = id == tab_id;
-  g_active_tab_id = tab_id;
-  LayoutChildren();
-  SendTabSnapshot();
+void SkAiCreateTab(const std::wstring&url,bool activate){
+ if(!g_window)return;int id=g_next++;Tab t{id,new SkAiClient(g_window,id,false),activate};
+ if(activate){for(auto&[n,x]:g_tabs)x.active=false;g_active=id;}
+ g_tabs.emplace(id,t);CefWindowInfo wi;wi.SetAsChild(g_window,g_bounds);CefBrowserSettings s;
+ CefBrowserHost::CreateBrowser(wi,t.client,url,s,nullptr,nullptr);Snapshot();
 }
-void SkAiOnTabClosed(int tab_id) {
-  g_tabs.erase(tab_id);
-  if (g_active_tab_id == tab_id) {
-    g_active_tab_id = g_tabs.empty() ? 0 : g_tabs.rbegin()->first;
-    SkAiActivateTab(g_active_tab_id);
-  }
-  SendTabSnapshot();
+void SkAiActivateTab(int id){
+ if(id!=0&&!g_tabs.contains(id))return;for(auto&[n,t]:g_tabs)t.active=(n==id);g_active=id;Layout();Snapshot();
 }
-void SkAiCloseTab(int tab_id) {
-  const auto it = g_tabs.find(tab_id);
-  if (it == g_tabs.end()) return;
-  if (it->second.client && it->second.client->GetBrowser())
-    it->second.client->GetBrowser()->GetHost()->CloseBrowser(false);
-  g_tabs.erase(it);
-  if (g_active_tab_id == tab_id) {
-    g_active_tab_id = g_tabs.empty() ? 0 : g_tabs.rbegin()->first;
-    if (g_active_tab_id) SkAiActivateTab(g_active_tab_id);
-  }
-  SendTabSnapshot();
+void SkAiOnTabClosed(int id){
+ g_tabs.erase(id);if(g_active==id){g_active=g_tabs.empty()?0:g_tabs.rbegin()->first;SkAiActivateTab(g_active);}Snapshot();
 }
-void SkAiNavigateActive(const std::wstring& url) {
-  const auto it = g_tabs.find(g_active_tab_id);
-  if (it != g_tabs.end() && it->second.client && it->second.client->GetBrowser())
-    it->second.client->GetBrowser()->GetMainFrame()->LoadURL(url);
+void SkAiCloseTab(int id){
+ auto i=g_tabs.find(id);if(i==g_tabs.end())return;
+ if(i->second.client&&i->second.client->GetBrowser())i->second.client->GetBrowser()->GetHost()->CloseBrowser(false);
 }
-void SkAiBrowserAction(const std::wstring& action) {
-  const auto it = g_tabs.find(g_active_tab_id);
-  if (it == g_tabs.end() || !it->second.client || !it->second.client->GetBrowser()) return;
-  auto browser = it->second.client->GetBrowser();
-  if (action == L"back" && browser->CanGoBack()) browser->GoBack();
-  else if (action == L"forward" && browser->CanGoForward()) browser->GoForward();
-  else if (action == L"reload") browser->Reload();
+void SkAiNavigateActive(const std::wstring&url){
+ auto i=g_tabs.find(g_active);if(i!=g_tabs.end()&&i->second.client&&i->second.client->GetBrowser())i->second.client->GetBrowser()->GetMainFrame()->LoadURL(url);
 }
-void SkAiSetContentBounds(int x, int y, int width, int height) {
-  g_content_bounds = {x, y, x + width, y + height};
-  if (g_window) PostMessageW(g_window, kLayoutMessage, 0, 0);
+void SkAiBrowserAction(const std::wstring&a){
+ auto i=g_tabs.find(g_active);if(i==g_tabs.end()||!i->second.client||!i->second.client->GetBrowser())return;
+ auto b=i->second.client->GetBrowser();if(a==L"back"&&b->CanGoBack())b->GoBack();else if(a==L"forward"&&b->CanGoForward())b->GoForward();else if(a==L"reload")b->Reload();
 }
-void SkAiNotifyTabState(int tab_id, const std::wstring& title,
-                        const std::wstring& url, bool loading) {
-  if (!g_ui_client || !g_ui_client->GetBrowser()) return;
-  auto make_json = [](const std::wstring& value) {
-    auto v = CefValue::Create(); v->SetString(value);
-    return CefWriteJSON(v, JSON_WRITER_DEFAULT).ToWString();
-  };
-  const std::wstring script = L"window.skaiNative&&window.skaiNative.updateTab(" +
-    std::to_wstring(tab_id) + L"," + make_json(title) + L"," +
-    make_json(url) + L"," + (loading ? L"true" : L"false") + L");";
-  auto b = g_ui_client->GetBrowser();
-  b->GetMainFrame()->ExecuteJavaScript(script, b->GetMainFrame()->GetURL(), 0);
+void SkAiSetContentBounds(int x,int y,int w,int h){g_bounds={x,y,x+w,y+h};if(g_window)PostMessageW(g_window,kLayout,0,0);}
+void SkAiNotifyTabState(int id,const std::wstring&t,const std::wstring&u,bool loading){
+ if(!g_ui_client||!g_ui_client->GetBrowser())return;auto j=[](const std::wstring&s){auto v=CefValue::Create();v->SetString(s);return CefWriteJSON(v,JSON_WRITER_DEFAULT).ToWString();};
+ auto b=g_ui_client->GetBrowser();b->GetMainFrame()->ExecuteJavaScript(L"window.skaiNative&&window.skaiNative.updateTab("+std::to_wstring(id)+L","+j(t)+L","+j(u)+L","+(loading?L"true":L"false")+L");",b->GetMainFrame()->GetURL(),0);
 }
-HWND SkAiCreateMainWindow(HINSTANCE instance, int show_command) {
-  WNDCLASSEXW wc{sizeof(wc)};
-  wc.lpfnWndProc = WindowProc; wc.hInstance = instance;
-  wc.hCursor = LoadCursor(nullptr, IDC_ARROW);
-  wc.hbrBackground = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
-  wc.lpszClassName = kWindowClass;
-  RegisterClassExW(&wc);
-  g_window = CreateWindowExW(0, kWindowClass, L"Sk/Ai",
-    WS_OVERLAPPEDWINDOW, CW_USEDEFAULT, CW_USEDEFAULT, 1440, 900,
-    nullptr, nullptr, instance, nullptr);
-  if (!g_window) return nullptr;
-  g_ui_client = new SkAiClient(g_window, 0, true);
-  CefWindowInfo info; RECT bounds{}; GetClientRect(g_window, &bounds);
-  info.SetAsChild(g_window, bounds);
-  CefBrowserSettings settings;
-  CefBrowserHost::CreateBrowser(info, g_ui_client, UiStartPage(), settings, nullptr, nullptr);
-  ShowWindow(g_window, show_command); UpdateWindow(g_window);
-  return g_window;
+void SkAiToggleFloatingAssistant(){
+ if(IsWindow(g_assistant_window)){ShowWindow(g_assistant_window,SW_HIDE);return;}
+ CefWindowInfo wi;wi.SetAsPopup(nullptr,L"Sk/Ai Assistant");CefBrowserSettings s;
+ g_assistant_client=new SkAiClient(nullptr,-1,true);
+ CefBrowserHost::CreateBrowser(wi,g_assistant_client,UiFile(L"assistant.html"),s,nullptr,nullptr);
+}
+HWND SkAiCreateMainWindow(HINSTANCE instance,int show){
+ WNDCLASSEXW wc{sizeof(wc)};wc.lpfnWndProc=Proc;wc.hInstance=instance;wc.hCursor=LoadCursor(nullptr,IDC_ARROW);wc.hbrBackground=(HBRUSH)GetStockObject(BLACK_BRUSH);wc.lpszClassName=kClass;RegisterClassExW(&wc);
+ g_window=CreateWindowExW(0,kClass,L"Sk/Ai",WS_POPUP|WS_THICKFRAME|WS_MINIMIZEBOX|WS_MAXIMIZEBOX,CW_USEDEFAULT,CW_USEDEFAULT,1440,900,nullptr,nullptr,instance,nullptr);
+ if(!g_window)return nullptr;g_ui_client=new SkAiClient(g_window,0,true);
+ CefWindowInfo wi;RECT r{};GetClientRect(g_window,&r);wi.SetAsChild(g_window,r);CefBrowserSettings s;
+ CefBrowserHost::CreateBrowser(wi,g_ui_client,UiFile(L"index.html"),s,nullptr,nullptr);
+ ShowWindow(g_window,show);UpdateWindow(g_window);return g_window;
 }
