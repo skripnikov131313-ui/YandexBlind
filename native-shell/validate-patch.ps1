@@ -5,9 +5,10 @@ Set-StrictMode -Version Latest
 
 $chromiumTag = "156.0.8078.88"
 $repoRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
-$patchPath = Join-Path $PSScriptRoot "patches\0001-skai-native-color-pipeline.patch"
-if (-not (Test-Path $patchPath -PathType Leaf)) {
-    throw "The first native Sk/Ai color patch is missing."
+$patchDir = Join-Path $PSScriptRoot "patches"
+$patches = @(Get-ChildItem -Path $patchDir -Filter "*.patch" -File | Sort-Object Name)
+if ($patches.Count -eq 0) {
+    throw "No native Sk/Ai source patches were found."
 }
 if (-not (Get-Command git.exe -ErrorAction SilentlyContinue)) {
     throw "Git is required to validate source patches."
@@ -22,7 +23,8 @@ try {
     $rawBase = "https://raw.githubusercontent.com/chromium/chromium/$chromiumTag/"
     $targets = @(
         "chrome/browser/ui/color/BUILD.gn",
-        "chrome/browser/ui/color/chrome_color_mixers.cc"
+        "chrome/browser/ui/color/chrome_color_mixers.cc",
+        "chrome/app/theme/chromium/BRANDING"
     )
     foreach ($relative in $targets) {
         $destination = Join-Path $sourceRoot ($relative -replace '/', '\')
@@ -38,10 +40,16 @@ try {
 
     Push-Location $sourceRoot
     try {
-        Write-Host ("Checking Sk/Ai patch against Chromium {0}..." -f $chromiumTag) -ForegroundColor Cyan
-        & git.exe apply --check --whitespace=error $patchPath
-        if ($LASTEXITCODE -ne 0) {
-            throw "The native Sk/Ai patch does not apply cleanly to the pinned Chromium source."
+        foreach ($patch in $patches) {
+            Write-Host ("Checking {0} against Chromium {1}..." -f $patch.Name, $chromiumTag) -ForegroundColor Cyan
+            & git.exe apply --check --whitespace=error $patch.FullName
+            if ($LASTEXITCODE -ne 0) {
+                throw ("The native Sk/Ai patch does not apply cleanly: {0}" -f $patch.Name)
+            }
+            & git.exe apply --whitespace=error $patch.FullName
+            if ($LASTEXITCODE -ne 0) {
+                throw ("The native Sk/Ai patch could not be applied: {0}" -f $patch.Name)
+            }
         }
     }
     finally {
