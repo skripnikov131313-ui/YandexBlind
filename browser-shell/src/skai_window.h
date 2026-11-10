@@ -33,3 +33,5 @@ void SkAiOnAssistantClosed();
 void SkAiNotifyDownloadState(CefRefPtr<CefDownloadItem> item,
                              CefRefPtr<CefDownloadItemCallback> callback);
 void SkAiDownloadAction(std::uint32_t download_id, const std::wstring& action);
+
+void SkAiOpenDownloadedFile(const std::wstring& path, const std::wstring& action);
