@@ -427,7 +427,7 @@ void SkAiNotifyTabState(int tab_id, const std::wstring& title,
   std::wstring effective_title = title;
   std::wstring effective_url = url;
   if (tab != g_tabs.end()) {
-    if (!title.empty()) tab->second.title = title;
+    if (!title.empty() && title != L"Загрузка…") tab->second.title = title;
     if (!url.empty()) tab->second.url = url;
     tab->second.is_loading = loading;
     if (effective_title.empty()) effective_title = tab->second.title;
