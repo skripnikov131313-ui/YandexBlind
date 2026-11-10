@@ -159,12 +159,14 @@
   function openAssistant() {
     panel.classList.remove("is-hidden");
     body.classList.remove("panel-closed");
+    body.classList.add("panel-mobile-open");
     panel.classList.add("is-visible");
     toast("Sk/Ai Assistant открыт");
   }
   function closeAssistant() {
     panel.classList.add("is-hidden");
     body.classList.add("panel-closed");
+    body.classList.remove("panel-mobile-open");
     panel.classList.remove("is-visible");
   }
   $("#closeAssistant").addEventListener("click", closeAssistant);
