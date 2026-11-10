@@ -42,3 +42,12 @@ Chromium-Gost provides ГОСТ TLS through its upstream msspi integration. This
 ## Third-party components
 
 Chromium-Gost/Chromium, llama.cpp and Qwen are third-party components. Their upstream notices and licenses apply. Qwen3.5-2B-GGUF is published under Apache-2.0; see the model repository for full terms.
+
+
+## Assistant mode switch
+
+The assistant panel includes a persistent two-mode switch:
+- **Local AI**: prompt and supported text-file context are sent to the local Qwen server at 127.0.0.1.
+- **Internet search**: opens the selected search provider in a new browser tab with the typed query. The query and ordinary network metadata are disclosed to that provider. Attachments are not sent in this mode.
+
+The current internet mode opens the provider's search-results page; it does not yet fetch pages, extract sources, or ask Qwen to synthesize a cited answer. That is a separate web-retrieval integration step.
