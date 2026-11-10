@@ -243,14 +243,12 @@ std::filesystem::path GetPermissionStorePath() {
     return {};
   }
 
-  const auto profile =
-      std::filesystem::path(local) / L"SkAi" / L"Profiles" / L"Default";
+  const auto profile = GetProfileDirectory(g_active_profile);
   CoTaskMemFree(local);
+  if (profile.empty()) return {};
   std::error_code error;
   std::filesystem::create_directories(profile, error);
-  if (error) {
-    return {};
-  }
+  if (error) return {};
   return profile / L"permissions.json";
 }
 
@@ -471,7 +469,7 @@ void LayoutChildren() {
       continue;
     }
 
-    if (tab.active) {
+    if (tab.active && !tab.closing && tab.profile == g_active_profile) {
       SetWindowPos(child, HWND_TOP, g_content_bounds.left, g_content_bounds.top,
                    width, height, SWP_NOACTIVATE | SWP_SHOWWINDOW);
       browser->GetHost()->WasHidden(false);
@@ -494,12 +492,12 @@ void SendTabSnapshot() {
   };
 
   std::wstring json = L"[";
+  bool first = true;
   for (auto it = g_tabs.begin(); it != g_tabs.end(); ++it) {
-    if (it != g_tabs.begin()) {
-      json += L",";
-    }
-
     const auto& tab = it->second;
+    if (tab.profile != g_active_profile || tab.closing) continue;
+    if (!first) json += L",";
+    first = false;
     json += L"{\"id\":" + std::to_wstring(tab.id) +
             L",\"active\":" + (tab.active ? L"true" : L"false") +
             L",\"loading\":" + (tab.is_loading ? L"true" : L"false") +
@@ -666,9 +664,17 @@ void SkAiCreateTab(const std::wstring& url, bool activate) {
     return;
   }
 
+  const auto request_context = GetOrCreateProfileContext(g_active_profile, true);
+  if (!request_context) {
+    NotifyProfileError(L"Не удалось открыть профиль браузера.");
+    return;
+  }
+
   const int id = g_next_tab_id++;
   Tab tab;
   tab.id = id;
+  tab.profile = g_active_profile;
+  tab.request_context = request_context;
   tab.client = new SkAiClient(g_window, id, false);
   tab.active = activate;
   tab.url = url;
@@ -688,7 +694,8 @@ void SkAiCreateTab(const std::wstring& url, bool activate) {
 
   ++g_pending_browser_creates;
   const bool started = CefBrowserHost::CreateBrowser(
-      window_info, tab.client, url, browser_settings, nullptr, nullptr);
+      window_info, tab.client, url, browser_settings, nullptr,
+      tab.request_context);
   if (!started) {
     --g_pending_browser_creates;
     g_tabs.erase(id);
