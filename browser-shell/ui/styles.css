@@ -69,3 +69,15 @@ body[data-theme=light] .internal-view-search{background:rgba(255,255,255,.72);co
 .library-open:disabled{opacity:.85;cursor:default}
 .downloads-note{font-size:10px;color:#9facca}
 body[data-theme=light] .downloads-note{color:#70809f}
+
+
+.bookmark-folder-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:-7px 0 15px}
+.bookmark-folder-tools select,.bookmark-folder-create input{height:36px;min-width:135px;max-width:220px;padding:0 10px;border:1px solid rgba(178,194,255,.18);border-radius:9px;outline:none;background:rgba(10,18,42,.38);color:#e9eeff;font:10px "Segoe UI",sans-serif}
+.bookmark-folder-create{display:flex;gap:6px;align-items:center}
+.bookmark-folder-create input{min-width:110px;width:140px}
+.bookmark-folder-tools button{height:36px;padding:0 10px;border:1px solid rgba(178,194,255,.18);border-radius:9px;background:rgba(255,255,255,.05);color:#c8d4f0;font-size:10px;white-space:nowrap}
+.bookmark-folder-tools button:hover{border-color:rgba(109,220,205,.45);background:rgba(62,170,160,.12)}
+.bookmark-folder-tools button:disabled{opacity:.35;cursor:default}
+.bookmark-folder-select{max-width:130px;height:34px;padding:0 7px;border:1px solid rgba(178,194,255,.14);border-radius:8px;background:rgba(10,18,42,.32);color:#cbd6f1;font:10px "Segoe UI",sans-serif}
+body[data-theme=light] .bookmark-folder-tools select,body[data-theme=light] .bookmark-folder-create input,body[data-theme=light] .bookmark-folder-tools button,body[data-theme=light] .bookmark-folder-select{background:rgba(255,255,255,.72);color:#2e3b5d;border-color:rgba(75,95,157,.18)}
+@media(max-width:760px){.bookmark-folder-tools{gap:6px}.bookmark-folder-tools select{max-width:none;flex:1}.bookmark-folder-create{flex:1}.bookmark-folder-create input{flex:1;min-width:80px}.bookmark-folder-select{max-width:110px}}
