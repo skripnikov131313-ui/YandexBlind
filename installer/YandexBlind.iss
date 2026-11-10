@@ -1,10 +1,10 @@
 [Setup]
 AppId={{D84B52E7-29A7-47CB-9C37-5C73E8F4C1B2}
-AppName=Yandex Blind
+AppName=Sk/Ai
 AppVersion=0.2.0
 AppPublisher=Yandex Blind Project
 DefaultDirName={localappdata}\Programs\YandexBlind
-DefaultGroupName=Yandex Blind
+DefaultGroupName=Sk/Ai
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
@@ -21,8 +21,8 @@ RestartApplications=no
 Source: "..\dist\payload\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Yandex Blind"; Filename: "{sys}\wscript.exe"; Parameters: "//B //Nologo ""{app}\YandexBlind.vbs"""; WorkingDir: "{app}"
-Name: "{autodesktop}\Yandex Blind"; Filename: "{sys}\wscript.exe"; Parameters: "//B //Nologo ""{app}\YandexBlind.vbs"""; WorkingDir: "{app}"; Tasks: desktopicon
+Name: "{group}\Sk/Ai"; Filename: "{sys}\wscript.exe"; Parameters: "//B //Nologo ""{app}\YandexBlind.vbs"""; WorkingDir: "{app}"
+Name: "{autodesktop}\Sk/Ai"; Filename: "{sys}\wscript.exe"; Parameters: "//B //Nologo ""{app}\YandexBlind.vbs"""; WorkingDir: "{app}"; Tasks: desktopicon
 
 [Tasks]
 Name: "desktopicon"; Description: "Создать ярлык на рабочем столе"; GroupDescription: "Дополнительные параметры:"
