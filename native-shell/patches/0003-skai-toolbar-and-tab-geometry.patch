@@ -1,0 +1,30 @@
+diff --git a/chrome/browser/ui/tabs/tab_style.cc b/chrome/browser/ui/tabs/tab_style.cc
+index ae95d2dfc228bab8c47e76f520c53a6fc1ba95ca..0000000000000000000000000000000000000000 100644
+--- a/chrome/browser/ui/tabs/tab_style.cc
++++ b/chrome/browser/ui/tabs/tab_style.cc
+@@ -97,9 +97,9 @@ int TabStyle::GetTopCornerRadius() const {
+ int TabStyle::GetTopCornerRadius() const {
+-  return 10;
++  return 12;
+ }
+ 
+ int TabStyle::GetBottomCornerRadius() const {
+-  return 12;
++  return 14;
+ }
+ 
+ int TabStyle::GetTabOverlap() const {
+diff --git a/chrome/browser/ui/views/toolbar/toolbar_view.cc b/chrome/browser/ui/views/toolbar/toolbar_view.cc
+index f9bb38f92374559f70077dfcb24c2010d1b7efba..0000000000000000000000000000000000000000 100644
+--- a/chrome/browser/ui/views/toolbar/toolbar_view.cc
++++ b/chrome/browser/ui/views/toolbar/toolbar_view.cc
+@@ -1560,7 +1560,7 @@ void ToolbarView::InitLayout() {
+ void ToolbarView::InitLayout() {
+   const int default_margin =
+-      GetLayoutConstant(LayoutConstant::kToolbarIconDefaultMargin);
++      GetLayoutConstant(LayoutConstant::kToolbarIconDefaultMargin) + 2;
+   const int location_bar_margin =
+-      GetLayoutConstant(LayoutConstant::kLocationBarMargin);
++      GetLayoutConstant(LayoutConstant::kLocationBarMargin) + 4;
+ 
+   // Shift previously flex-able elements' order by `kOrderOffset`.

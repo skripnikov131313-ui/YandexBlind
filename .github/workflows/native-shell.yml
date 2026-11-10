@@ -1,0 +1,69 @@
+name: Sk/Ai Native Shell
+
+on:
+  push:
+    branches: [feature/sk-ai-native-shell]
+    paths:
+      - "native-shell/**"
+      - ".github/workflows/native-shell.yml"
+      - ".gitattributes"
+  pull_request:
+    paths:
+      - "native-shell/**"
+      - ".github/workflows/native-shell.yml"
+      - ".gitattributes"
+  workflow_dispatch:
+    inputs:
+      run_full_build:
+        description: "Run the pinned upstream Chromium source build on a configured large self-hosted Windows runner"
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate source-build tooling
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js for UI prototype checks
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate browser UI prototype JavaScript
+        shell: pwsh
+        run: node --check native-shell/ui-prototype/app.js
+
+      - name: Validate PowerShell scripts and design tokens
+        shell: pwsh
+        run: ./native-shell/validate.ps1
+
+      - name: Apply-check Sk/Ai patch against upstream Chromium source tag
+        shell: pwsh
+        run: ./native-shell/validate-patch.ps1
+
+  baseline-build:
+    name: Compile upstream Chromium baseline
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_build }}
+    runs-on: [self-hosted, windows, x64, skai-chromium-large]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Build pinned pristine Chromium baseline
+        shell: pwsh
+        run: ./native-shell/build.ps1 -Workspace D:\SkAiBuild -ChromiumRef 156.0.8078.88 -InitializeChromiumCheckout -BaselineOnly
+
+      - name: Upload baseline artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: SkAi-Chromium-156.0.8078.88-BASELINE
+          path: native-shell/artifacts/*
+          if-no-files-found: error
+          retention-days: 7
