@@ -1,120 +1,504 @@
 #include "skai_window.h"
+
 #include "include/cef_browser.h"
 #include "include/cef_client.h"
 #include "include/cef_values.h"
 #include "include/cef_parser.h"
 #include "skai_client.h"
+
 #include <windowsx.h>
 #include <filesystem>
 #include <map>
 #include <string>
+#include <vector>
 
 namespace {
-constexpr wchar_t kClass[]=L"SkAi.NativeBrowserWindow";
-constexpr UINT kLayout=WM_APP+20;
-HWND g_window=nullptr;
-HWND g_assistant_window=nullptr;
+constexpr wchar_t kClass[] = L"SkAi.NativeBrowserWindow";
+constexpr UINT kLayout = WM_APP + 20;
+constexpr UINT kFinishClose = WM_APP + 21;
+
+HWND g_window = nullptr;
+HWND g_assistant_window = nullptr;
 CefRefPtr<SkAiClient> g_ui_client;
 CefRefPtr<SkAiClient> g_assistant_client;
-struct Tab{int id;CefRefPtr<SkAiClient> client;bool active=false;};
-std::map<int,Tab> g_tabs;
-int g_next=1,g_active=0;
-RECT g_bounds{0,100,800,600};
-std::wstring UiFile(const wchar_t* file){
- wchar_t exe[MAX_PATH]{};GetModuleFileNameW(nullptr,exe,MAX_PATH);
- auto path=std::filesystem::path(exe).parent_path()/L"ui"/file;
- return L"file:///"+path.generic_wstring();
+
+struct Tab {
+  int id = 0;
+  CefRefPtr<SkAiClient> client;
+  bool active = false;
+};
+std::map<int, Tab> g_tabs;
+
+int g_next_tab_id = 1;
+int g_active_tab_id = 0;
+RECT g_content_bounds{0, 100, 800, 600};
+
+bool g_close_requested = false;
+bool g_finish_close_posted = false;
+int g_pending_browser_creates = 0;
+int g_pending_browser_closes = 0;
+
+std::wstring UiFile(const wchar_t* file) {
+  wchar_t exe[MAX_PATH]{};
+  GetModuleFileNameW(nullptr, exe, MAX_PATH);
+  const auto path = std::filesystem::path(exe).parent_path() / L"ui" / file;
+  return L"file:///" + path.generic_wstring();
 }
-void Layout(){
- if(!IsWindow(g_window))return;
- for(auto&[id,t]:g_tabs){auto b=t.client?t.client->GetBrowser():nullptr;if(!b)continue;
-  HWND child=b->GetHost()->GetWindowHandle();if(!child)continue;
-  SetWindowPos(child,t.active?HWND_TOP:HWND_BOTTOM,g_bounds.left,g_bounds.top,
-   g_bounds.right-g_bounds.left,g_bounds.bottom-g_bounds.top,SWP_NOACTIVATE|(t.active?0:SWP_NOZORDER));
-  ShowWindow(child,t.active?SW_SHOW:SW_HIDE);b->GetHost()->WasHidden(!t.active);
- }
+
+void MaybeFinishClose() {
+  if (!g_close_requested || g_finish_close_posted ||
+      g_pending_browser_creates != 0 || g_pending_browser_closes != 0) {
+    return;
+  }
+  g_finish_close_posted = true;
+  if (IsWindow(g_window)) {
+    PostMessageW(g_window, kFinishClose, 0, 0);
+  }
 }
-void Snapshot(){
- if(!g_ui_client||!g_ui_client->GetBrowser())return;
- std::wstring j=L"[";
- for(auto it=g_tabs.begin();it!=g_tabs.end();++it){
-  if(it!=g_tabs.begin())j+=L",";
-  auto v=CefValue::Create();v->SetString(L"Вкладка "+std::to_wstring(it->first));
-  j+=L"{\"id\":"+std::to_wstring(it->first)+L",\"active\":"+(it->second.active?L"true":L"false")+L",\"title\":"+CefWriteJSON(v,JSON_WRITER_DEFAULT).ToWString()+L"}";
- }
- j+=L"]";auto b=g_ui_client->GetBrowser();b->GetMainFrame()->ExecuteJavaScript(L"window.skaiNative&&window.skaiNative.syncTabs("+j+L");",b->GetMainFrame()->GetURL(),0);
+
+void BrowserClosedDuringShutdown() {
+  if (!g_close_requested) {
+    return;
+  }
+  if (g_pending_browser_closes > 0) {
+    --g_pending_browser_closes;
+  }
+  MaybeFinishClose();
 }
-LRESULT CALLBACK Proc(HWND h,UINT m,WPARAM w,LPARAM l){
- switch(m){
- case WM_SIZE:Layout();return 0;
- case kLayout:Layout();return 0;
- case WM_NCHITTEST:{
-  const LRESULT hit=DefWindowProcW(h,m,w,l);if(hit!=HTCLIENT)return hit;
-  POINT p{GET_X_LPARAM(l),GET_Y_LPARAM(l)};ScreenToClient(h,&p);
-  RECT r{};GetClientRect(h,&r);const int edge=8;
-  const bool left=p.x<edge,right=p.x>=r.right-edge,top=p.y<edge,bottom=p.y>=r.bottom-edge;
-  if(top&&left)return HTTOPLEFT;if(top&&right)return HTTOPRIGHT;if(bottom&&left)return HTBOTTOMLEFT;if(bottom&&right)return HTBOTTOMRIGHT;
-  if(left)return HTLEFT;if(right)return HTRIGHT;if(top)return HTTOP;if(bottom)return HTBOTTOM;return HTCLIENT;
- }
- case WM_ERASEBKGND:return 1;
- case WM_CLOSE:
-  for(auto&[id,t]:g_tabs)if(t.client&&t.client->GetBrowser())t.client->GetBrowser()->GetHost()->CloseBrowser(false);
-  if(g_ui_client&&g_ui_client->GetBrowser()){g_ui_client->GetBrowser()->GetHost()->CloseBrowser(false);return 0;}
-  DestroyWindow(h);return 0;
- case WM_APP+11:
-  if(h==g_assistant_window){g_assistant_window=nullptr;g_assistant_client=nullptr;return 0;}
-  DestroyWindow(h);return 0;
- case WM_DESTROY:
-  if(h==g_window){g_tabs.clear();g_ui_client=nullptr;PostQuitMessage(0);}
-  return 0;
- default:return DefWindowProcW(h,m,w,l);
- }
+
+void LayoutChildren() {
+  if (!IsWindow(g_window)) {
+    return;
+  }
+
+  const int width = g_content_bounds.right - g_content_bounds.left;
+  const int height = g_content_bounds.bottom - g_content_bounds.top;
+
+  for (auto& [id, tab] : g_tabs) {
+    const auto browser = tab.client ? tab.client->GetBrowser() : nullptr;
+    if (!browser) {
+      continue;
+    }
+
+    const HWND child = browser->GetHost()->GetWindowHandle();
+    if (!IsWindow(child)) {
+      continue;
+    }
+
+    if (tab.active) {
+      SetWindowPos(child, HWND_TOP, g_content_bounds.left, g_content_bounds.top,
+                   width, height, SWP_NOACTIVATE | SWP_SHOWWINDOW);
+      browser->GetHost()->WasHidden(false);
+    } else {
+      ShowWindow(child, SW_HIDE);
+      browser->GetHost()->WasHidden(true);
+    }
+  }
 }
+
+void SendTabSnapshot() {
+  if (!g_ui_client || !g_ui_client->GetBrowser()) {
+    return;
+  }
+
+  std::wstring json = L"[";
+  for (auto it = g_tabs.begin(); it != g_tabs.end(); ++it) {
+    if (it != g_tabs.begin()) {
+      json += L",";
+    }
+
+    auto title = CefValue::Create();
+    title->SetString(L"Вкладка " + std::to_wstring(it->first));
+
+    json += L"{\"id\":" + std::to_wstring(it->first) +
+            L",\"active\":" + (it->second.active ? L"true" : L"false") +
+            L",\"title\":" +
+            CefWriteJSON(title, JSON_WRITER_DEFAULT).ToWString() + L"}";
+  }
+  json += L"]";
+
+  const auto browser = g_ui_client->GetBrowser();
+  const auto frame = browser->GetMainFrame();
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.syncTabs(" + json + L");",
+      frame->GetURL(), 0);
 }
-void SkAiCreateTab(const std::wstring&url,bool activate){
- if(!g_window)return;int id=g_next++;Tab t{id,new SkAiClient(g_window,id,false),activate};
- if(activate){for(auto&[n,x]:g_tabs)x.active=false;g_active=id;}
- g_tabs.emplace(id,t);CefWindowInfo wi;wi.SetAsChild(g_window,g_bounds);CefBrowserSettings s;
- CefBrowserHost::CreateBrowser(wi,t.client,url,s,nullptr,nullptr);Snapshot();
+
+void BeginApplicationClose(HWND window) {
+  if (g_close_requested) {
+    return;
+  }
+
+  g_close_requested = true;
+  std::vector<CefRefPtr<CefBrowser>> browsers;
+  browsers.reserve(g_tabs.size() + 2);
+
+  for (const auto& [id, tab] : g_tabs) {
+    const auto browser = tab.client ? tab.client->GetBrowser() : nullptr;
+    if (browser) {
+      browsers.push_back(browser);
+    }
+  }
+
+  if (g_ui_client && g_ui_client->GetBrowser()) {
+    browsers.push_back(g_ui_client->GetBrowser());
+  }
+  if (g_assistant_client && g_assistant_client->GetBrowser()) {
+    browsers.push_back(g_assistant_client->GetBrowser());
+  }
+
+  // Count before issuing CloseBrowser because CEF may deliver callbacks
+  // while shutdown messages are being pumped.
+  g_pending_browser_closes = static_cast<int>(browsers.size());
+  for (const auto& browser : browsers) {
+    browser->GetHost()->CloseBrowser(false);
+  }
+
+  MaybeFinishClose();
+  if (!IsWindow(window)) {
+    return;
+  }
 }
-void SkAiActivateTab(int id){
- if(id!=0&&!g_tabs.contains(id))return;for(auto&[n,t]:g_tabs)t.active=(n==id);g_active=id;Layout();Snapshot();
+
+LRESULT CALLBACK WindowProc(HWND hwnd, UINT message, WPARAM wparam,
+                             LPARAM lparam) {
+  switch (message) {
+    case WM_SIZE:
+    case kLayout:
+      LayoutChildren();
+      return 0;
+
+    case WM_NCHITTEST: {
+      const LRESULT hit = DefWindowProcW(hwnd, message, wparam, lparam);
+      if (hit != HTCLIENT) {
+        return hit;
+      }
+
+      POINT point{GET_X_LPARAM(lparam), GET_Y_LPARAM(lparam)};
+      ScreenToClient(hwnd, &point);
+
+      RECT client{};
+      GetClientRect(hwnd, &client);
+      constexpr int edge = 8;
+      const bool left = point.x < edge;
+      const bool right = point.x >= client.right - edge;
+      const bool top = point.y < edge;
+      const bool bottom = point.y >= client.bottom - edge;
+
+      if (top && left) return HTTOPLEFT;
+      if (top && right) return HTTOPRIGHT;
+      if (bottom && left) return HTBOTTOMLEFT;
+      if (bottom && right) return HTBOTTOMRIGHT;
+      if (left) return HTLEFT;
+      if (right) return HTRIGHT;
+      if (top) return HTTOP;
+      if (bottom) return HTBOTTOM;
+      return HTCLIENT;
+    }
+
+    case WM_ERASEBKGND:
+      return 1;
+
+    case WM_CLOSE:
+      BeginApplicationClose(hwnd);
+      return 0;
+
+    case kFinishClose:
+      if (g_close_requested && g_pending_browser_creates == 0 &&
+          g_pending_browser_closes == 0) {
+        DestroyWindow(hwnd);
+      }
+      return 0;
+
+    case WM_DESTROY:
+      if (hwnd == g_window) {
+        g_tabs.clear();
+        g_ui_client = nullptr;
+        g_assistant_client = nullptr;
+        g_window = nullptr;
+        PostQuitMessage(0);
+      }
+      return 0;
+
+    default:
+      return DefWindowProcW(hwnd, message, wparam, lparam);
+  }
 }
-void SkAiOnTabClosed(int id){
- g_tabs.erase(id);if(g_active==id){g_active=g_tabs.empty()?0:g_tabs.rbegin()->first;SkAiActivateTab(g_active);}Snapshot();
+}  // namespace
+
+bool SkAiOnBrowserCreated() {
+  if (g_pending_browser_creates > 0) {
+    --g_pending_browser_creates;
+  }
+
+  if (!g_close_requested) {
+    return false;
+  }
+
+  ++g_pending_browser_closes;
+  MaybeFinishClose();
+  return true;
 }
-void SkAiCloseTab(int id){
- auto i=g_tabs.find(id);if(i==g_tabs.end())return;
- if(i->second.client&&i->second.client->GetBrowser())i->second.client->GetBrowser()->GetHost()->CloseBrowser(false);
+
+void SkAiOnUiClosed() {
+  g_ui_client = nullptr;
+  BrowserClosedDuringShutdown();
 }
-void SkAiNavigateActive(const std::wstring&url){
- if(g_active==0){SkAiCreateTab(url,true);return;}
- auto i=g_tabs.find(g_active);
- if(i!=g_tabs.end()&&i->second.client&&i->second.client->GetBrowser())
-  i->second.client->GetBrowser()->GetMainFrame()->LoadURL(url);
+
+void SkAiOnAssistantClosed() {
+  g_assistant_window = nullptr;
+  g_assistant_client = nullptr;
+  BrowserClosedDuringShutdown();
 }
-void SkAiBrowserAction(const std::wstring&a){
- auto i=g_tabs.find(g_active);if(i==g_tabs.end()||!i->second.client||!i->second.client->GetBrowser())return;
- auto b=i->second.client->GetBrowser();if(a==L"back"&&b->CanGoBack())b->GoBack();else if(a==L"forward"&&b->CanGoForward())b->GoForward();else if(a==L"reload")b->Reload();
+
+void SkAiCreateTab(const std::wstring& url, bool activate) {
+  if (!g_window || g_close_requested) {
+    return;
+  }
+
+  const int id = g_next_tab_id++;
+  Tab tab;
+  tab.id = id;
+  tab.client = new SkAiClient(g_window, id, false);
+  tab.active = activate;
+
+  if (activate) {
+    for (auto& [existing_id, existing_tab] : g_tabs) {
+      existing_tab.active = false;
+    }
+    g_active_tab_id = id;
+  }
+
+  g_tabs.emplace(id, tab);
+
+  CefWindowInfo window_info;
+  window_info.SetAsChild(g_window, g_content_bounds);
+  CefBrowserSettings browser_settings;
+
+  ++g_pending_browser_creates;
+  const bool started = CefBrowserHost::CreateBrowser(
+      window_info, tab.client, url, browser_settings, nullptr, nullptr);
+  if (!started) {
+    --g_pending_browser_creates;
+    g_tabs.erase(id);
+    if (g_active_tab_id == id) {
+      g_active_tab_id = 0;
+    }
+    SendTabSnapshot();
+    MaybeFinishClose();
+    return;
+  }
+
+  SendTabSnapshot();
 }
-void SkAiSetContentBounds(int x,int y,int w,int h){g_bounds={x,y,x+w,y+h};if(g_window)PostMessageW(g_window,kLayout,0,0);}
-void SkAiNotifyTabState(int id,const std::wstring&t,const std::wstring&u,bool loading){
- if(!g_ui_client||!g_ui_client->GetBrowser())return;auto j=[](const std::wstring&s){auto v=CefValue::Create();v->SetString(s);return CefWriteJSON(v,JSON_WRITER_DEFAULT).ToWString();};
- auto b=g_ui_client->GetBrowser();b->GetMainFrame()->ExecuteJavaScript(L"window.skaiNative&&window.skaiNative.updateTab("+std::to_wstring(id)+L","+j(t)+L","+j(u)+L","+(loading?L"true":L"false")+L");",b->GetMainFrame()->GetURL(),0);
+
+void SkAiActivateTab(int tab_id) {
+  if (g_close_requested) {
+    return;
+  }
+  if (tab_id != 0 && !g_tabs.contains(tab_id)) {
+    return;
+  }
+
+  for (auto& [id, tab] : g_tabs) {
+    tab.active = (id == tab_id);
+  }
+  g_active_tab_id = tab_id;
+  LayoutChildren();
+  SendTabSnapshot();
 }
-void SkAiSetFloatingAssistantHandle(HWND hwnd){g_assistant_window=hwnd;if(IsWindow(hwnd)){SetWindowPos(hwnd,HWND_TOPMOST,0,0,480,760,SWP_NOMOVE|SWP_SHOWWINDOW);ShowWindow(hwnd,SW_SHOW);}}
-void SkAiNotifyTabFavicon(int id,const std::wstring&url){if(!g_ui_client||!g_ui_client->GetBrowser())return;auto v=CefValue::Create();v->SetString(url);auto j=CefWriteJSON(v,JSON_WRITER_DEFAULT).ToWString();auto b=g_ui_client->GetBrowser();b->GetMainFrame()->ExecuteJavaScript(L"window.skaiNative&&window.skaiNative.updateFavicon("+std::to_wstring(id)+L","+j+L");",b->GetMainFrame()->GetURL(),0);}
-void SkAiToggleFloatingAssistant(){
- if(IsWindow(g_assistant_window)){ShowWindow(g_assistant_window,SW_SHOW);SetWindowPos(g_assistant_window,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);return;}
- CefWindowInfo wi;wi.SetAsPopup(nullptr,L"Sk/Ai Assistant");CefBrowserSettings s;
- g_assistant_client=new SkAiClient(nullptr,-1,true);
- CefBrowserHost::CreateBrowser(wi,g_assistant_client,UiFile(L"assistant.html"),s,nullptr,nullptr);
+
+void SkAiOnTabClosed(int tab_id) {
+  g_tabs.erase(tab_id);
+
+  if (!g_close_requested && g_active_tab_id == tab_id) {
+    g_active_tab_id = g_tabs.empty() ? 0 : g_tabs.rbegin()->first;
+    SkAiActivateTab(g_active_tab_id);
+  } else if (!g_close_requested) {
+    SendTabSnapshot();
+  }
+
+  BrowserClosedDuringShutdown();
 }
-HWND SkAiCreateMainWindow(HINSTANCE instance,int show){
- WNDCLASSEXW wc{sizeof(wc)};wc.lpfnWndProc=Proc;wc.hInstance=instance;wc.hCursor=LoadCursor(nullptr,IDC_ARROW);wc.hbrBackground=(HBRUSH)GetStockObject(BLACK_BRUSH);wc.lpszClassName=kClass;RegisterClassExW(&wc);
- g_window=CreateWindowExW(0,kClass,L"Sk/Ai",WS_POPUP|WS_THICKFRAME|WS_MINIMIZEBOX|WS_MAXIMIZEBOX,CW_USEDEFAULT,CW_USEDEFAULT,1440,900,nullptr,nullptr,instance,nullptr);
- if(!g_window)return nullptr;g_ui_client=new SkAiClient(g_window,0,true);
- CefWindowInfo wi;RECT r{};GetClientRect(g_window,&r);wi.SetAsChild(g_window,r);CefBrowserSettings s;
- CefBrowserHost::CreateBrowser(wi,g_ui_client,UiFile(L"index.html"),s,nullptr,nullptr);
- ShowWindow(g_window,show);UpdateWindow(g_window);return g_window;
+
+void SkAiCloseTab(int tab_id) {
+  const auto it = g_tabs.find(tab_id);
+  if (it == g_tabs.end() || g_close_requested) {
+    return;
+  }
+
+  const auto browser = it->second.client ? it->second.client->GetBrowser() : nullptr;
+  if (browser) {
+    browser->GetHost()->CloseBrowser(false);
+  }
+}
+
+void SkAiNavigateActive(const std::wstring& url) {
+  if (g_close_requested) {
+    return;
+  }
+  if (g_active_tab_id == 0) {
+    SkAiCreateTab(url, true);
+    return;
+  }
+
+  const auto it = g_tabs.find(g_active_tab_id);
+  const auto browser = it != g_tabs.end() && it->second.client
+                           ? it->second.client->GetBrowser()
+                           : nullptr;
+  if (browser) {
+    browser->GetMainFrame()->LoadURL(url);
+  }
+}
+
+void SkAiBrowserAction(const std::wstring& action) {
+  if (g_close_requested) {
+    return;
+  }
+  const auto it = g_tabs.find(g_active_tab_id);
+  const auto browser = it != g_tabs.end() && it->second.client
+                           ? it->second.client->GetBrowser()
+                           : nullptr;
+  if (!browser) {
+    return;
+  }
+
+  if (action == L"back" && browser->CanGoBack()) {
+    browser->GoBack();
+  } else if (action == L"forward" && browser->CanGoForward()) {
+    browser->GoForward();
+  } else if (action == L"reload") {
+    browser->Reload();
+  }
+}
+
+void SkAiSetContentBounds(int x, int y, int width, int height) {
+  if (width <= 0 || height <= 0) {
+    return;
+  }
+  g_content_bounds = {x, y, x + width, y + height};
+  if (g_window) {
+    PostMessageW(g_window, kLayout, 0, 0);
+  }
+}
+
+void SkAiNotifyTabState(int tab_id, const std::wstring& title,
+                        const std::wstring& url, bool loading) {
+  if (g_close_requested || !g_ui_client || !g_ui_client->GetBrowser()) {
+    return;
+  }
+
+  const auto json_string = [](const std::wstring& value) {
+    auto cef_value = CefValue::Create();
+    cef_value->SetString(value);
+    return CefWriteJSON(cef_value, JSON_WRITER_DEFAULT).ToWString();
+  };
+
+  const auto browser = g_ui_client->GetBrowser();
+  const auto frame = browser->GetMainFrame();
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.updateTab(" +
+          std::to_wstring(tab_id) + L"," + json_string(title) + L"," +
+          json_string(url) + L"," + (loading ? L"true" : L"false") + L");",
+      frame->GetURL(), 0);
+}
+
+void SkAiSetFloatingAssistantHandle(HWND hwnd) {
+  g_assistant_window = hwnd;
+  if (IsWindow(hwnd)) {
+    SetWindowPos(hwnd, HWND_TOPMOST, 0, 0, 480, 760,
+                 SWP_NOMOVE | SWP_SHOWWINDOW);
+    ShowWindow(hwnd, SW_SHOW);
+  }
+}
+
+void SkAiNotifyTabFavicon(int tab_id, const std::wstring& icon_url) {
+  if (g_close_requested || !g_ui_client || !g_ui_client->GetBrowser()) {
+    return;
+  }
+
+  auto cef_value = CefValue::Create();
+  cef_value->SetString(icon_url);
+  const auto json = CefWriteJSON(cef_value, JSON_WRITER_DEFAULT).ToWString();
+  const auto browser = g_ui_client->GetBrowser();
+  const auto frame = browser->GetMainFrame();
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.updateFavicon(" +
+          std::to_wstring(tab_id) + L"," + json + L");",
+      frame->GetURL(), 0);
+}
+
+void SkAiToggleFloatingAssistant() {
+  if (g_close_requested) {
+    return;
+  }
+
+  if (IsWindow(g_assistant_window)) {
+    ShowWindow(g_assistant_window, SW_SHOW);
+    SetWindowPos(g_assistant_window, HWND_TOPMOST, 0, 0, 0, 0,
+                 SWP_NOMOVE | SWP_NOSIZE | SWP_SHOWWINDOW);
+    return;
+  }
+
+  CefWindowInfo window_info;
+  window_info.SetAsPopup(nullptr, L"Sk/Ai Assistant");
+  CefBrowserSettings browser_settings;
+  g_assistant_client = new SkAiClient(nullptr, -1, true);
+
+  ++g_pending_browser_creates;
+  const bool started = CefBrowserHost::CreateBrowser(
+      window_info, g_assistant_client, UiFile(L"assistant.html"),
+      browser_settings, nullptr, nullptr);
+  if (!started) {
+    --g_pending_browser_creates;
+    g_assistant_client = nullptr;
+    MaybeFinishClose();
+  }
+}
+
+HWND SkAiCreateMainWindow(HINSTANCE instance, int show_command) {
+  WNDCLASSEXW window_class{sizeof(window_class)};
+  window_class.lpfnWndProc = WindowProc;
+  window_class.hInstance = instance;
+  window_class.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+  window_class.hbrBackground = static_cast<HBRUSH>(GetStockObject(BLACK_BRUSH));
+  window_class.lpszClassName = kClass;
+
+  if (!RegisterClassExW(&window_class) &&
+      GetLastError() != ERROR_CLASS_ALREADY_EXISTS) {
+    return nullptr;
+  }
+
+  g_window = CreateWindowExW(
+      0, kClass, L"Sk/Ai", WS_POPUP | WS_THICKFRAME | WS_MINIMIZEBOX |
+                              WS_MAXIMIZEBOX,
+      CW_USEDEFAULT, CW_USEDEFAULT, 1440, 900, nullptr, nullptr, instance,
+      nullptr);
+  if (!g_window) {
+    return nullptr;
+  }
+
+  g_ui_client = new SkAiClient(g_window, 0, true);
+
+  CefWindowInfo window_info;
+  RECT client_rect{};
+  GetClientRect(g_window, &client_rect);
+  window_info.SetAsChild(g_window, client_rect);
+  CefBrowserSettings browser_settings;
+
+  ++g_pending_browser_creates;
+  const bool started = CefBrowserHost::CreateBrowser(
+      window_info, g_ui_client, UiFile(L"index.html"), browser_settings,
+      nullptr, nullptr);
+  if (!started) {
+    --g_pending_browser_creates;
+    g_ui_client = nullptr;
+    DestroyWindow(g_window);
+    g_window = nullptr;
+    return nullptr;
+  }
+
+  ShowWindow(g_window, show_command);
+  UpdateWindow(g_window);
+  return g_window;
 }
