@@ -198,7 +198,7 @@
   if (!Array.isArray(bookmarks)) bookmarks = [];
   if (!Array.isArray(historyItems)) historyItems = [];
 
-  const pageSections = $(".page-scroll > :not(#internalView)");
+  const pageSections = $$(".page-scroll > :not(#internalView)");
   function syncBookmarkButton() {
     const url = $("#addressInput")?.value || "";
     const saved = bookmarks.some(item => item.url === url);
@@ -356,7 +356,7 @@
   $("#internalViewSearch")?.addEventListener("input", () => {
     if (internalViewType) renderInternalView(internalViewType);
   });
-  $(".shortcut-card[data-url]").forEach(card => card.addEventListener("click", () => {
+  $$(".shortcut-card[data-url]").forEach(card => card.addEventListener("click", () => {
     const route = card.dataset.url;
     if (route === "skai://bookmarks") {
       openInternalView("bookmarks");
