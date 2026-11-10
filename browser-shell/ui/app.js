@@ -200,17 +200,26 @@
 
   $("#themeButton")?.addEventListener("click", cycleTheme);
   const bookmarkKey = "skai.bookmarks.v1";
+  const bookmarkFoldersKey = "skai.bookmark.folders.v1";
   const historyKey = "skai.history.v1";
   const downloadsKey = "skai.downloads.v1";
   let bookmarks = [];
+  let bookmarkFolders = ["Без папки"];
+  let bookmarkFolderFilter = "*";
   let historyItems = [];
   let downloads = [];
   let lastDownloadPersistAt = 0;
   let internalViewType = "";
   try { bookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || "[]"); } catch (_) { bookmarks = []; }
+  try { bookmarkFolders = JSON.parse(localStorage.getItem(bookmarkFoldersKey) || '["Без папки"]'); } catch (_) { bookmarkFolders = ["Без папки"]; }
   try { historyItems = JSON.parse(localStorage.getItem(historyKey) || "[]"); } catch (_) { historyItems = []; }
   try { downloads = JSON.parse(localStorage.getItem(downloadsKey) || "[]"); } catch (_) { downloads = []; }
   if (!Array.isArray(bookmarks)) bookmarks = [];
+  if (!Array.isArray(bookmarkFolders)) bookmarkFolders = ["Без папки"];
+  bookmarkFolders = [...new Set(["Без папки", ...bookmarkFolders.filter(name => typeof name === "string" && name.trim()).map(name => name.trim().slice(0, 32))])];
+  bookmarks.forEach(item => {
+    if (!item.folder || !bookmarkFolders.includes(item.folder)) item.folder = "Без папки";
+  });
   if (!Array.isArray(historyItems)) historyItems = [];
   if (!Array.isArray(downloads)) downloads = [];
   downloads = downloads.filter(item => item && typeof item.path === "string")
@@ -235,6 +244,10 @@
   function persistBookmarks() {
     try { localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks)); }
     catch (_) { notify("Не удалось сохранить закладки в профиле"); }
+  }
+  function persistBookmarkFolders() {
+    try { localStorage.setItem(bookmarkFoldersKey, JSON.stringify(bookmarkFolders)); }
+    catch (_) { notify("Не удалось сохранить папки закладок"); }
   }
   function persistHistory() {
     try { localStorage.setItem(historyKey, JSON.stringify(historyItems)); }
@@ -316,6 +329,31 @@
       type === "bookmarks" ? "Сохранённые страницы в вашем профиле" :
       type === "history" ? "Недавно посещённые страницы · хранится локально" :
       "Файлы, полученные через браузер · папка Загрузки/SkAi";
+    const folderTools = $("#bookmarkFolderTools");
+    if (folderTools) {
+      folderTools.hidden = type !== "bookmarks";
+      if (type === "bookmarks") {
+        const folderSelect = $("#bookmarkFolderFilter");
+        if (folderSelect) {
+          folderSelect.replaceChildren();
+          const allOption = document.createElement("option");
+          allOption.value = "*";
+          allOption.textContent = "Все папки";
+          folderSelect.append(allOption);
+          bookmarkFolders.forEach(folder => {
+            const option = document.createElement("option");
+            option.value = folder;
+            option.textContent = folder;
+            folderSelect.append(option);
+          });
+          folderSelect.value = bookmarkFolderFilter;
+        }
+        const canManage = bookmarkFolderFilter !== "*" && bookmarkFolderFilter !== "Без папки";
+        $("#renameBookmarkFolder").disabled = !canManage;
+        $("#deleteBookmarkFolder").disabled = !canManage;
+      }
+    }
+
     const list = $("#internalViewList");
     list.replaceChildren();
     const allItems = type === "bookmarks" ? bookmarks :
@@ -328,7 +366,9 @@
     const items = allItems.map((item, index) => ({ item, index })).filter(entry => {
       const haystack = ((entry.item.title || entry.item.fileName || "") + " " +
         (entry.item.url || "") + " " + (entry.item.path || "")).toLocaleLowerCase("ru-RU");
-      return !query || haystack.includes(query);
+      const folderMatch = type !== "bookmarks" || bookmarkFolderFilter === "*" ||
+        (entry.item.folder || "Без папки") === bookmarkFolderFilter;
+      return folderMatch && (!query || haystack.includes(query));
     });
     $("#internalViewEmpty").hidden = items.length > 0;
     $("#internalViewEmpty").textContent = allItems.length === 0
@@ -366,6 +406,40 @@
       }
       open.append(title, detail);
       row.append(open);
+
+      if (type === "bookmarks") {
+        const folderSelect = document.createElement("select");
+        folderSelect.className = "bookmark-folder-select";
+        folderSelect.setAttribute("aria-label", "Папка закладки");
+        bookmarkFolders.forEach(folder => {
+          const option = document.createElement("option");
+          option.value = folder;
+          option.textContent = folder;
+          folderSelect.append(option);
+        });
+        folderSelect.value = item.folder || "Без папки";
+        folderSelect.addEventListener("change", () => {
+          item.folder = folderSelect.value;
+          persistBookmarks();
+          renderInternalView("bookmarks");
+        });
+        row.append(folderSelect);
+
+        const rename = document.createElement("button");
+        rename.className = "library-remove";
+        rename.type = "button";
+        rename.textContent = "Изменить";
+        rename.addEventListener("click", () => {
+          const nextTitle = window.prompt("Название закладки", item.title || item.url);
+          if (nextTitle === null) return;
+          const cleanTitle = nextTitle.trim().slice(0, 120);
+          if (!cleanTitle) return;
+          item.title = cleanTitle;
+          persistBookmarks();
+          renderInternalView("bookmarks");
+        });
+        row.append(rename);
+      }
 
       if (type === "downloads") {
         const actions = document.createElement("div");
@@ -466,7 +540,7 @@
     } else {
       const activeTab = $('.tab.active');
       const title = activeTab ? $(".tab-name", activeTab)?.textContent : url;
-      bookmarks.unshift({ title: title || url, url, createdAt: Date.now() });
+      bookmarks.unshift({ title: title || url, url, folder: "Без папки", createdAt: Date.now() });
       notify("Страница добавлена в закладки");
     }
     persistBookmarks();
@@ -484,6 +558,53 @@
   $("#internalViewClose")?.addEventListener("click", () => closeInternalView());
   $("#internalViewSearch")?.addEventListener("input", () => {
     if (internalViewType) renderInternalView(internalViewType);
+  });
+  $("#bookmarkFolderFilter")?.addEventListener("change", event => {
+    bookmarkFolderFilter = event.currentTarget.value || "*";
+    renderInternalView("bookmarks");
+  });
+  $("#newBookmarkFolder")?.addEventListener("click", () => {
+    const input = $("#newBookmarkFolderName");
+    const name = input?.value.trim().replace(/[\\/\\\\:*?"<>|]/g, "").slice(0, 32);
+    if (!name) { notify("Введите название папки"); return; }
+    if (bookmarkFolders.some(folder => folder.toLocaleLowerCase("ru-RU") === name.toLocaleLowerCase("ru-RU"))) {
+      notify("Такая папка уже существует");
+      return;
+    }
+    bookmarkFolders.push(name);
+    persistBookmarkFolders();
+    bookmarkFolderFilter = name;
+    if (input) input.value = "";
+    renderInternalView("bookmarks");
+  });
+  $("#renameBookmarkFolder")?.addEventListener("click", () => {
+    const current = bookmarkFolderFilter;
+    if (current === "*" || current === "Без папки") return;
+    const nextName = window.prompt("Новое название папки", current);
+    if (nextName === null) return;
+    const cleanName = nextName.trim().slice(0, 32);
+    if (!cleanName || bookmarkFolders.some(folder =>
+      folder !== current && folder.toLocaleLowerCase("ru-RU") === cleanName.toLocaleLowerCase("ru-RU"))) {
+      notify("Название пустое или уже занято");
+      return;
+    }
+    bookmarkFolders = bookmarkFolders.map(folder => folder === current ? cleanName : folder);
+    bookmarks.forEach(item => { if (item.folder === current) item.folder = cleanName; });
+    bookmarkFolderFilter = cleanName;
+    persistBookmarkFolders();
+    persistBookmarks();
+    renderInternalView("bookmarks");
+  });
+  $("#deleteBookmarkFolder")?.addEventListener("click", () => {
+    const current = bookmarkFolderFilter;
+    if (current === "*" || current === "Без папки") return;
+    if (!window.confirm("Удалить папку «" + current + "»? Закладки останутся в разделе «Без папки».")) return;
+    bookmarkFolders = bookmarkFolders.filter(folder => folder !== current);
+    bookmarks.forEach(item => { if (item.folder === current) item.folder = "Без папки"; });
+    bookmarkFolderFilter = "*";
+    persistBookmarkFolders();
+    persistBookmarks();
+    renderInternalView("bookmarks");
   });
   $$(".shortcut-card[data-url]").forEach(card => card.addEventListener("click", () => {
     const route = card.dataset.url;
