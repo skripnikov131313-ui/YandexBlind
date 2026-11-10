@@ -200,3 +200,50 @@ body.no-motion *,body.no-motion *:before,body.no-motion *:after{animation:none!i
  .search-hint{font-size:7px;letter-spacing:.8px}
  footer{gap:10px;flex-wrap:wrap;font-size:8px}
 }
+
+
+/* Docked workspace layout: page stays in the main pane; AI lives in Chromium's native side panel. */
+.app-rail{
+ position:fixed;z-index:4;left:0;top:82px;bottom:0;width:64px;
+ display:flex;flex-direction:column;justify-content:space-between;align-items:center;
+ padding:22px 9px 18px;border-right:1px solid var(--line);
+ background:color-mix(in srgb,var(--surface) 72%,transparent);
+ backdrop-filter:blur(22px)
+}
+.rail-group{display:flex;flex-direction:column;align-items:center;gap:8px;width:100%}
+.rail-btn{
+ width:42px;height:42px;display:grid;place-items:center;border:1px solid transparent;
+ border-radius:13px;background:transparent;color:var(--muted);cursor:pointer;
+ transition:background .2s,color .2s,border-color .2s,transform .2s
+}
+.rail-btn svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
+.rail-btn:hover{color:var(--text);background:var(--surface-hi);border-color:var(--line);transform:translateY(-1px)}
+.rail-btn.selected{color:var(--lavender);background:color-mix(in srgb,var(--lavender) 16%,var(--surface));border-color:color-mix(in srgb,var(--lavender) 28%,var(--line));box-shadow:0 6px 22px color-mix(in srgb,var(--lavender) 16%,transparent)}
+.page{
+ width:min(1000px,calc(100% - 104px));
+ margin-left:clamp(76px,calc((100% - 1000px)/2 + 64px),160px);
+ margin-right:auto
+}
+.feature-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.feature-card{min-height:174px;padding:18px 17px 15px}
+.card-copy{margin-top:18px}
+.card-copy strong{font-size:12px}
+.card-copy>span{font-size:9px}
+.card-foot{font-size:7px;letter-spacing:.8px}
+@media(max-width:760px){
+ .app-rail{width:54px;padding-left:6px;padding-right:6px}
+ .rail-btn{width:38px;height:38px}
+ .page{width:calc(100% - 72px);margin-left:68px;margin-right:4px}
+ .feature-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+ .hero{padding:74px 0 58px}
+ h1{font-size:clamp(40px,8vw,64px)}
+}
+@media(max-width:480px){
+ .app-rail{width:48px;padding-left:4px;padding-right:4px}
+ .rail-btn{width:36px;height:36px}
+ .page{width:calc(100% - 60px);margin-left:56px;margin-right:4px}
+ .feature-grid{grid-template-columns:1fr}
+ .hero{padding:56px 0 45px}
+ .searchbar{height:60px}
+ .search-hint{font-size:7px;gap:7px}
+}
