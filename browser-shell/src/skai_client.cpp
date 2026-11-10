@@ -35,9 +35,9 @@ bool SkAiClient::OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,CefRefPt
  if(category=="browser"){SkAiBrowserAction(action.ToWString());return true;}
  return false;
 }
-void SkAiClient::OnAfterCreated(CefRefPtr<CefBrowser>b){browser_=b;if(!ui_browser_){SkAiNotifyTabState(tab_id_,L"Новая вкладка",b->GetMainFrame()->GetURL(),false);SkAiActivateTab(tab_id_);}}
+void SkAiClient::OnAfterCreated(CefRefPtr<CefBrowser>b){browser_=b;if(ui_browser_&&tab_id_==-1){HWND hwnd=b->GetHost()->GetWindowHandle();SkAiSetFloatingAssistantHandle(hwnd);host_window_=hwnd;}if(!ui_browser_){SkAiNotifyTabState(tab_id_,L"Новая вкладка",b->GetMainFrame()->GetURL(),false);SkAiActivateTab(tab_id_);}}
 bool SkAiClient::DoClose(CefRefPtr<CefBrowser>){return false;}
-void SkAiClient::OnBeforeClose(CefRefPtr<CefBrowser>){browser_=nullptr;if(!ui_browser_)SkAiOnTabClosed(tab_id_);else if(IsWindow(host_window_))PostMessageW(host_window_,WM_APP+11,0,0);}
+void SkAiClient::OnBeforeClose(CefRefPtr<CefBrowser>){browser_=nullptr;if(!ui_browser_)SkAiOnTabClosed(tab_id_);else if(IsWindow(host_window_)){if(tab_id_==-1)SkAiSetFloatingAssistantHandle(nullptr);else PostMessageW(host_window_,WM_APP+11,0,0);}}
 void SkAiClient::OnAddressChange(CefRefPtr<CefBrowser>,CefRefPtr<CefFrame>f,const CefString&u){
  if(!f->IsMain())return;
  if(ui_browser_){auto v=CefValue::Create();v->SetString(u);auto json=CefWriteJSON(v,JSON_WRITER_DEFAULT);f->ExecuteJavaScript(L"window.skaiNative&&window.skaiNative.addressChanged("+json.ToWString()+L");",f->GetURL(),0);}
