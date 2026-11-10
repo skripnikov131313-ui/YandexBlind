@@ -28,7 +28,7 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [ ] Multiple profiles and isolated profile data.
 - [ ] Import/export of bookmarks and settings.
 - [ ] Find-in-page, print, zoom, fullscreen and developer tools.
-- [~] CEF permission prompts for camera, microphone, screen/audio capture, geolocation, notifications, clipboard and other supported permission types. Explicit allow/deny, optional remember-per-origin-and-type, saved decision list and revoke. Windows runtime validation and a broader site settings page remain open.
+- [~] CEF permission prompts for camera, microphone, screen/audio capture, geolocation, notifications, clipboard and other supported permission types. Explicit allow/deny, optional remember-per-origin-and-type, saved decision list and revoke. Windows runtime validation and integration with a full permissions/settings database remain open.
 
 ## 2. Search
 
@@ -122,4 +122,4 @@ The mode selector belongs next to the assistant composer.
 
 Native C++/Win32 + CEF shell with tabs/navigation controls, session restoration, bookmark folders/editing, local history, persistent download history, native permission prompts and remembered per-site permission management is implemented in source. The current CEF build uses the post-CEF-138 bootstrap architecture and explicitly refuses to start without the sandbox handle.
 
-JavaScript syntax and HTML-to-JS element-reference checks pass in the repository inspection. The Windows workflow has not yet produced a successful build artifact; its latest run is queued and no Windows compile/runtime result is claimed. No Windows runtime behavior is claimed as tested. Next gate: complete Windows CI build and native-window smoke test. After that: multiple profiles, extension compatibility, per-site permission management and browser settings, then integrate local AI.
+JavaScript syntax and HTML-to-JS element-reference checks pass in the repository inspection. The Windows workflow has not yet produced a successful build artifact; its latest run is queued and no Windows compile/runtime result is claimed. No Windows runtime behavior is claimed as tested. Next gate: complete Windows CI build and native-window smoke test. After that: multiple profiles, extension compatibility, cookie/cache/site-data controls and broader browser settings, then integrate local AI.
