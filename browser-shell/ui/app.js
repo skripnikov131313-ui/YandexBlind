@@ -282,6 +282,9 @@
       if (!tab && id !== 0) tab = createTabElement(id, info.title || "Новая вкладка");
       if (!tab) return;
       $(".tab-name", tab).textContent = info.title || "Новая вкладка";
+      tab.title = info.url || "";
+      tab.classList.toggle("loading", !!info.loading);
+      if (info.active && info.url) $("#addressInput").value = info.url;
       tabSequence = Math.max(tabSequence, id + 1);
     });
     $$(".tab").forEach(tab => {
