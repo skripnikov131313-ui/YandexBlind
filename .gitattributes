@@ -1,0 +1,13 @@
+# Keep Git patch files LF-only. Git's Windows autocrlf checkout otherwise
+# makes every added patch line look like trailing-whitespace to git apply.
+*.patch text eol=lf
+
+# Stable text formats for cross-platform source builds and CI.
+*.cc text eol=lf
+*.h text eol=lf
+*.gn text eol=lf
+*.gni text eol=lf
+*.ps1 text eol=lf
+*.yml text eol=lf
+*.json text eol=lf
+*.md text eol=lf
