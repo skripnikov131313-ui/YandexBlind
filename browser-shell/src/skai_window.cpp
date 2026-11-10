@@ -838,6 +838,7 @@ void SkAiActivateTab(int tab_id) {
   g_active_tab_id = tab_id;
   LayoutChildren();
   SendTabSnapshot();
+
   const auto active = g_tabs.find(tab_id);
   if (active != g_tabs.end()) {
     SkAiNotifyNavigationState(tab_id, active->second.can_go_back,
