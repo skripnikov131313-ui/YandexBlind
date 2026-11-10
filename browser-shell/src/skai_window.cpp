@@ -99,7 +99,8 @@ void SkAiNotifyTabState(int id,const std::wstring&t,const std::wstring&u,bool lo
  auto b=g_ui_client->GetBrowser();b->GetMainFrame()->ExecuteJavaScript(L"window.skaiNative&&window.skaiNative.updateTab("+std::to_wstring(id)+L","+j(t)+L","+j(u)+L","+(loading?L"true":L"false")+L");",b->GetMainFrame()->GetURL(),0);
 }
 void SkAiSetFloatingAssistantHandle(HWND hwnd){g_assistant_window=hwnd;if(IsWindow(hwnd)){SetWindowPos(hwnd,HWND_TOPMOST,0,0,480,760,SWP_NOMOVE|SWP_SHOWWINDOW);ShowWindow(hwnd,SW_SHOW);}}
-void SkAiNotifyTabFavicon(int id,const std::wstring&url){if(!g_ui_client||!g_ui_client->GetBrowser())return;auto v=CefValue::Create();v->SetString(url);auto j=CefWriteJSON(v,JSON_WRITER_DEFAULT).ToWString();auto b=g_ui_client->GetBrowser();b->GetMainFrame()->ExecuteJavaScript(L"window.skaiNative&&window.skaiNative.updateFavicon("+std::to_wstring(id)+L","+j+L");",b->GetMainFrame()->GetURL(),0);}\nvoid SkAiToggleFloatingAssistant(){
+void SkAiNotifyTabFavicon(int id,const std::wstring&url){if(!g_ui_client||!g_ui_client->GetBrowser())return;auto v=CefValue::Create();v->SetString(url);auto j=CefWriteJSON(v,JSON_WRITER_DEFAULT).ToWString();auto b=g_ui_client->GetBrowser();b->GetMainFrame()->ExecuteJavaScript(L"window.skaiNative&&window.skaiNative.updateFavicon("+std::to_wstring(id)+L","+j+L");",b->GetMainFrame()->GetURL(),0);}
+void SkAiToggleFloatingAssistant(){
  if(IsWindow(g_assistant_window)){ShowWindow(g_assistant_window,SW_SHOW);SetWindowPos(g_assistant_window,HWND_TOPMOST,0,0,0,0,SWP_NOMOVE|SWP_NOSIZE);return;}
  CefWindowInfo wi;wi.SetAsPopup(nullptr,L"Sk/Ai Assistant");CefBrowserSettings s;
  g_assistant_client=new SkAiClient(nullptr,-1,true);
