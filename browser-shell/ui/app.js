@@ -43,6 +43,9 @@
   let conversation = [];
   try { conversation = JSON.parse(localStorage.getItem(conversationKey) || "[]"); } catch (_) { conversation = []; }
   try { mode = localStorage.getItem(modeKey) || "local"; } catch (_) {}
+  let localAiState = "checking";
+  let localAiDetail = "Проверяем локальную модель…";
+  let localAiBusy = false;
 
   const systemTheme = window.matchMedia("(prefers-color-scheme: light)");
   function applyTheme() {
@@ -150,16 +153,38 @@
     notify("Помощник открыт в отдельном окне");
   });
 
+  function renderLocalAiStatus() {
+    const note = $("#modelFootnote");
+    const button = $("#installLocalModel");
+    const dot = $("#modelStatus");
+    const localMode = mode === "local";
+    if (note) {
+      note.textContent = localMode
+        ? localAiDetail
+        : "Облачная модель не подключена · передача отключена";
+    }
+    if (button) {
+      button.hidden = !localMode || localAiState === "ready";
+      button.disabled = ["checking", "downloading", "loading"].includes(localAiState);
+      button.textContent = localAiState === "downloading"
+        ? "Загрузка " + Math.max(0, Math.min(100, Number(button.dataset.progress || 0))) + "%"
+        : localAiState === "checking" ? "Проверка…"
+        : localAiState === "loading" ? "Запуск…"
+        : localAiState === "invalid" || localAiState === "error" || localAiState === "cancelled"
+          ? "Повторить установку" : "Установить · 1,3 ГБ";
+    }
+    if (dot) {
+      dot.classList.toggle("pending", !["ready"].includes(localAiState));
+      dot.classList.toggle("downloading", localAiState === "downloading" || localAiState === "loading");
+      dot.classList.toggle("ready", localAiState === "ready");
+      dot.classList.toggle("error", ["error", "invalid"].includes(localAiState));
+    }
+  }
   function applyAssistantMode(persist = false) {
     $$(".mode-option").forEach(button => {
       button.classList.toggle("active", button.dataset.mode === mode);
     });
-    const note = $("#modelFootnote");
-    if (note) {
-      note.textContent = mode === "local"
-        ? "Модель ещё не подключена · запросы не отправляются"
-        : "Облачная модель не подключена · передача отключена";
-    }
+    renderLocalAiStatus();
     const badge = $(".local-badge");
     if (badge) {
       badge.textContent = mode === "local" ? "LOCAL" : "CLOUD";
@@ -170,22 +195,29 @@
     }
   }
   applyAssistantMode();
+  $("#installLocalModel")?.addEventListener("click", () => window.skaiNative?.installLocalModel());
   $$(".mode-option").forEach(button => button.addEventListener("click", () => {
     mode = button.dataset.mode;
     applyAssistantMode(true);
     notify(mode === "local" ? "Выбран локальный ИИ" : "Выбрано облако. Передача данных пока отключена.");
   }));
 
-  function addMessage(kind, value) {
-    conversation.push({ role: kind, text: value });
-    conversation = conversation.slice(-200);
+  function persistConversation() {
     try { localStorage.setItem(conversationKey, JSON.stringify(conversation)); } catch (_) {}
+  }
+  function addMessage(kind, value, pending = false) {
+    const entry = { role: kind, text: value };
+    if (pending) entry.pending = true;
+    conversation.push(entry);
+    conversation = conversation.slice(-200);
+    persistConversation();
     const chat = $("#chatArea");
     $(".assistant-intro", chat)?.remove();
     $(".suggestion-list", chat)?.remove();
     const message = document.createElement("div");
     message.className = "chat-message " + kind;
     message.textContent = value;
+    if (pending) message.classList.add("pending");
     chat.append(message);
     chat.scrollTop = chat.scrollHeight;
   }
@@ -202,7 +234,7 @@
       conversation.forEach(item => {
         const message = document.createElement("div");
         message.className = "chat-message " + (item.role === "user" ? "user" : "assistant");
-        message.textContent = item.text || "";
+        message.textContent = item.pending ? "Запрос был прерван при закрытии браузера." : (item.text || "");
         chat.append(message);
       });
     } else {
@@ -226,14 +258,71 @@
       applyAssistantMode();
     }
   });
+  window.skaiNative.localAiStatus = (status, percent, detail) => {
+    localAiState = String(status || "error");
+    localAiDetail = String(detail || "Статус локальной модели обновлён.");
+    const button = $("#installLocalModel");
+    if (button) button.dataset.progress = String(Number(percent) || 0);
+    renderLocalAiStatus();
+  };
+  window.skaiNative.localAiResult = (requestId, text, isError) => {
+    localAiBusy = false;
+    const sendButton = $("#sendPrompt");
+    if (sendButton) sendButton.disabled = false;
+    let pendingIndex = -1;
+    for (let index = conversation.length - 1; index >= 0; index -= 1) {
+      if (conversation[index]?.role === "assistant" && conversation[index]?.pending) {
+        pendingIndex = index;
+        break;
+      }
+    }
+    const answer = String(text || (isError ? "Не удалось получить ответ локальной модели." : ""));
+    if (pendingIndex >= 0) {
+      conversation[pendingIndex].text = answer;
+      delete conversation[pendingIndex].pending;
+    } else {
+      conversation.push({ role: "assistant", text: answer });
+      conversation = conversation.slice(-200);
+    }
+    persistConversation();
+    renderConversation();
+    if (isError) notify(answer);
+  };
+
   function sendPrompt(value) {
     const prompt = value.trim();
-    if (!prompt) return;
-    addMessage("user", prompt);
-    addMessage("assistant", mode === "local"
-      ? "Это интерфейсный прототип Sk/Ai. На следующем этапе подключим локальную модель Qwen — сейчас запрос не отправляется модели."
-      : "Облачный режим выбран, но провайдер пока не подключён. Запрос и контекст не покидают устройство.");
+    if (!prompt || localAiBusy) return;
     $("#promptInput").value = "";
+    addMessage("user", prompt);
+
+    if (mode === "cloud") {
+      addMessage("assistant", "Облачный провайдер пока не подключён. Данные и контекст не отправлены.");
+      return;
+    }
+    if (localAiState !== "ready") {
+      addMessage("assistant", "Для локального ответа установите Qwen 3.5 2B в карточке модели. Запрос не отправлялся.");
+      return;
+    }
+    const messages = conversation
+      .filter(item => item && !item.pending && ["user", "assistant"].includes(item.role))
+      .slice(-20)
+      .map(item => ({ role: item.role, content: String(item.text || "") }));
+    addMessage("assistant", "Обрабатываю запрос локально…", true);
+    localAiBusy = true;
+    const sendButton = $("#sendPrompt");
+    if (sendButton) sendButton.disabled = true;
+    if (!window.skaiNative?.sendLocalAi) {
+      window.skaiNative?.localAiResult?.(0, "Нативный модуль локального ИИ не подключён.", true);
+      return;
+    }
+    const payload = {
+      model: "Qwen3.5-2B",
+      messages,
+      stream: false,
+      temperature: 0.7,
+      max_tokens: 1024
+    };
+    window.skaiNative.sendLocalAi(JSON.stringify(payload));
   }
   $("#sendPrompt")?.addEventListener("click", () => sendPrompt($("#promptInput").value));
   $("#promptInput")?.addEventListener("keydown", event => {
@@ -676,6 +765,7 @@
     profileGroup.append(profileNote);
     refreshProfileControls();
     window.skaiNative?.listProfiles();
+  window.skaiNative?.aiStatus();
   }
 
   function renderInternalView(type) {
