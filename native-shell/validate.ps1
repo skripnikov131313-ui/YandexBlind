@@ -19,7 +19,7 @@ foreach ($relative in $required) {
     }
 }
 
-foreach ($scriptName in @("bootstrap.ps1", "build.ps1", "validate.ps1")) {
+foreach ($scriptName in @("bootstrap.ps1", "build.ps1", "validate.ps1", "validate-patch.ps1")) {
     $path = Join-Path $PSScriptRoot $scriptName
     $tokens = $null
     $errors = $null
