@@ -29,12 +29,15 @@ class SkAiClient final : public CefClient,
   void OnFaviconURLChange(CefRefPtr<CefBrowser> browser,
       const std::vector<CefString>& icon_urls) override;
   CefRefPtr<CefBrowser> GetBrowser() const { return browser_; }
+  bool is_closing() const { return closing_; }
+  void RequestClose();
   int tab_id() const { return tab_id_; }
   bool is_ui_browser() const { return ui_browser_; }
  private:
   HWND host_window_ = nullptr;
   int tab_id_ = 0;
   bool ui_browser_ = false;
+  bool closing_ = false;
   CefRefPtr<CefBrowser> browser_;
   IMPLEMENT_REFCOUNTING(SkAiClient);
 };
