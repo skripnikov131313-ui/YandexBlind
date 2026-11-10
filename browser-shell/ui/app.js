@@ -188,16 +188,33 @@
     chat.append(message);
     chat.scrollTop = chat.scrollHeight;
   }
-  if (conversation.length) {
-    $(".assistant-intro", $("#chatArea"))?.remove();
-    $(".suggestion-list", $("#chatArea"))?.remove();
-    conversation.forEach(item => {
-      const message = document.createElement("div");
-      message.className = "chat-message " + (item.role === "user" ? "user" : "assistant");
-      message.textContent = item.text || "";
-      $("#chatArea").append(message);
-    });
+  const chatIntroTemplate = $(".assistant-intro", $("#chatArea"))?.cloneNode(true);
+  const chatSuggestionTemplate = $(".suggestion-list", $("#chatArea"))?.cloneNode(true);
+  function renderConversation() {
+    const chat = $("#chatArea");
+    if (!chat) return;
+    chat.querySelectorAll(".chat-message").forEach(message => message.remove());
+
+    if (conversation.length) {
+      $(".assistant-intro", chat)?.remove();
+      $(".suggestion-list", chat)?.remove();
+      conversation.forEach(item => {
+        const message = document.createElement("div");
+        message.className = "chat-message " + (item.role === "user" ? "user" : "assistant");
+        message.textContent = item.text || "";
+        chat.append(message);
+      });
+    } else {
+      if (!$(".assistant-intro", chat) && chatIntroTemplate) {
+        chat.prepend(chatIntroTemplate.cloneNode(true));
+      }
+      if (!$(".suggestion-list", chat) && chatSuggestionTemplate) {
+        chat.append(chatSuggestionTemplate.cloneNode(true));
+      }
+    }
+    chat.scrollTop = chat.scrollHeight;
   }
+  renderConversation();
   function sendPrompt(value) {
     const prompt = value.trim();
     if (!prompt) return;
@@ -214,10 +231,12 @@
       sendPrompt(event.currentTarget.value);
     }
   });
-  $$(".suggestion").forEach(button => button.addEventListener("click", () => {
+  $("#chatArea")?.addEventListener("click", event => {
+    const button = event.target.closest(".suggestion");
+    if (!button) return;
     $("#promptInput").value = button.dataset.prompt || "";
     $("#promptInput").focus();
-  }));
+  });
   $("#sharePage")?.addEventListener("click", () => notify("Передача страницы появится после подключения браузерного движка"));
 
   function syncProvider() {
