@@ -1,0 +1,79 @@
+diff --git a/chrome/browser/ui/views/toolbar/toolbar_view.cc b/chrome/browser/ui/views/toolbar/toolbar_view.cc
+index f9bb38f92374559f70077dfcb24c2010d1b7efba..0000000000000000000000000000000000000000 100644
+--- a/chrome/browser/ui/views/toolbar/toolbar_view.cc
++++ b/chrome/browser/ui/views/toolbar/toolbar_view.cc
+@@ -60,3 +60,5 @@
+ #include "chrome/browser/ui/side_panel/side_panel_entry_id.h"
++#include "chrome/browser/ui/side_panel/side_panel_entry_key.h"
++#include "chrome/browser/ui/side_panel/side_panel_ui.h"
+ #include "chrome/browser/ui/tabs/public/tab_features.h"
+ #include "chrome/browser/ui/tabs/tab_strip_model.h"
+@@ -155,3 +157,5 @@
+ #include "content/public/browser/render_view_host.h"
+ #include "content/public/browser/web_contents.h"
++#include "extensions/browser/extension_registry.h"
++#include "extensions/common/extension.h"
+ #include "third_party/skia/include/core/SkPath.h"
+@@ -486,8 +490,29 @@
+   if (location_bar_view) {
+     location_bar_view_ = AddChildView(std::move(location_bar_view));
+     location_bar_ = location_bar_view_;
+   } else {
+     location_bar_ = toolbar_webview_->GetLocationBar();
+   }
+ 
++  // The native browser toolbar opens the Sk/Ai extension in Chromium's
++  // docked side panel. The fixed extension key keeps this independent from
++  // transient unpacked-extension IDs.
++  skai_assistant_button_ = AddChildView(std::make_unique<ToolbarButton>(
++      base::BindRepeating(
++          [](BrowserWindowInterface* browser) {
++            auto* extension_registry =
++                extensions::ExtensionRegistry::Get(browser->GetProfile());
++            if (!extension_registry) {
++              return;
++            }
++            const extensions::Extension* extension =
++                extension_registry->GetExtensionById(
++                    "ggpogknlgefbmnlahkjmchoioahcpmkk",
++                    extensions::ExtensionRegistry::ENABLED);
++            if (!extension) {
++              return;
++            }
++            auto* side_panel = SidePanelUI::From(browser);
++            if (!side_panel) {
++              return;
++            }
++            side_panel->Show(SidePanelEntryKey(
++                SidePanelEntryId::kExtension, extension->id()));
++          },
++          browser_)));
++  skai_assistant_button_->SetText(u"✦");
++  skai_assistant_button_->SetTooltipText(u"Sk/Ai Assistant");
++  skai_assistant_button_->SetProperty(views::kMarginsKey,
++                                      gfx::Insets::VH(0, 5));
++
+   bool is_glic_left_of_profile =
+       features::kGlicToolbarButtonLocationParam.Get() ==
+           features::GlicToolbarButtonLocation::kLeftOfProfileChip ||
+diff --git a/chrome/browser/ui/views/toolbar/toolbar_view.h b/chrome/browser/ui/views/toolbar/toolbar_view.h
+index 50e546251e9f8021683a6929593205daefbb0596..0000000000000000000000000000000000000000 100644
+--- a/chrome/browser/ui/views/toolbar/toolbar_view.h
++++ b/chrome/browser/ui/views/toolbar/toolbar_view.h
+@@ -411,4 +411,5 @@
+   // view hierarchy.
+   raw_ptr<ToolbarButton> contextual_tasks_button_ = nullptr;
++  raw_ptr<ToolbarButton> skai_assistant_button_ = nullptr;
+   raw_ptr<ToolbarButton> back_ = nullptr;
+   raw_ptr<ToolbarButton> forward_ = nullptr;
+   raw_ptr<ReloadButton> reload_ = nullptr;
+diff --git a/chrome/browser/ui/views/toolbar/BUILD.gn b/chrome/browser/ui/views/toolbar/BUILD.gn
+index 21df5f091c8e7202651fa792f04d644ad8306660..0000000000000000000000000000000000000000 100644
+--- a/chrome/browser/ui/views/toolbar/BUILD.gn
++++ b/chrome/browser/ui/views/toolbar/BUILD.gn
+@@ -350,4 +350,5 @@
+     "//content/public/browser",
++    "//extensions/browser",
+     "//extensions/browser/api/feedback_private",
+     "//extensions/common",
+     "//media",
