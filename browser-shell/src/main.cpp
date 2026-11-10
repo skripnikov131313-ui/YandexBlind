@@ -38,12 +38,14 @@ int RunSkAi(HINSTANCE instance, int show_command, void* sandbox_info) {
   PWSTR local = nullptr;
   if (SUCCEEDED(SHGetKnownFolderPath(
           FOLDERID_LocalAppData, KF_FLAG_CREATE, nullptr, &local))) {
-    const auto profile =
-        std::filesystem::path(local) / L"SkAi" / L"Profiles" / L"Default";
+    const auto app_data = std::filesystem::path(local) / L"SkAi";
+    const auto profile = app_data / L"Profiles" / L"Default";
     std::error_code filesystem_error;
-    std::filesystem::create_directories(profile, filesystem_error);
+    std::filesystem::create_directories(profile / L"Cache", filesystem_error);
     if (!filesystem_error) {
-      CefString(&settings.root_cache_path) = profile.wstring();
+      // root_cache_path is shared by every named RequestContext. Each profile
+      // cache_path must be a child of this root directory.
+      CefString(&settings.root_cache_path) = app_data.wstring();
       CefString(&settings.cache_path) = (profile / L"Cache").wstring();
       settings.persist_session_cookies = true;
       settings.persist_user_preferences = true;
