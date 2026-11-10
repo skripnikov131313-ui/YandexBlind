@@ -543,6 +543,20 @@
   $("#newTab")?.addEventListener("click", () => createTab("about:blank"));
   window.skaiNative = window.skaiNative || {};
   window.skaiNative.addressChanged = url => { $("#addressInput").value = url; syncBookmarkButton(); };
+  function persistBrowserSession() {
+    const tabs = $(".tab")
+      .filter(tab => Number(tab.dataset.tabId || 0) !== 0)
+      .map(tab => ({
+        title: $(".tab-name", tab)?.textContent || tab.title || "",
+        url: tab.title || "",
+        active: tab.classList.contains("active")
+      }))
+      .filter(item => /^https?:\/\//i.test(item.url));
+    tabs.sort((a, b) => Number(a.active) - Number(b.active));
+    try { localStorage.setItem(sessionKey, JSON.stringify(tabs.slice(-50))); }
+    catch (_) {}
+  }
+
   window.skaiNative.syncTabs = tabs => {
     const nativeIds = new Set(tabs.map(info => Number(info.id)));
     tabs.forEach(info => {
@@ -572,14 +586,7 @@
       syncBookmarkButton();
     }
 
-    // Save non-home tabs; order the active tab last so it is restored active.
-    const orderedTabs = tabs.filter(info => !info.active)
-      .concat(tabs.filter(info => info.active));
-    const session = orderedTabs
-      .filter(info => typeof info.url === "string" && /^https?:\/\//i.test(info.url))
-      .slice(-50)
-      .map(info => ({ title: info.title || info.url, url: info.url }));
-    try { localStorage.setItem(sessionKey, JSON.stringify(session)); } catch (_) {}
+    persistBrowserSession();
   };
   window.skaiNative.downloadUpdated = item => {
     if (!item || !Number.isFinite(Number(item.id))) return;
@@ -604,6 +611,7 @@
     $(".tab-name", tab).textContent = title || "Новая вкладка";
     tab.title = url || "";
     tab.classList.toggle("loading", !!loading);
+    persistBrowserSession();
     if (tab.classList.contains("active")) {
       $("#addressInput").value = url || "";
       syncBookmarkButton();
