@@ -1,57 +1,57 @@
-# Windows source build prerequisites
+# Upstream Chromium Windows Source Build
 
-The native shell is built inside Chromium-Gost's source tree. This is separate from the existing lightweight packaging workflow.
+The native Sk/Ai browser is developed by modifying upstream Chromium. No Chromium-Gost repository or GOST/CryptoPro patch layer is used.
 
-## Machine
+## Build host
 
-- Windows 11 x64 on an NTFS volume.
-- 120 GB free disk space recommended for the workspace (Chromium documentation currently lists at least 100 GB).
-- More than 16 GB RAM strongly recommended; 32 GB is a safer practical target for builds.
-- Visual Studio 2026 (18.x) with Desktop development with C++, MSVC x64/x86 tools and a Windows SDK.
-- Git for Windows.
-- Python supplied/managed by depot_tools.
-- 7-Zip at the default upstream build-script path, or adjust the generated private environment file.
+- Windows 11 x64 on NTFS.
+- At least 100 GB free disk; 120 GB is the bootstrap safety threshold.
+- 8 GB RAM is the documented minimum; more than 16 GB is highly recommended. 32 GB is preferable for practical builds.
+- Visual Studio 2026 (18.x) with Desktop development with C++, MSVC x64/x86 tools and MFC/ATL support.
+- Git for Windows and depot_tools.
+- A short workspace path without spaces, such as D:\SkAiBuild.
 
-The 8 GB target computer is the runtime target, not the intended compilation machine.
+The 8 GB everyday computer is the intended runtime target, not the recommended Chromium compilation host.
 
-## Workspace
+## Bootstrap
 
-Use a short path without spaces, for example:
+Run from PowerShell:
 
-    D:\SkAiBuild
-    ├── depot_tools
-    ├── chromium
-    │   └── src
-    └── Chromium-Gost
+    pwsh -File .\native-shell\bootstrap.ps1 -Workspace D:\SkAiBuild -ChromiumRef 156.0.8078.88 -InitializeChromiumCheckout
 
-The upstream Windows scripts contain unquoted legacy batch variables and expect a path without spaces. The bootstrap script enforces this to avoid path-splitting failures.
+This clones depot_tools, checks out the upstream Chromium source, pins tag 156.0.8078.88, synchronizes DEPS and verifies chrome/VERSION.
 
-## Initial source checkout
+The initial Chromium source download is large. Do not run it on a disk with less than the required free space.
 
-The first source download is large. It is explicit; do not run it on the user's 8 GB daily-use computer.
+## Compile pristine Chromium baseline
 
-    pwsh -File .\native-shell\bootstrap.ps1 -Workspace D:\SkAiBuild -ChromiumGostRef 156.0.8078.88 -InitializeChromiumCheckout
+    pwsh -File .\native-shell\build.ps1 -Workspace D:\SkAiBuild -ChromiumRef 156.0.8078.88 -BaselineOnly
 
-This clones the pinned Chromium-Gost source/patch repository and depot_tools. It then uses depot_tools' fetch chromium to create the Chromium source checkout. The upstream prepare script subsequently checks out the pinned Chromium tag and synchronizes dependencies.
+The baseline compiles unmodified upstream Chromium. It is a build-host check, not a Sk/Ai release.
 
-## Prepare source and compile upstream baseline
+## Compile the Sk/Ai patch overlay
 
-    pwsh -File .\native-shell\build.ps1 -Workspace D:\SkAiBuild -ChromiumGostRef 156.0.8078.88 -BaselineOnly
+Once the ordered Sk/Ai patch series passes CI:
 
-This runs upstream chromium-gost-prepare.bat and chromium-gost-build-release.bat. It produces an upstream Chromium-Gost baseline with the Sk/Ai source branch's current UI patches (none yet). It is a baseline artifact, not a finished Sk/Ai browser.
+    pwsh -File .\native-shell\build.ps1 -Workspace D:\SkAiBuild -ChromiumRef 156.0.8078.88
 
-Once native patch files exist in native-shell/patches/*.patch, omit -BaselineOnly to apply them before compilation.
+The script applies patches in lexical order, generates GN files with an x64 release-like configuration, builds the Chromium chrome target with autoninja and packages the runtime output folder as a ZIP.
+
+The resulting package is still an engineering build. It is not a signed installer, and the assistant/model integration must pass its own gates before it can be called a usable browser.
 
 ## Remote build runner
 
-The GitHub Actions workflow supports a manually configured self-hosted Windows runner labelled:
+The GitHub Actions workflow supports a privately configured self-hosted runner labelled:
 
-self-hosted, windows, x64, skai-chromium-large
+    self-hosted, windows, x64, skai-chromium-large
 
-The runner must satisfy the machine requirements above and have permission to access GitHub and the upstream Chromium source/dependency hosts. Configure it privately; do not store source tree credentials or CSP keys in repository secrets.
+The runner must have the disk, RAM, Visual Studio and network access required by Chromium. Do not put personal certificate stores, signing keys or user profile data on the runner.
 
-A standard hosted Windows runner is suitable for lint and small CI checks, but not for a complete Chromium checkout/build on a 14 GB-class runner disk.
+Hosted Windows runners are used for JavaScript syntax checks, PowerShell parsing and exact-source patch apply-checks. They are not assumed to have enough disk space for a full Chromium source checkout and build.
 
-## Version discipline
+## Reproducibility
 
-The current project distribution and this first source-build branch are pinned to Chromium-Gost 156.0.8078.88. The upstream repository's default branch can advance independently. Never replace the pin with master or latest in a reproducible build.
+- The Chromium tag is pinned in native-shell scripts and the CI patch validator.
+- The exact chrome/VERSION file is checked before GN generation.
+- Sk/Ai patch files remain separate, ordered and reviewed.
+- Updating the Chromium version requires checking all patch contexts and CI before changing the pin.
