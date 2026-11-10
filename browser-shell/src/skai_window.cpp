@@ -29,6 +29,8 @@ struct Tab {
   bool can_go_back = false;
   bool can_go_forward = false;
   bool is_loading = false;
+  std::wstring title = L"Новая вкладка";
+  std::wstring url;
 };
 std::map<int, Tab> g_tabs;
 
@@ -104,19 +106,24 @@ void SendTabSnapshot() {
     return;
   }
 
+  const auto json_string = [](const std::wstring& value) {
+    auto cef_value = CefValue::Create();
+    cef_value->SetString(value);
+    return CefWriteJSON(cef_value, JSON_WRITER_DEFAULT).ToWString();
+  };
+
   std::wstring json = L"[";
   for (auto it = g_tabs.begin(); it != g_tabs.end(); ++it) {
     if (it != g_tabs.begin()) {
       json += L",";
     }
 
-    auto title = CefValue::Create();
-    title->SetString(L"Вкладка " + std::to_wstring(it->first));
-
-    json += L"{\"id\":" + std::to_wstring(it->first) +
-            L",\"active\":" + (it->second.active ? L"true" : L"false") +
-            L",\"title\":" +
-            CefWriteJSON(title, JSON_WRITER_DEFAULT).ToWString() + L"}";
+    const auto& tab = it->second;
+    json += L"{\"id\":" + std::to_wstring(tab.id) +
+            L",\"active\":" + (tab.active ? L"true" : L"false") +
+            L",\"loading\":" + (tab.is_loading ? L"true" : L"false") +
+            L",\"title\":" + json_string(tab.title) +
+            L",\"url\":" + json_string(tab.url) + L"}";
   }
   json += L"]";
 
@@ -279,6 +286,7 @@ void SkAiCreateTab(const std::wstring& url, bool activate) {
   tab.id = id;
   tab.client = new SkAiClient(g_window, id, false);
   tab.active = activate;
+  tab.url = url;
 
   if (activate) {
     for (auto& [existing_id, existing_tab] : g_tabs) {
@@ -411,7 +419,18 @@ void SkAiSetContentBounds(int x, int y, int width, int height) {
 
 void SkAiNotifyTabState(int tab_id, const std::wstring& title,
                         const std::wstring& url, bool loading) {
-  if (g_close_requested || !g_ui_client || !g_ui_client->GetBrowser()) {
+  if (g_close_requested) {
+    return;
+  }
+
+  const auto tab = g_tabs.find(tab_id);
+  if (tab != g_tabs.end()) {
+    if (!title.empty()) tab->second.title = title;
+    if (!url.empty()) tab->second.url = url;
+    tab->second.is_loading = loading;
+  }
+
+  if (!g_ui_client || !g_ui_client->GetBrowser()) {
     return;
   }
 
