@@ -102,3 +102,19 @@ body[data-theme=light] .settings-select{background:rgba(255,255,255,.75);color:#
 body[data-theme=light] .settings-note{background:rgba(255,255,255,.56);color:#566787}
 body.reduced-motion *,body.reduced-motion *::before,body.reduced-motion *::after{animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important;scroll-behavior:auto!important}
 @media(max-width:650px){.settings-group{padding:14px}.settings-field{align-items:flex-start;flex-direction:column}.settings-select{max-width:none;width:100%}.settings-checkbox{align-self:flex-start}}
+
+
+.permission-prompts{position:absolute;z-index:20;top:72px;left:12px;right:12px;display:flex;flex-direction:column;gap:9px;max-height:55%;overflow:auto;padding:2px 3px}
+.permission-prompt-card{padding:14px;border:1px solid rgba(100,218,202,.45);border-radius:14px;background:linear-gradient(145deg,rgba(21,40,71,.98),rgba(24,28,63,.98));box-shadow:0 14px 36px rgba(0,0,0,.4)}
+.permission-prompt-card>b{display:block;font:700 12px Manrope,sans-serif;color:#f3f5ff}
+.permission-prompt-origin{margin-top:7px;color:#81dfd2;font-size:10px;overflow-wrap:anywhere}
+.permission-prompt-card p{margin:8px 0 4px;color:#d5def3;font-size:10px;line-height:1.55}
+.permission-prompt-card small{display:block;margin-top:7px;color:#a6b4d2;font-size:9px;line-height:1.45}
+.permission-prompt-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:12px}
+.permission-prompt-actions button{min-width:80px;height:32px;border-radius:9px;font-size:10px}
+.permission-deny{border:1px solid rgba(255,154,174,.35);background:rgba(160,65,100,.2);color:#ffdce4}
+.permission-allow{border:1px solid rgba(94,220,196,.55);background:linear-gradient(120deg,rgba(35,160,139,.55),rgba(55,119,154,.52));color:#eafffa}
+body[data-theme=light] .permission-prompt-card{background:rgba(245,249,255,.98);border-color:rgba(41,158,144,.4)}
+body[data-theme=light] .permission-prompt-card>b{color:#273454}
+body[data-theme=light] .permission-prompt-card p{color:#455777}
+body[data-theme=light] .permission-prompt-card small{color:#71809c}
