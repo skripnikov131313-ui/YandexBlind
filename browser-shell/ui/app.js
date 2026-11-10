@@ -188,6 +188,20 @@
       if (info.active) activateTab(tab);
     });
   };
+  window.skaiNative.updateFavicon = (id, url) => {
+    const tab = $('.tab[data-tab-id="' + id + '"]');
+    if (!tab || !/^https?:\\/\\//i.test(url)) return;
+    const icon = $(".tab-favicon", tab);
+    if (!icon) return;
+    const image = document.createElement("img");
+    image.alt = "";
+    image.width = 16;
+    image.height = 16;
+    image.referrerPolicy = "no-referrer";
+    image.src = url;
+    image.onerror = () => { image.remove(); };
+    icon.replaceChildren(image);
+  };
   window.skaiNative.updateTab = (id, title, url, loading) => {
     const tab = $('.tab[data-tab-id="' + id + '"]');
     if (!tab) return;
