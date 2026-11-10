@@ -70,7 +70,7 @@ The scripts here:
 - apply Sk/Ai patches from native-shell/patches/*.patch;
 - optionally build the upstream baseline for comparison.
 
-The first milestone is reproducible source preparation and baseline build. The native UI patch series is deliberately separate and must be introduced in small, reviewable, compile-tested steps.
+The first milestone is reproducible source preparation and baseline build. The first native Soft Aurora color-mixer patch is now in native-shell/patches/0001-skai-native-color-pipeline.patch. Its hunk contexts and ColorIds were cross-checked against the pinned source; CI performs git apply --check. It is not yet compiled or runtime-validated. Further native UI patches will be introduced in small, reviewable, compile-tested steps.
 
 ## Current state
 
@@ -81,7 +81,7 @@ The first milestone is reproducible source preparation and baseline build. The n
 - [x] Bootstrap/build/validation scripts added.
 - [ ] Full Chromium source checkout on a large Windows build machine.
 - [ ] Baseline Chromium-Gost source build.
-- [ ] First Sk/Ai Views/color patch.
+- [x] First Sk/Ai ColorProvider patch added for Chromium 156 (apply-check pending CI; compilation not yet run).
 - [ ] Native docked assistant registration.
 - [ ] Floating Windows assistant and Always-on-Top option.
 - [ ] Windows 11 integration and performance validation.
