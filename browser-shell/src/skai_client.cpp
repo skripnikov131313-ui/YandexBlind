@@ -195,6 +195,14 @@ void SkAiClient::OnAddressChange(CefRefPtr<CefBrowser> /*browser*/,
   }
 }
 
+void SkAiClient::OnLoadingStateChange(
+    CefRefPtr<CefBrowser> browser, bool is_loading, bool can_go_back,
+    bool can_go_forward) {
+  if (!ui_browser_) {
+    SkAiNotifyNavigationState(tab_id_, can_go_back, can_go_forward, is_loading);
+  }
+}
+
 void SkAiClient::OnTitleChange(CefRefPtr<CefBrowser> /*browser*/,
                                const CefString& title) {
   if (ui_browser_ || !browser_) {
