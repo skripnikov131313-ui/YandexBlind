@@ -1,0 +1,48 @@
+name: Sk/Ai Native Shell
+
+on:
+  push:
+    branches:
+      - feature/skai-native-shell
+    paths:
+      - "browser-shell/**"
+      - ".github/workflows/native-shell-windows.yml"
+  pull_request:
+    paths:
+      - "browser-shell/**"
+      - ".github/workflows/native-shell-windows.yml"
+  workflow_dispatch:
+
+jobs:
+  windows-x64:
+    runs-on: windows-2022
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download pinned CEF distribution
+        shell: pwsh
+        run: |
+          $version = "154.0.34+g14c5a08+chromium-154.0.8037.98"
+          $archive = "cef_binary_$($version)_windows64.tar.bz2"
+          $base = "https://cef-builds.spotifycdn.com/$archive"
+          $encoded = $base.Replace("+", "%2B")
+          $folder = Join-Path $env:RUNNER_TEMP "cef"
+          New-Item -ItemType Directory -Force -Path $folder | Out-Null
+          $archivePath = Join-Path $folder $archive
+          Invoke-WebRequest -Uri "$encoded.sha1" -OutFile "$archivePath.sha1"
+          Invoke-WebRequest -Uri $encoded -OutFile $archivePath
+          $expected = (Get-Content "$archivePath.sha1" -Raw).Trim().Split(" ")[0].ToLowerInvariant()
+          $actual = (Get-FileHash $archivePath -Algorithm SHA1).Hash.ToLowerInvariant()
+          if ($expected -ne $actual) { throw "CEF SHA-1 verification failed." }
+          tar -xjf $archivePath -C $folder
+          $cefRoot = Join-Path $folder "cef_binary_$($version)_windows64"
+          "CEF_ROOT=$cefRoot" | Out-File -FilePath $env:GITHUB_ENV -Append
+          "CEF_ROOT=$cefRoot" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Configure native shell
+        run: cmake -S browser-shell -B build/skai -A x64 -DCEF_ROOT="$env:CEF_ROOT"
+
+      - name: Build native shell
+        run: cmake --build build/skai --config Release --parallel 2
