@@ -504,7 +504,7 @@
     $(".tab").forEach(tab => {
       if (Number(tab.dataset.tabId || 0) !== 0) tab.remove();
     });
-    tabSequence = 1;
+    // Tab IDs are assigned by the native CEF host; there is no JS counter.
     setActiveTabUi(homeTab);
     window.skaiNative?.activateTab(0);
     const restore = sessionToRestore.slice();
