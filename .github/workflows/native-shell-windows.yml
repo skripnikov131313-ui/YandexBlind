@@ -102,7 +102,9 @@ jobs:
             "-DGGML_OPENMP=OFF",
             "-DGGML_CUDA=OFF",
             "-DGGML_VULKAN=OFF",
-            "-DBUILD_SHARED_LIBS=ON"
+            "-DBUILD_SHARED_LIBS=ON",
+            "-DGGML_BACKEND_DL=ON",
+            "-DGGML_CPU_ALL_VARIANTS=ON"
           )
           & cmake @cmakeArgs
           if ($LASTEXITCODE -ne 0) { throw "llama.cpp CMake configuration failed." }
@@ -129,6 +131,11 @@ jobs:
 
           $packagedServer = Join-Path $runtime "llama-server.exe"
           if (!(Test-Path $packagedServer)) { throw "Could not package llama-server.exe." }
+          $cpuBackends = Get-ChildItem $runtime -Filter "ggml-cpu-*.dll" -File
+          if (!$cpuBackends -or $cpuBackends.Count -lt 2) {
+            throw "Runtime-dispatched CPU backend variants were not packaged."
+          }
+          Get-ChildItem $cpuBackends | Select-Object Name, Length
           & $packagedServer --version
           if ($LASTEXITCODE -ne 0) { throw "Packaged llama-server could not start." }
           Get-ChildItem $runtime -File | Select-Object Name, Length
@@ -152,7 +159,9 @@ jobs:
             "chrome_200_percent.pak",
             "runtime/llama/llama-server.exe",
             "runtime/llama/LICENSE-llama.cpp.txt",
-            "runtime/llama/BUILD-INFO.txt"
+            "runtime/llama/BUILD-INFO.txt",
+            "runtime/llama/ggml-cpu-x64.dll",
+            "runtime/llama/ggml-cpu-sse42.dll"
           )
           foreach ($item in $required) {
             $path = Join-Path $bin $item
