@@ -258,6 +258,43 @@
     }
   }
 
+  async function toggleWindowMode() {
+    const button = $("window-mode");
+    if (busy) { toast("Дождись завершения ответа, затем меняй расположение панели."); return; }
+    button.disabled = true;
+    try {
+      const current = await chrome.windows.getCurrent();
+      const isFloating = new URLSearchParams(location.search).get("window") === "floating" || current.type === "popup";
+      await persistState();
+
+      if (!isFloating) {
+        const popup = await chrome.windows.create({
+          url: chrome.runtime.getURL("sidepanel.html?window=floating"),
+          type: "popup",
+          width: 440,
+          height: 760,
+          focused: true
+        });
+        if (chrome.sidePanel?.close && current.id != null) {
+          try { await chrome.sidePanel.close({ windowId: current.id }); } catch (error) {
+            console.debug("Side panel close is unavailable in this Chromium build:", error);
+          }
+        }
+        if (!popup?.id) toast("Не удалось открыть отдельное окно Sk/Ai.");
+      } else {
+        const browserWindow = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
+        if (browserWindow?.id == null) throw new Error("Не найдено обычное окно браузера для закрепления.");
+        if (!chrome.sidePanel?.open) throw new Error("Chromium не предоставляет API закреплённой панели.");
+        await chrome.sidePanel.open({ windowId: browserWindow.id });
+        await chrome.windows.remove(current.id);
+      }
+    } catch (error) {
+      toast("Не удалось изменить расположение: " + error.message);
+    } finally {
+      button.disabled = false;
+    }
+  }
+
   async function startNewChat() {
     if (busy) return;
     history = [];
@@ -284,6 +321,7 @@
     if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); }
   });
   $("new-chat").addEventListener("click", startNewChat);
+  $("window-mode").addEventListener("click", toggleWindowMode);
   document.querySelectorAll("[data-prompt]").forEach((button) => {
     button.addEventListener("click", () => { $("prompt").value = button.dataset.prompt; $("prompt").focus(); });
   });
@@ -312,6 +350,11 @@
   });
 
   (async () => {
+    const isFloating = new URLSearchParams(location.search).get("window") === "floating";
+    document.body.classList.toggle("floating-window", isFloating);
+    $("window-mode").innerHTML = isFloating ? "▣ <span>ЗАКРЕПИТЬ</span>" : "↗ <span>ОКНО</span>";
+    $("window-mode").title = isFloating ? "Закрепить в правой панели браузера" : "Открыть отдельным плавающим окном";
+    $("window-mode").setAttribute("aria-label", isFloating ? "Закрепить в браузере" : "Открыть отдельным окном");
     applyAppearance();
     await restoreState();
     if (!history.length) setMode("local", false);
