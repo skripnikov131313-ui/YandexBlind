@@ -1,13 +1,49 @@
 {
   "manifest_version": 3,
   "name": "Sk/Ai Start",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Privacy-focused start page with local Qwen assistant, tracker filtering and configurable search.",
-  "permissions": ["declarativeNetRequest", "privacy", "storage"],
-  "host_permissions": ["http://127.0.0.1:8765/*"],
-  "declarative_net_request": {"rule_resources": [{"id": "privacy_filters", "enabled": true, "path": "rules/privacy_filters.json"}]},
+  "permissions": [
+    "declarativeNetRequest",
+    "privacy",
+    "storage",
+    "sidePanel",
+    "scripting",
+    "activeTab"
+  ],
+  "host_permissions": [
+    "http://127.0.0.1:8765/*"
+  ],
+  "declarative_net_request": {
+    "rule_resources": [
+      {
+        "id": "privacy_filters",
+        "enabled": true,
+        "path": "rules/privacy_filters.json"
+      }
+    ]
+  },
   "content_security_policy": {
     "extension_pages": "script-src 'self'; object-src 'self'; connect-src 'self' http://127.0.0.1:8765"
   },
-  "chrome_url_overrides": {"newtab": "newtab.html"}
+  "chrome_url_overrides": {
+    "newtab": "newtab.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_title": "Открыть Sk/Ai Assistant"
+  },
+  "side_panel": {
+    "default_path": "sidepanel.html"
+  },
+  "commands": {
+    "toggle-skai-panel": {
+      "suggested_key": {
+        "default": "Alt+Shift+S"
+      },
+      "description": "Открыть боковую панель Sk/Ai"
+    }
+  }
 }
