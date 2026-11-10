@@ -9,7 +9,7 @@
 - Assistant: docked in the main UI; detach creates a separate native CEF popup with Windows topmost behavior. The popup can be closed to redock.
 - Local AI: Qwen GGUF through a separately managed llama.cpp service, planned but not integrated.
 - Cloud AI: placeholder only; no provider is connected and no prompts/page content are sent.
-- Persistence: browser profile is located under `%LOCALAPPDATA%/SkAi/Profiles/Default`. Bookmarks and bookmark folders, history, download metadata, last-open HTTP(S) tabs and assistant conversation state are stored in the UI CEF profile. Cross-session behavior still requires Windows runtime validation.
+- Persistence: browser profile is located under `%LOCALAPPDATA%/SkAi/Profiles/Default`. Bookmarks and bookmark folders, history, download metadata, last-open HTTP(S) tabs and assistant conversation state are stored in the UI CEF profile. Remembered per-origin permission decisions are stored in `permissions.json` in the same profile and atomically replaced on updates. Cross-session behavior still requires Windows runtime validation.
 
 ## CEF version and sandbox
 
@@ -34,7 +34,7 @@ cmake -S browser-shell -B out/skai -A x64 -DCEF_ROOT="$env:CEF_ROOT" -DUSE_SANDB
 cmake --build out/skai --config Release --parallel 2
 ```
 
-The packaged output is written to `out/skai/bin/Release`. It contains `SkAi.exe` (CEF bootstrap), `SkAi.dll` (Sk/Ai client), CEF runtime DLLs, resource packs, `locales/` and the local `ui/` directory. Downloads are written to the user Downloads folder under `SkAi`; only paths resolving inside that managed directory can be opened from persisted download history.
+The packaged output is written to `out/skai/bin/Release`. It contains `SkAi.exe` (CEF bootstrap), `SkAi.dll` (Sk/Ai client), CEF runtime DLLs, resource packs, `locales/` and the local `ui/` directory. Downloads are written to the user Downloads folder under `SkAi`; only paths resolving inside that managed directory can be opened from persisted download history. CEF permission requests are mediated by the native permission handler; decisions are explicit, optional to remember per origin and permission mask, and revocable from Settings.
 
 ## CI
 
