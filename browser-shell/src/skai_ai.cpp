@@ -1,10 +1,12 @@
-#include "skai_ai.h"
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <windows.h>
 
+#include "skai_ai.h"
 #include "include/cef_task.h"
 #include "include/cef_parser.h"
 #include "include/cef_values.h"
 
-#include <windows.h>
 #include <winhttp.h>
 #include <bcrypt.h>
 #include <shlobj.h>
@@ -18,6 +20,9 @@
 #include <condition_variable>
 #include <cstdint>
 #include <filesystem>
+#include <functional>
+#include <chrono>
+#include <utility>
 #include <mutex>
 #include <string>
 #include <thread>
@@ -227,22 +232,16 @@ bool HashFileSha256(const std::filesystem::path& path, std::string& digest,
     std::array<UCHAR, 1024 * 1024> buffer{};
     std::uint64_t total = 0;
     DWORD read = 0;
-    while (ReadFile(file, buffer.data(),
-                    static_cast<DWORD>(buffer.size()), &read, nullptr) &&
-           read > 0) {
+    while (true) {
+      if (!ReadFile(file, buffer.data(),
+                    static_cast<DWORD>(buffer.size()), &read, nullptr)) {
+        goto cleanup;
+      }
+      if (read == 0) break;
       if (BCryptHashData(hash, buffer.data(), read, 0) < 0) goto cleanup;
       total += read;
       if (progress) progress(total);
       if (g_shutting_down.load()) goto cleanup;
-    }
-    if (GetLastError() != ERROR_HANDLE_EOF) {
-      // ReadFile returns false with ERROR_HANDLE_EOF only for certain handles;
-      // a zero-byte successful read is also a normal end-of-file.
-      DWORD size_high = 0;
-      const DWORD size_low = GetFileSize(file, &size_high);
-      if (size_low == INVALID_FILE_SIZE && GetLastError() != NO_ERROR) {
-        goto cleanup;
-      }
     }
   }
 
