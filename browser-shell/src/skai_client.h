@@ -10,16 +10,25 @@
 #include "include/cef_life_span_handler.h"
 #include "include/cef_display_handler.h"
 #include "include/cef_load_handler.h"
+#include "include/cef_download_handler.h"
 
 class SkAiClient final : public CefClient,
                          public CefLifeSpanHandler,
                          public CefDisplayHandler,
-                         public CefLoadHandler {
+                         public CefLoadHandler,
+                         public CefDownloadHandler {
  public:
   SkAiClient(HWND host_window, int tab_id, bool ui_browser);
   CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override { return this; }
   CefRefPtr<CefDisplayHandler> GetDisplayHandler() override { return this; }
   CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
+  CefRefPtr<CefDownloadHandler> GetDownloadHandler() override { return this; }
+  bool OnBeforeDownload(CefRefPtr<CefBrowser> browser,
+      CefRefPtr<CefDownloadItem> download_item, const CefString& suggested_name,
+      CefRefPtr<CefBeforeDownloadCallback> callback) override;
+  void OnDownloadUpdated(CefRefPtr<CefBrowser> browser,
+      CefRefPtr<CefDownloadItem> download_item,
+      CefRefPtr<CefDownloadItemCallback> callback) override;
   void OnLoadingStateChange(CefRefPtr<CefBrowser> browser, bool is_loading,
       bool can_go_back, bool can_go_forward) override;
   bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
