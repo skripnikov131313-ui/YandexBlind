@@ -199,6 +199,10 @@ void SkAiClient::OnLoadingStateChange(
     CefRefPtr<CefBrowser> browser, bool is_loading, bool can_go_back,
     bool can_go_forward) {
   if (!ui_browser_) {
+    if (!is_loading && browser && browser->GetMainFrame()) {
+      SkAiNotifyTabState(tab_id_, L"",
+                         browser->GetMainFrame()->GetURL().ToWString(), false);
+    }
     SkAiNotifyNavigationState(tab_id_, can_go_back, can_go_forward, is_loading);
   }
 }
