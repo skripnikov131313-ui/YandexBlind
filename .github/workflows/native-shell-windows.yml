@@ -52,10 +52,11 @@ jobs:
           }
           "CEF_ROOT=$cefRoot" | Out-File -FilePath $env:GITHUB_ENV -Append
 
-      - name: Check JavaScript syntax
+      - name: Check JavaScript syntax and UI invariants
         run: |
           node --check browser-shell/ui/app.js
           node --check browser-shell/ui/assistant.js
+          node browser-shell/tests/ui-invariants.mjs
 
       - name: Configure native shell
         shell: pwsh
