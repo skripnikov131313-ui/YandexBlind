@@ -28,4 +28,5 @@ bool SkAiClient::DoClose(CefRefPtr<CefBrowser>) {
 }
 void SkAiClient::OnBeforeClose(CefRefPtr<CefBrowser>) {
   browser_ = nullptr;
+  if (IsWindow(host_window_)) PostMessageW(host_window_, WM_APP + 11, 0, 0);
 }
