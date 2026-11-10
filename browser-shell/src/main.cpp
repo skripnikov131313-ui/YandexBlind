@@ -7,6 +7,7 @@
 #include <windows.h>
 #include <shlobj.h>
 #include <filesystem>
+#include <system_error>
 
 namespace {
 int RunSkAi(HINSTANCE instance, int show_command, void* sandbox_info) {
