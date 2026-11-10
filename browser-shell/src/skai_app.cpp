@@ -13,17 +13,34 @@ class SkAiV8Bridge final : public CefV8Handler {
     const auto frame = context->GetFrame();
     if (!frame) return false;
 
+    const auto message = CefProcessMessage::Create("skai.command");
+    auto args = message->GetArgumentList();
     if (name == "windowAction") {
       if (arguments.empty() || !arguments[0]->IsString()) {
         exception = "A window action name is required.";
         return true;
       }
-      const auto message = CefProcessMessage::Create("skai.windowAction");
-      message->GetArgumentList()->SetString(0, arguments[0]->GetStringValue());
-      frame->SendProcessMessage(PID_BROWSER, message);
-      return true;
+      args->SetString(0, "window");
+      args->SetString(1, arguments[0]->GetStringValue());
+    } else if (name == "navigate") {
+      if (arguments.empty() || !arguments[0]->IsString()) {
+        exception = "A URL is required.";
+        return true;
+      }
+      args->SetString(0, "navigate");
+      args->SetString(1, arguments[0]->GetStringValue());
+    } else if (name == "browserAction") {
+      if (arguments.empty() || !arguments[0]->IsString()) {
+        exception = "A browser action is required.";
+        return true;
+      }
+      args->SetString(0, "browser");
+      args->SetString(1, arguments[0]->GetStringValue());
+    } else {
+      return false;
     }
-    return false;
+    frame->SendProcessMessage(PID_BROWSER, message);
+    return true;
   }
   IMPLEMENT_REFCOUNTING(SkAiV8Bridge);
 };
@@ -35,9 +52,15 @@ void SkAiApp::OnWebKitInitialized() {
     var skaiNative = {};
     (function() {
       native function windowAction();
+      native function navigate();
+      native function browserAction();
       skaiNative.minimize = function() { windowAction("minimize"); };
       skaiNative.toggleMaximize = function() { windowAction("toggleMaximize"); };
       skaiNative.close = function() { windowAction("close"); };
+      skaiNative.navigate = function(url) { navigate(String(url)); };
+      skaiNative.back = function() { browserAction("back"); };
+      skaiNative.forward = function() { browserAction("forward"); };
+      skaiNative.reload = function() { browserAction("reload"); };
     })();
   )", bridge);
 }
