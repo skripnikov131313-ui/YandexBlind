@@ -48,6 +48,7 @@ void SkAiApp::OnWebKitInitialized() {
       skaiNative.back=function(){browserAction("back")};
       skaiNative.forward=function(){browserAction("forward")};
       skaiNative.reload=function(){browserAction("reload")};
+      skaiNative.stop=function(){browserAction("stop")};
       skaiNative.newTab=function(v){tabAction("new",String(v||"about:blank"))};
       skaiNative.activateTab=function(v){tabAction("activate",String(v))};
       skaiNative.closeTab=function(v){tabAction("close",String(v))};
