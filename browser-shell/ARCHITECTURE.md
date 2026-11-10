@@ -7,7 +7,7 @@
 - Native UI: Aurora Glass interface from `ui/`, rendered by a dedicated CEF browser.
 - Web contents: separate CEF browser instances per native tab. Native controller owns tab IDs, active state, bounds and lifetime.
 - Assistant: docked in the main UI; detach creates a separate native CEF popup with Windows topmost behavior. The popup can be closed to redock.
-- Local AI: Qwen GGUF through a separately managed llama.cpp service, planned but not integrated.
+- Local AI: native C++ module downloads Qwen 3.5 2B Q4_K_M GGUF to `%LOCALAPPDATA%/SkAi/Models`, verifies the pinned SHA-256, and starts a separately packaged llama.cpp v0.9.0 CPU server on `127.0.0.1` with an ephemeral API key. The docked and floating assistant send OpenAI-compatible chat requests through the CEF-to-native bridge. Windows build and inference tests are still pending.
 - Cloud AI: placeholder only; no provider is connected and no prompts/page content are sent.
 - Persistence: browser profile is located under `%LOCALAPPDATA%/SkAi/Profiles/Default`. Bookmarks and bookmark folders, history, download metadata, last-open HTTP(S) tabs and assistant conversation state are stored in the UI CEF profile. Remembered per-origin permission decisions are stored in `permissions.json` in the same profile and atomically replaced on updates. Cross-session behavior still requires Windows runtime validation.
 
@@ -36,11 +36,15 @@ cmake --build out/skai --config Release --parallel 2
 
 The packaged output is written to `out/skai/bin/Release`. It contains `SkAi.exe` (CEF bootstrap), `SkAi.dll` (Sk/Ai client), CEF runtime DLLs, resource packs, `locales/` and the local `ui/` directory. Downloads are written to the user Downloads folder under `SkAi`; only paths resolving inside that managed directory can be opened from persisted download history. CEF permission requests are mediated by the native permission handler; decisions are explicit, optional to remember per origin and permission mask, and revocable from Settings.
 
+## Local AI runtime
+
+The Windows workflow also builds `llama-server.exe` from llama.cpp v0.9.0 (verified against commit `cd959bae99ff4bed22bef2604f45241c09bbb8c8`) with CPU-only settings and packages its runtime DLLs under `runtime/llama/`. The GGUF installer downloads the pinned model over HTTPS, computes SHA-256 incrementally with Windows CNG/BCrypt, and only atomically installs the file after the digest matches. Local inference binds to `127.0.0.1`, uses an ephemeral API key, disables the server Web UI, and does not use a network proxy for inference requests. The Cloud mode is still a non-transmitting placeholder.
+
 ## CI
 
-`.github/workflows/native-shell-windows.yml` downloads the pinned CEF archive, verifies its published SHA-1, runs Node syntax checks, configures and builds the native target, checks required runtime files, starts the application for a native-window smoke test, then uploads `skai-win-x64-runtime`.
+`.github/workflows/native-shell-windows.yml` downloads and verifies the pinned CEF archive, runs JavaScript syntax and UI regression checks, builds the native shell, builds the pinned CPU llama.cpp server, packages its required runtime files, starts the server with `--version` as a dependency smoke test, checks required runtime files, starts Sk/Ai for a native-window smoke test, then uploads `skai-win-x64-runtime`.
 
-A green CI run and an actual Windows 11 test are required before calling the browser built or usable. The current Actions job is queued; no successful build is being claimed.
+A green CI run and an actual Windows 11 test are required before calling the browser built or usable. The native AI integration and packaging steps are source-configured; no successful Windows build or model inference is being claimed.
 
 ## Product boundaries
 
