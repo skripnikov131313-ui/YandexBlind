@@ -19,7 +19,7 @@
     const savedSession = JSON.parse(localStorage.getItem(sessionKey) || "[]");
     if (Array.isArray(savedSession)) {
       sessionToRestore = savedSession
-        .filter(item => item && typeof item.url === "string" && /^https?:\\/\\//i.test(item.url))
+        .filter(item => item && typeof item.url === "string" && /^https?:\/\//i.test(item.url))
         .slice(0, 50);
     }
   } catch (_) { sessionToRestore = []; }
@@ -576,7 +576,7 @@
     const orderedTabs = tabs.filter(info => !info.active)
       .concat(tabs.filter(info => info.active));
     const session = orderedTabs
-      .filter(info => typeof info.url === "string" && /^https?:\\/\\//i.test(info.url))
+      .filter(info => typeof info.url === "string" && /^https?:\/\//i.test(info.url))
       .slice(-50)
       .map(info => ({ title: info.title || info.url, url: info.url }));
     try { localStorage.setItem(sessionKey, JSON.stringify(session)); } catch (_) {}
