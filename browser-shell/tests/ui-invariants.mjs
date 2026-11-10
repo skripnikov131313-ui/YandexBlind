@@ -41,12 +41,12 @@ const nativeWindowSource = readFileSync(
 
 assert.match(
   assistantSource,
-  /skai\.conversation\.v1\."\+activeProfile/,
+  /skai\.conversation\.v1\."\s*\+\s*activeProfile/,
   "Detached assistant conversation storage must be profile-scoped."
 );
 assert.match(
   assistantSource,
-  /skai\.assistant\.mode\.v1\."\+activeProfile/,
+  /skai\.assistant\.mode\.v1\."\s*\+\s*activeProfile/,
   "Detached assistant mode storage must be profile-scoped."
 );
 assert.match(
