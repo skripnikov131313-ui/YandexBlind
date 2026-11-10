@@ -1,7 +1,7 @@
 [Setup]
 AppId={{D84B52E7-29A7-47CB-9C37-5C73E8F4C1B2}
 AppName=Yandex Blind
-AppVersion=0.1.0
+AppVersion=0.2.0
 AppPublisher=Yandex Blind Project
 DefaultDirName={localappdata}\Programs\YandexBlind
 DefaultGroupName=Yandex Blind
