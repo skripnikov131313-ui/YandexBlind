@@ -186,7 +186,7 @@ assert.match(htmlSource, /id="zoomIn"/, "The browser toolbar must expose zoom co
 assert.match(htmlSource, /id="printPage"/, "The browser toolbar must expose the print command.");
 assert.match(
   source,
-  /window\.skaiNative\.browserAction\("findNext", query\)/,
+  /window\.skaiNative\?\.browserAction\(direction, query\)/,
   "Find next must call the native CEF find API."
 );
 assert.match(
