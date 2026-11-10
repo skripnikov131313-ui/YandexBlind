@@ -188,17 +188,179 @@
   });
 
   $("#themeButton")?.addEventListener("click", cycleTheme);
-  $$(".shortcut-card[data-url]").forEach(card => card.addEventListener("click", () => {
-    $("#addressInput").value = card.dataset.url;
-    notify("Раздел откроется после подключения Sk/Ai Core");
-  }));
-  $("#bookmarkButton")?.addEventListener("click", event => {
-    event.currentTarget.textContent = event.currentTarget.textContent === "☆" ? "★" : "☆";
-    notify(event.currentTarget.textContent === "★" ? "Закладка добавлена (демо)" : "Закладка удалена (демо)");
+  const bookmarkKey = "skai.bookmarks.v1";
+  const historyKey = "skai.history.v1";
+  let bookmarks = [];
+  let historyItems = [];
+  let internalViewType = "";
+  try { bookmarks = JSON.parse(localStorage.getItem(bookmarkKey) || "[]"); } catch (_) { bookmarks = []; }
+  try { historyItems = JSON.parse(localStorage.getItem(historyKey) || "[]"); } catch (_) { historyItems = []; }
+  if (!Array.isArray(bookmarks)) bookmarks = [];
+  if (!Array.isArray(historyItems)) historyItems = [];
+
+  const pageSections = $(".page-scroll > :not(#internalView)");
+  function syncBookmarkButton() {
+    const url = $("#addressInput")?.value || "";
+    const saved = bookmarks.some(item => item.url === url);
+    const button = $("#bookmarkButton");
+    if (!button) return;
+    button.textContent = saved ? "★" : "☆";
+    button.title = saved ? "Удалить закладку" : "Добавить закладку";
+    button.setAttribute("aria-pressed", String(saved));
+  }
+  function persistBookmarks() {
+    try { localStorage.setItem(bookmarkKey, JSON.stringify(bookmarks)); }
+    catch (_) { notify("Не удалось сохранить закладки в профиле"); }
+  }
+  function persistHistory() {
+    try { localStorage.setItem(historyKey, JSON.stringify(historyItems)); }
+    catch (_) { notify("Не удалось сохранить историю в профиле"); }
+  }
+  function addHistoryVisit(id, title, url) {
+    if (!/^https?:\\/\\//i.test(url)) return;
+    const now = Date.now();
+    const previous = historyItems[0];
+    if (previous && previous.url === url && now - previous.visitedAt < 60000) {
+      previous.title = title || previous.title || url;
+      previous.visitedAt = now;
+      previous.tabId = id;
+    } else {
+      historyItems.unshift({ title: title || url, url, visitedAt: now, tabId: id });
+    }
+    historyItems = historyItems.slice(0, 2000);
+    persistHistory();
+    if (internalViewType === "history") renderInternalView("history");
+  }
+  function formatVisitTime(value) {
+    try { return new Intl.DateTimeFormat("ru-RU", { dateStyle: "short", timeStyle: "short" }).format(new Date(value)); }
+    catch (_) { return ""; }
+  }
+  function openSavedUrl(url) {
+    if (!/^https?:\\/\\//i.test(url)) return;
+    createTab(url);
+    closeInternalView();
+  }
+  function renderInternalView(type) {
+    internalViewType = type;
+    const view = $("#internalView");
+    if (!view) return;
+    view.hidden = false;
+    pageSections.forEach(section => { section.hidden = true; });
+    $("#internalViewTitle").textContent = type === "bookmarks" ? "Закладки" : "История";
+    $("#internalViewDescription").textContent = type === "bookmarks"
+      ? "Сохранённые страницы в вашем профиле"
+      : "Недавно посещённые страницы · хранится локально";
+    const list = $("#internalViewList");
+    list.replaceChildren();
+    const items = type === "bookmarks" ? bookmarks : historyItems;
+    $("#internalViewEmpty").hidden = items.length > 0;
+    $("#internalViewEmpty").textContent = type === "bookmarks"
+      ? "Пока нет закладок. Нажмите ☆ рядом с адресом страницы."
+      : "История посещений пока пуста.";
+    items.forEach((item, index) => {
+      const row = document.createElement("article");
+      row.className = "library-row";
+      const open = document.createElement("button");
+      open.className = "library-open";
+      open.type = "button";
+      const title = document.createElement("b");
+      title.textContent = item.title || item.url;
+      const detail = document.createElement("small");
+      detail.textContent = type === "history"
+        ? item.url + " · " + formatVisitTime(item.visitedAt)
+        : item.url;
+      open.append(title, detail);
+      open.addEventListener("click", () => openSavedUrl(item.url));
+      const remove = document.createElement("button");
+      remove.className = "library-remove";
+      remove.type = "button";
+      remove.textContent = type === "bookmarks" ? "Удалить" : "Убрать";
+      remove.addEventListener("click", () => {
+        if (type === "bookmarks") {
+          bookmarks.splice(index, 1);
+          persistBookmarks();
+          syncBookmarkButton();
+        } else {
+          historyItems.splice(index, 1);
+          persistHistory();
+        }
+        renderInternalView(type);
+      });
+      row.append(open, remove);
+      list.append(row);
+    });
+    const footer = $("#internalViewFooter");
+    footer.replaceChildren();
+    if (type === "history" && historyItems.length) {
+      const clear = document.createElement("button");
+      clear.className = "library-clear";
+      clear.type = "button";
+      clear.textContent = "Очистить историю";
+      clear.addEventListener("click", () => {
+        historyItems = [];
+        persistHistory();
+        renderInternalView("history");
+      });
+      footer.append(clear);
+    }
+  }
+  function openInternalView(type) {
+    internalViewType = type;
+    window.skaiNative?.activateTab(0);
+    setActiveTabUi(homeTab);
+    renderInternalView(type);
+  }
+  function closeInternalView() {
+    internalViewType = "";
+    const view = $("#internalView");
+    if (view) view.hidden = true;
+    pageSections.forEach(section => { section.hidden = false; });
+    syncBookmarkButton();
+  }
+  function toggleBookmark() {
+    const url = $("#addressInput")?.value || "";
+    if (!/^https?:\\/\\//i.test(url)) {
+      notify("Сначала откройте веб-страницу");
+      return;
+    }
+    const existing = bookmarks.findIndex(item => item.url === url);
+    if (existing >= 0) {
+      bookmarks.splice(existing, 1);
+      notify("Закладка удалена");
+    } else {
+      const activeTab = $('.tab.active');
+      const title = activeTab ? $(".tab-name", activeTab)?.textContent : url;
+      bookmarks.unshift({ title: title || url, url, createdAt: Date.now() });
+      notify("Страница добавлена в закладки");
+    }
+    persistBookmarks();
+    syncBookmarkButton();
+    if (internalViewType === "bookmarks") renderInternalView("bookmarks");
+  }
+  $("#bookmarkButton")?.addEventListener("click", toggleBookmark);
+  $("#historyNav")?.addEventListener("click", () => openInternalView("history"));
+  $("#homeNav")?.addEventListener("click", () => {
+    closeInternalView();
+    activateTab(homeTab);
   });
+  $("#internalViewClose")?.addEventListener("click", () => closeInternalView());
+  $(".shortcut-card[data-url]").forEach(card => card.addEventListener("click", () => {
+    const route = card.dataset.url;
+    if (route === "skai://bookmarks") {
+      openInternalView("bookmarks");
+      return;
+    }
+    $("#addressInput").value = route;
+    notify("Этот раздел будет подключён на следующем этапе");
+  }));
+  syncBookmarkButton();
 
   window.skaiNative = window.skaiNative || {};
-  window.skaiNative.addressChanged = url => { $("#addressInput").value = url; };
+  window.skaiNative.addressChanged = url => {
+    $("#addressInput").value = url;
+    syncBookmarkButton();
+  };
+  window.skaiNative.recordVisit = (id, title, url) => addHistoryVisit(id, title, url);
   window.skaiNative.navigationState = (id, canGoBack, canGoForward, isLoading) => {
     const tab = $('.tab[data-tab-id="' + id + '"]');
     const selected = id === 0 || tab?.classList.contains("active");
@@ -284,7 +446,10 @@
       $(".tab-name", tab).textContent = info.title || "Новая вкладка";
       tab.title = info.url || "";
       tab.classList.toggle("loading", !!info.loading);
-      if (info.active && info.url) $("#addressInput").value = info.url;
+      if (info.active && info.url) {
+        $("#addressInput").value = info.url;
+        syncBookmarkButton();
+      }
       tabSequence = Math.max(tabSequence, id + 1);
     });
     $$(".tab").forEach(tab => {
@@ -295,7 +460,10 @@
     const activeTab = activeInfo
       ? $('.tab[data-tab-id="' + Number(activeInfo.id) + '"]')
       : homeTab;
-    if (activeTab) setActiveTabUi(activeTab);
+    if (activeTab) {
+      setActiveTabUi(activeTab);
+      syncBookmarkButton();
+    }
   };
   function updateContentBounds() {
     const area = $("#pageArea");
