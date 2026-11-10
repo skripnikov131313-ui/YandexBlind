@@ -222,16 +222,20 @@
   };
 
   let tabSequence = 1;
-  function activateTab(tab) {
+  function setActiveTabUi(tab) {
     $$(".tab").forEach(item => {
       const active = item === tab;
       item.classList.toggle("active", active);
       item.setAttribute("aria-selected", String(active));
     });
     const id = Number(tab.dataset.tabId || 0);
-    window.skaiNative?.activateTab(id);
     $("#pageArea")?.classList.toggle("site-active", id !== 0);
     updateContentBounds();
+  }
+  function activateTab(tab) {
+    setActiveTabUi(tab);
+    const id = Number(tab.dataset.tabId || 0);
+    window.skaiNative?.activateTab(id);
   }
   function bindTab(tab) {
     tab.addEventListener("click", event => {
@@ -248,15 +252,20 @@
       activateTab(tab);
     });
   }
-  function createTab(url = "about:blank") {
+  function createTabElement(id, title = "Новая вкладка") {
     const tab = document.createElement("button");
     tab.className = "tab";
-    tab.dataset.tabId = String(tabSequence++);
+    tab.dataset.tabId = String(id);
     tab.setAttribute("role", "tab");
     tab.setAttribute("aria-selected", "false");
-    tab.innerHTML = '<span class="tab-favicon">◉</span><span class="tab-name">Новая вкладка</span><span class="tab-close">×</span>';
+    tab.innerHTML = '<span class="tab-favicon">◉</span><span class="tab-name"></span><span class="tab-close">×</span>';
+    $(".tab-name", tab).textContent = title;
     $("#tabs").append(tab);
     bindTab(tab);
+    return tab;
+  }
+  function createTab(url = "about:blank") {
+    const tab = createTabElement(tabSequence++);
     window.skaiNative?.newTab(url);
     activateTab(tab);
   }
@@ -266,34 +275,24 @@
   window.skaiNative = window.skaiNative || {};
   window.skaiNative.addressChanged = url => { $("#addressInput").value = url; };
   window.skaiNative.syncTabs = tabs => {
+    const nativeIds = new Set(tabs.map(info => Number(info.id)));
     tabs.forEach(info => {
-      const tab = $('.tab[data-tab-id="' + info.id + '"]');
+      const id = Number(info.id);
+      let tab = $('.tab[data-tab-id="' + id + '"]');
+      if (!tab && id !== 0) tab = createTabElement(id, info.title || "Новая вкладка");
       if (!tab) return;
       $(".tab-name", tab).textContent = info.title || "Новая вкладка";
-      if (info.active) activateTab(tab);
+      tabSequence = Math.max(tabSequence, id + 1);
     });
-  };
-  window.skaiNative.updateFavicon = (id, url) => {
-    const tab = $('.tab[data-tab-id="' + id + '"]');
-    if (!tab || !/^https?:\/\//i.test(url)) return;
-    const icon = $(".tab-favicon", tab);
-    if (!icon) return;
-    const image = document.createElement("img");
-    image.alt = "";
-    image.width = 16;
-    image.height = 16;
-    image.referrerPolicy = "no-referrer";
-    image.src = url;
-    image.onerror = () => { image.remove(); };
-    icon.replaceChildren(image);
-  };
-  window.skaiNative.updateTab = (id, title, url, loading) => {
-    const tab = $('.tab[data-tab-id="' + id + '"]');
-    if (!tab) return;
-    $(".tab-name", tab).textContent = title || "Новая вкладка";
-    tab.title = url || "";
-    tab.classList.toggle("loading", !!loading);
-    if (tab.classList.contains("active")) $("#addressInput").value = url || "";
+    $$(".tab").forEach(tab => {
+      const id = Number(tab.dataset.tabId || 0);
+      if (id !== 0 && !nativeIds.has(id)) tab.remove();
+    });
+    const activeInfo = tabs.find(info => info.active);
+    const activeTab = activeInfo
+      ? $('.tab[data-tab-id="' + Number(activeInfo.id) + '"]')
+      : homeTab;
+    if (activeTab) setActiveTabUi(activeTab);
   };
   function updateContentBounds() {
     const area = $("#pageArea");
