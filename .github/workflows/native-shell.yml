@@ -15,7 +15,7 @@ on:
   workflow_dispatch:
     inputs:
       run_full_build:
-        description: "Run the pinned Chromium-Gost source build on a configured large self-hosted Windows runner"
+        description: "Run the pinned upstream Chromium source build on a configured large self-hosted Windows runner"
         type: boolean
         required: true
         default: false
@@ -44,12 +44,12 @@ jobs:
         shell: pwsh
         run: ./native-shell/validate.ps1
 
-      - name: Apply-check Sk/Ai patch against Chromium-Gost source tag
+      - name: Apply-check Sk/Ai patch against upstream Chromium source tag
         shell: pwsh
         run: ./native-shell/validate-patch.ps1
 
   baseline-build:
-    name: Compile Chromium-Gost source baseline
+    name: Compile upstream Chromium baseline
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_full_build }}
     runs-on: [self-hosted, windows, x64, skai-chromium-large]
     steps:
@@ -63,7 +63,7 @@ jobs:
       - name: Upload baseline artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: SkAi-ChromiumGost-156.0.8078.88-BASELINE
+          name: SkAi-Chromium-156.0.8078.88-BASELINE
           path: native-shell/artifacts/*
           if-no-files-found: error
           retention-days: 7
