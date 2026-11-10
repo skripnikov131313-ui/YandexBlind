@@ -1,7 +1,10 @@
 (() => {
  "use strict";
  const $=s=>document.querySelector(s);
- const conversationKey="skai.conversation.v1", modeKey="skai.assistant.mode.v1";
+ const requestedProfile=new URLSearchParams(window.location.search).get("profile")||"default";
+ const activeProfile=/^[a-z0-9_-]{1,24}$/.test(requestedProfile)?requestedProfile:"default";
+ const conversationKey="skai.conversation.v1."+activeProfile;
+ const modeKey="skai.assistant.mode.v1."+activeProfile;
  let mode="local", messages=[];
  try { mode=localStorage.getItem(modeKey)||"local"; } catch (_) {}
  try { messages=JSON.parse(localStorage.getItem(conversationKey)||"[]"); } catch (_) {}
