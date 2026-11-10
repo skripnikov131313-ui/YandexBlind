@@ -15,6 +15,8 @@ void SkAiSetContentBounds(int x, int y, int width, int height);
 void SkAiNotifyTabState(int tab_id, const std::wstring& title,
                         const std::wstring& url, bool loading);
 void SkAiNotifyTabFavicon(int tab_id, const std::wstring& icon_url);
+void SkAiNotifyNavigationState(int tab_id, bool can_go_back,
+                               bool can_go_forward, bool is_loading);
 
 void SkAiToggleFloatingAssistant();
 void SkAiSetFloatingAssistantHandle(HWND hwnd);
