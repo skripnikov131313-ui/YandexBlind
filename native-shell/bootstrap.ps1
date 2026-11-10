@@ -108,10 +108,13 @@ if (Test-Path $privateEnv) {
         throw ("Refusing to overwrite an existing user-owned file: {0}" -f $privateEnv)
     }
 }
+$sevenZipDir = Split-Path -Parent $sevenZipExe
+$quote = [char]34
 $privateLines = @(
     $generatedMarker,
     ("set CHROMIUM_PATH={0}" -f $chromiumSrc),
-    ("set DEPOT_TOOLS_PATH={0}" -f $depotTools)
+    ("set DEPOT_TOOLS_PATH={0}" -f $depotTools),
+    ("set SEVENZIP_PATH={0}{1}{0}" -f $quote, ($sevenZipDir + '\'))
 )
 $privateContent = $privateLines -join [Environment]::NewLine
 [IO.File]::WriteAllText($privateEnv, $privateContent + [Environment]::NewLine, [Text.Encoding]::ASCII)
