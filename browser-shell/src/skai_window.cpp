@@ -130,28 +130,34 @@ void BeginApplicationClose(HWND window) {
   }
 
   g_close_requested = true;
-  std::vector<CefRefPtr<CefBrowser>> browsers;
+  struct PendingClose {
+    CefRefPtr<CefBrowser> browser;
+    CefRefPtr<SkAiClient> client;
+  };
+  std::vector<PendingClose> browsers;
   browsers.reserve(g_tabs.size() + 2);
 
   for (const auto& [id, tab] : g_tabs) {
     const auto browser = tab.client ? tab.client->GetBrowser() : nullptr;
     if (browser) {
-      browsers.push_back(browser);
+      browsers.push_back({browser, tab.client});
     }
   }
 
   if (g_ui_client && g_ui_client->GetBrowser()) {
-    browsers.push_back(g_ui_client->GetBrowser());
+    browsers.push_back({g_ui_client->GetBrowser(), g_ui_client});
   }
   if (g_assistant_client && g_assistant_client->GetBrowser()) {
-    browsers.push_back(g_assistant_client->GetBrowser());
+    browsers.push_back({g_assistant_client->GetBrowser(), g_assistant_client});
   }
 
-  // Count before issuing CloseBrowser because CEF may deliver callbacks
-  // while shutdown messages are being pumped.
+  // Count every live browser, including one already closing because the
+  // user clicked its own close button. Never issue CloseBrowser twice.
   g_pending_browser_closes = static_cast<int>(browsers.size());
-  for (const auto& browser : browsers) {
-    browser->GetHost()->CloseBrowser(false);
+  for (const auto& pending : browsers) {
+    if (pending.client && !pending.client->is_closing()) {
+      pending.client->RequestClose();
+    }
   }
 
   MaybeFinishClose();
@@ -336,9 +342,8 @@ void SkAiCloseTab(int tab_id) {
     return;
   }
 
-  const auto browser = it->second.client ? it->second.client->GetBrowser() : nullptr;
-  if (browser) {
-    browser->GetHost()->CloseBrowser(false);
+  if (it->second.client) {
+    it->second.client->RequestClose();
   }
 }
 
