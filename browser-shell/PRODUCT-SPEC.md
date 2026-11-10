@@ -23,7 +23,8 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [ ] Session restore and crash recovery.
 - [ ] Bookmarks with folders, editing and persistence.
 - [~] Local browsing history: capture completed native CEF navigations, search, remove individual entries and clear all. Persistence and navigation capture still require Windows runtime validation.
-- [ ] Downloads with progress, open, show-in-folder and remove.
+- [~] Native CEF download handler saves to Downloads/SkAi, emits progress and exposes pause/resume/cancel/open/show actions. The list is not yet restored after browser restart.
+- [~] Native CEF downloads: progress, pause/resume/cancel, open and show in folder. The live list is session-only; persistent download history and Windows runtime validation remain open.
 - [ ] Extension manager and documented compatibility policy.
 - [ ] Multiple profiles and isolated profile data.
 - [ ] Import/export of bookmarks and settings.
@@ -120,6 +121,6 @@ The mode selector belongs next to the assistant composer.
 
 ## Current milestone
 
-Native C++/Win32 + CEF shell with tabs/navigation controls, an independent assistant popup, and local bookmarks/history screens is implemented in source. The current CEF build uses the post-CEF-138 bootstrap architecture and explicitly refuses to start without the sandbox handle.
+Native C++/Win32 + CEF shell with tabs/navigation controls, an independent assistant popup, local bookmarks/history screens, and a native CEF downloads manager is implemented in source. The current CEF build uses the post-CEF-138 bootstrap architecture and explicitly refuses to start without the sandbox handle.
 
 JavaScript syntax and HTML-to-JS element-reference checks pass in the repository inspection. The Windows workflow has not yet produced a successful build artifact; its latest run is queued and no Windows compile/runtime result is claimed. No Windows runtime behavior is claimed as tested. Next gate: complete Windows CI build and native-window smoke test. After that: harden profile/session storage, implement core browser services (bookmarks/history/downloads/permissions), then integrate local AI.
