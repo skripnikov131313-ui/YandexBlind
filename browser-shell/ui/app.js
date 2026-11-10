@@ -239,7 +239,7 @@
       conversation.forEach(item => {
         const message = document.createElement("div");
         message.className = "chat-message " + (item.role === "user" ? "user" : "assistant");
-        message.textContent = item.pending ? "Запрос был прерван при закрытии браузера." : (item.text || "");
+        message.textContent = item.pending ? (item.requestId === localAiPendingId ? (item.text || "Обрабатываю запрос локально…") : "Запрос был прерван при закрытии браузера.") : (item.text || "");
         chat.append(message);
       });
     } else {
@@ -409,6 +409,8 @@
       ? String(name) : "default";
     localAiBusy = false;
     localAiPendingId = "";
+    const sendButton = $("#sendPrompt");
+    if (sendButton) sendButton.disabled = false;
     activeProfileName = normalized;
     try { localStorage.setItem("skai.active.profile.v1", activeProfileName); } catch (_) {}
 
