@@ -20,27 +20,31 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Download and verify Chromium-Gost
+      - name: Download and verify Chromium-Gost x64 MSI
         shell: pwsh
         run: |
           $version = "156.0.8078.88"
-          $asset = "chromium-gost-$version-windows-amd64.zip"
+          $asset = "chromium-gost-$version-windows-amd64.msi"
           $url = "https://github.com/deemru/Chromium-Gost/releases/download/$version/$asset"
-          $expected = "2556469361fc977e0802711a8f561abbf65735d8c321d43739505ebe2c7cb3a0d7"
+          $expected = "ba38c6b7e8272104c9323538735d75dd2de4f7a63f82694122464f4b6495c9ad"
           New-Item -ItemType Directory -Force -Path "dist\upstream", "dist\browser" | Out-Null
-          $archive = Join-Path $PWD "dist\upstream\$asset"
-          Invoke-WebRequest -Uri $url -OutFile $archive
-          $actual = (Get-FileHash -Path $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          $msi = Join-Path $PWD "dist\upstream\$asset"
+          Invoke-WebRequest -Uri $url -OutFile $msi
+          $actual = (Get-FileHash -Path $msi -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($actual -ne $expected) {
             throw "SHA-256 mismatch. Expected $expected, got $actual"
           }
-          Expand-Archive -Path $archive -DestinationPath "dist\upstream\expanded" -Force
-          $chrome = Get-ChildItem -Path "dist\upstream\expanded" -Filter "chrome.exe" -File -Recurse | Select-Object -First 1
-          if (-not $chrome) { throw "chrome.exe was not found in the verified upstream archive." }
-          $browserRoot = $chrome.Directory.FullName
-          Copy-Item -Path (Join-Path $browserRoot "*") -Destination "dist\browser" -Recurse -Force
+          $target = Join-Path $PWD "dist\upstream\extracted"
+          New-Item -ItemType Directory -Force -Path $target | Out-Null
+          $log = Join-Path $PWD "dist\upstream\msiexec.log"
+          $arguments = @("/a", $msi, "/qn", "TARGETDIR=$target", "/l*v", $log)
+          $process = Start-Process -FilePath "msiexec.exe" -ArgumentList $arguments -Wait -PassThru
+          if ($process.ExitCode -ne 0) { throw "MSI administrative extraction failed: $($process.ExitCode). See $log" }
+          $chrome = Get-ChildItem -Path $target -Filter "chrome.exe" -File -Recurse | Select-Object -First 1
+          if (-not $chrome) { throw "chrome.exe was not found in the extracted x64 MSI." }
+          Copy-Item -Path (Join-Path $chrome.Directory.FullName "*") -Destination "dist\browser" -Recurse -Force
           if (-not (Test-Path "dist\browser\chrome.exe")) { throw "Browser packaging failed." }
-          "Verified upstream version: $version" | Out-File "dist\UPSTREAM.txt" -Encoding utf8
+          "Verified upstream version: $version (Windows x64 MSI)" | Out-File "dist\UPSTREAM.txt" -Encoding utf8
           "SHA256: $actual" | Out-File "dist\UPSTREAM.txt" -Append -Encoding utf8
 
       - name: Prepare Yandex Blind files
