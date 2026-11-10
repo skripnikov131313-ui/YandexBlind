@@ -75,17 +75,6 @@
   <footer><span>SK<span class="footer-slash">/</span>AI · PRIVATE BROWSING EXPERIENCE</span><span>DESIGNED FOR FOCUS <b>·</b> BUILT FOR PRIVACY</span></footer>
 </main>
 
-<div class="scrim" id="ai-scrim" hidden>
-  <aside class="ai-panel" role="dialog" aria-modal="true" aria-labelledby="ai-title">
-    <div class="panel-header"><div class="panel-title-wrap"><span class="panel-kicker">SK/AI INTELLIGENCE</span><h2 id="ai-title">Qwen <span>Assistant</span></h2></div><button class="close-btn" id="ai-close" aria-label="Закрыть">×</button></div>
-    <div class="model-strip"><span class="model-orb">✳</span><span><b>Qwen3.5 · 2B</b><small>Работает на этом устройстве</small></span><span class="local-badge"><i></i> <b id="mode-badge">LOCAL</b></span></div>
-    <p class="mode-explainer" id="mode-explainer">История диалога сохраняется в памяти этой вкладки. Локальный режим не отправляет запросы в облако.</p>
-    <div class="chat-area" id="chat-area"><div class="welcome" id="welcome"><div class="welcome-symbol">✳</div><h3>С чего начнём?</h3><p>Помогу разобраться с текстом, документом или идеей. Запросы обрабатываются локально.</p><div class="suggestions"><button data-prompt="Составь краткий и понятный план по теме: ">Составить план <span>↗</span></button><button data-prompt="Отредактируй этот текст, сохранив смысл и стиль: ">Улучшить текст <span>↗</span></button><button data-prompt="Кратко перескажи и выдели главное: ">Сделать выжимку <span>↗</span></button></div></div></div>
-    <div class="attachment" id="attachment" hidden><span>▤</span><span id="file-name"></span><button id="file-remove" aria-label="Удалить файл">×</button></div>
-    <div class="composer"><div class="composer-tools"><label class="attach-btn" id="attach-label" for="file-input" title="Добавить текстовый файл">＋ <span>ФАЙЛ</span></label><input id="file-input" type="file" accept=".txt,.md,.csv,.log,.json"><div class="mode-switch" role="group" aria-label="Режим помощника"><button type="button" class="mode-option active" id="mode-local" aria-pressed="true"><span>✳</span> Локальный</button><button type="button" class="mode-option cloud-option" id="mode-cloud" aria-pressed="false"><span>☁</span> Облако</button></div></div><textarea id="ai-prompt" rows="2" placeholder="Спросите о чём угодно…"></textarea><div class="composer-bottom"><span class="privacy-caption" id="privacy-caption"><i></i> НЕ ПОКИДАЕТ УСТРОЙСТВО</span><button id="ai-send" class="send-btn" aria-label="Отправить запрос"><svg viewBox="0 0 24 24"><path d="M4 12 20 4l-5 16-3-6-8-2Z"/><path d="m12 14 8-10"/></svg></button></div><p class="file-note">Поддерживаются TXT, MD, CSV, LOG и JSON. Содержимое файла передаётся только локальной модели.</p></div>
-  </aside>
-</div>
-
 <div class="scrim" id="settings-scrim" hidden>
   <aside class="settings-panel" role="dialog" aria-modal="true" aria-labelledby="settings-title">
     <div class="panel-header"><div><span class="panel-kicker">CONTROL CENTER</span><h2 id="settings-title">Настройки</h2></div><button class="close-btn" id="settings-close" aria-label="Закрыть">×</button></div>
