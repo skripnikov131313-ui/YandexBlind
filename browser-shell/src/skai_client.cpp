@@ -20,7 +20,7 @@ bool TryParseTabId(const CefString& input, int& tab_id) {
   wchar_t* end = nullptr;
   errno = 0;
   const long parsed = std::wcstol(value.c_str(), &end, 10);
-  if (errno == ERANGE || end == value.c_str() || *end != L'\\0' ||
+  if (errno == ERANGE || end == value.c_str() || *end != L'\0' ||
       parsed < 0 || parsed > INT_MAX) {
     return false;
   }
