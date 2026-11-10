@@ -43,6 +43,6 @@ std::uint64_t SkAiRequestSitePermission(
     CefRefPtr<CefPermissionPromptCallback> prompt_callback,
     CefRefPtr<CefMediaAccessCallback> media_callback,
     std::uint64_t cef_prompt_id = 0);
-void SkAiResolvePermission(std::uint64_t request_id, bool allow);
+void SkAiResolvePermission(std::uint64_t request_id, bool allow, bool remember);
 void SkAiDismissPermission(std::uint64_t cef_prompt_id);
 void SkAiCancelAllPermissions();
