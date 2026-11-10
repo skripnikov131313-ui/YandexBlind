@@ -48,7 +48,7 @@ struct DownloadRecord {
   std::wstring path;
   CefRefPtr<CefDownloadItemCallback> callback;
 };
-std::map<uint32_t, DownloadRecord> g_downloads;
+std::map<std::uint32_t, DownloadRecord> g_downloads;
 
 std::wstring UiFile(const wchar_t* file) {
   wchar_t exe[MAX_PATH]{};
@@ -518,7 +518,7 @@ void SkAiNotifyDownloadState(CefRefPtr<CefDownloadItem> item,
     return;
   }
 
-  const uint32_t id = item->GetId();
+  const std::uint32_t id = item->GetId();
   const bool in_progress = item->IsInProgress();
   const bool paused = item->IsPaused();
   const bool complete = item->IsComplete();
@@ -566,7 +566,7 @@ void SkAiNotifyDownloadState(CefRefPtr<CefDownloadItem> item,
       frame->GetURL(), 0);
 }
 
-void SkAiDownloadAction(uint32_t download_id, const std::wstring& action) {
+void SkAiDownloadAction(std::uint32_t download_id, const std::wstring& action) {
   const auto it = g_downloads.find(download_id);
   if (it == g_downloads.end()) {
     return;
