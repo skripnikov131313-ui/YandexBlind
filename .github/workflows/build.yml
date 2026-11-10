@@ -1,0 +1,74 @@
+name: Build Yandex Blind for Windows
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/build.yml"
+      - "installer/**"
+      - "newtab/**"
+      - "README.md"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download and verify Chromium-Gost
+        shell: pwsh
+        run: |
+          $version = "156.0.8078.88"
+          $asset = "chromium-gost-$version-windows-amd64.zip"
+          $url = "https://github.com/deemru/Chromium-Gost/releases/download/$version/$asset"
+          $expected = "2556469361fc977e0802711a8f561abbf65735d8c321d43739505ebe2c7cb3a0d7"
+          New-Item -ItemType Directory -Force -Path "dist\upstream", "dist\browser" | Out-Null
+          $archive = Join-Path $PWD "dist\upstream\$asset"
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $actual = (Get-FileHash -Path $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) {
+            throw "SHA-256 mismatch. Expected $expected, got $actual"
+          }
+          Expand-Archive -Path $archive -DestinationPath "dist\upstream\expanded" -Force
+          $chrome = Get-ChildItem -Path "dist\upstream\expanded" -Filter "chrome.exe" -File -Recurse | Select-Object -First 1
+          if (-not $chrome) { throw "chrome.exe was not found in the verified upstream archive." }
+          $browserRoot = $chrome.Directory.FullName
+          Copy-Item -Path (Join-Path $browserRoot "*") -Destination "dist\browser" -Recurse -Force
+          if (-not (Test-Path "dist\browser\chrome.exe")) { throw "Browser packaging failed." }
+          "Verified upstream version: $version" | Out-File "dist\UPSTREAM.txt" -Encoding utf8
+          "SHA256: $actual" | Out-File "dist\UPSTREAM.txt" -Append -Encoding utf8
+
+      - name: Prepare Yandex Blind files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path "dist\payload\Browser", "dist\payload\NewTab" | Out-Null
+          Copy-Item "dist\browser\*" "dist\payload\Browser" -Recurse -Force
+          Copy-Item "newtab\*" "dist\payload\NewTab" -Recurse -Force
+          Copy-Item "installer\YandexBlind.vbs" "dist\payload\YandexBlind.vbs" -Force
+          Copy-Item "dist\UPSTREAM.txt" "dist\payload\UPSTREAM.txt" -Force
+
+      - name: Install Inno Setup
+        shell: pwsh
+        run: choco install innosetup --no-progress -y
+
+      - name: Build installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { throw "Inno Setup compiler not found: $iscc" }
+          & $iscc "installer\YandexBlind.iss"
+          if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
+          if (-not (Test-Path "dist\YandexBlind-Setup.exe")) { throw "Installer output is missing." }
+
+      - name: Upload installer
+        uses: actions/upload-artifact@v4
+        with:
+          name: YandexBlind-Windows11-x64
+          path: dist/YandexBlind-Setup.exe
+          if-no-files-found: error
+          retention-days: 14
