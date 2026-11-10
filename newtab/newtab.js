@@ -21,6 +21,9 @@
         await chrome.privacy.websites.thirdPartyCookiesAllowed.set({value:!thirdPartyOn});
       }
       $("filter-status").textContent="Фильтры: "+(filtersOn?"включены":"выключены")+" · сторонние cookie: "+(thirdPartyOn?"ограничены":"разрешены");
+      const indicator=$("filter-indicator"),detail=$("filter-detail");
+      if(indicator)indicator.textContent=filtersOn?"Базовая фильтрация включена":"Фильтрация отключена";
+      if(detail)detail.textContent=filtersOn?"Локальные правила для известных рекламных и трекинговых доменов":"Сетевые фильтры не применяются";
     }catch(err){$("filter-status").textContent="Не удалось применить системную настройку: "+err.message;}
   };
   $("filter-toggle").addEventListener("change",e=>{write("filters",e.target.checked?"on":"off");applyPrivacyControls()});
