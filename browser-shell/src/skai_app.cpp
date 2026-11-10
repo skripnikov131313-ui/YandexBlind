@@ -50,8 +50,12 @@ class SkAiV8Bridge final : public CefV8Handler {
       if(a.empty() || !a[0]->IsString()){exception="AI action required";return true;}
       p->SetString(0,"ai");p->SetString(1,a[0]->GetStringValue());
       if(a.size()>1) {
-        if(!a[1]->IsString()){exception="AI request must be a string";return true;}
+        if(!a[1]->IsString()){exception="AI request ID must be a string";return true;}
         p->SetString(2,a[1]->GetStringValue());
+      }
+      if(a.size()>2) {
+        if(!a[2]->IsString()){exception="AI request must be a string";return true;}
+        p->SetString(3,a[2]->GetStringValue());
       }
     } else if(name=="dragWindow") {
       p->SetString(0,"window");p->SetString(1,"drag");
@@ -93,7 +97,7 @@ void SkAiApp::OnWebKitInitialized() {
       skaiNative.toggleFloatingAssistant=function(){assistantAction("toggle")};
       skaiNative.aiStatus=function(){aiAction("status")};
       skaiNative.installLocalModel=function(){aiAction("install")};
-      skaiNative.sendLocalAi=function(request){aiAction("send",String(request))};
+      skaiNative.sendLocalAi=function(requestId,request){aiAction("send",String(requestId),String(request))};
     })();
   )",bridge);
 }
