@@ -24,6 +24,14 @@ class SkAiV8Bridge final : public CefV8Handler {
     } else if(name=="downloadPathAction") {
       if(a.size()<2 || !a[0]->IsString() || !a[1]->IsString()){exception="Download path arguments required";return true;}
       p->SetString(0,"downloadPath");p->SetString(1,a[1]->GetStringValue());p->SetString(2,a[0]->GetStringValue());
+    } else if(name=="profileListAction") {
+      p->SetString(0,"profilesList");p->SetString(1,"list");
+    } else if(name=="profileCreateAction") {
+      if(a.empty() || !a[0]->IsString()){exception="Profile name required";return true;}
+      p->SetString(0,"profileCreate");p->SetString(1,"create");p->SetString(2,a[0]->GetStringValue());
+    } else if(name=="profileSwitchAction") {
+      if(a.empty() || !a[0]->IsString()){exception="Profile name required";return true;}
+      p->SetString(0,"profileSwitch");p->SetString(1,"switch");p->SetString(2,a[0]->GetStringValue());
     } else if(name=="permissionListAction") {
       p->SetString(0,"permissionsList");p->SetString(1,"list");
     } else if(name=="permissionRevokeAction") {
@@ -53,7 +61,7 @@ void SkAiApp::OnWebKitInitialized() {
     (function(){
       native function windowAction(); native function assistantAction();
       native function navigate(); native function browserAction();
-      native function tabAction(); native function downloadAction(); native function downloadPathAction(); native function permissionAction(); native function permissionListAction(); native function permissionRevokeAction(); native function layoutAction(); native function dragWindow();
+      native function tabAction(); native function downloadAction(); native function downloadPathAction(); native function permissionAction(); native function profileListAction(); native function profileCreateAction(); native function profileSwitchAction(); native function permissionListAction(); native function permissionRevokeAction(); native function layoutAction(); native function dragWindow();
       skaiNative.minimize=function(){windowAction("minimize")};
       skaiNative.toggleMaximize=function(){windowAction("toggleMaximize")};
       skaiNative.close=function(){windowAction("close")};
@@ -71,6 +79,9 @@ void SkAiApp::OnWebKitInitialized() {
       skaiNative.resolvePermission=function(id,action,remember){permissionAction(String(id),String(action),!!remember)};
       skaiNative.listSitePermissions=function(){permissionListAction()};
       skaiNative.revokeSitePermission=function(key){permissionRevokeAction(String(key))};
+      skaiNative.listProfiles=function(){profileListAction()};
+      skaiNative.createProfile=function(name){profileCreateAction(String(name))};
+      skaiNative.switchProfile=function(name){profileSwitchAction(String(name))};
       skaiNative.setContentBounds=function(x,y,w,h){layoutAction([x,y,w,h].join(","))};
       skaiNative.toggleFloatingAssistant=function(){assistantAction("toggle")};
     })();
