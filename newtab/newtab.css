@@ -247,3 +247,24 @@ body.no-motion *,body.no-motion *:before,body.no-motion *:after{animation:none!i
  .searchbar{height:60px}
  .search-hint{font-size:7px;gap:7px}
 }
+
+
+/* Compact trust/status strip inspired by the split workspace reference. */
+.workspace-status{
+ min-height:56px;display:flex;align-items:center;gap:12px;margin:5px 0 28px;
+ padding:10px 15px;border:1px solid color-mix(in srgb,var(--mint) 24%,var(--line));
+ border-radius:16px;background:linear-gradient(100deg,color-mix(in srgb,var(--mint) 8%,var(--surface)),color-mix(in srgb,var(--lavender) 5%,var(--surface-hi)));
+ box-shadow:0 10px 30px rgba(30,26,56,.045);overflow:hidden
+}
+.status-shield{width:29px;height:29px;flex:none;display:grid;place-items:center;border-radius:10px;background:color-mix(in srgb,var(--mint) 17%,transparent);color:var(--mint)}
+.status-shield svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+.status-copy{display:grid;gap:3px;min-width:0}
+.status-copy b{font-size:9px;font-weight:700;color:var(--text)}
+.status-copy small{font-size:8px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.status-wave{height:22px;display:flex;align-items:center;gap:4px;flex:1;min-width:36px;opacity:.9}
+.status-wave i{display:block;height:7px;width:18%;border-radius:999px;background:linear-gradient(90deg,var(--lavender),var(--blue),var(--mint));transform:skewX(-28deg);box-shadow:0 0 13px color-mix(in srgb,var(--accent) 24%,transparent)}
+.status-wave i:nth-child(2){height:13px}.status-wave i:nth-child(3){height:18px}.status-wave i:nth-child(4){height:10px}.status-wave i:nth-child(5){height:5px}
+.status-end{display:flex;align-items:center;gap:7px;white-space:nowrap;font-size:7px;letter-spacing:.9px;color:var(--muted)}
+.status-end i{width:6px;height:6px;border-radius:50%;background:var(--mint);box-shadow:0 0 10px color-mix(in srgb,var(--mint) 65%,transparent)}
+.status-end b{color:var(--lavender)}
+@media(max-width:600px){.workspace-status{gap:8px;padding:9px 10px}.status-wave{display:none}.status-end{font-size:6px;letter-spacing:.5px}.status-copy small{max-width:190px}}
