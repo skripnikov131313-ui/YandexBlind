@@ -24,7 +24,7 @@
  }
  setMode(mode); render();
  document.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
- $("#min").onclick=()=>window.skaiNative?.minimize();
+ $("#dock").onclick=()=>window.skaiNative?.close();$("#min").onclick=()=>window.skaiNative?.minimize();
  $("#max").onclick=()=>window.skaiNative?.toggleMaximize();
  $("#close").onclick=()=>window.skaiNative?.close();
  function send(){
