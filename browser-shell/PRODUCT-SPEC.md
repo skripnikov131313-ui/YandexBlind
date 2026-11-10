@@ -20,10 +20,10 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [~] Native CEF tab controller: create, close, activate, title/URL/loading/favicon synchronization.
 - [~] Address bar accepts URLs and search queries.
 - [~] Back, forward, reload and stop controls.
-- [ ] Session restore and crash recovery.
+- [~] Restore up to 50 recent HTTP(S) tabs in their saved order, with the previous active tab restored last. Crash-recovery semantics and Windows runtime validation remain open.
 - [ ] Bookmarks with folders, editing and persistence.
 - [~] Local browsing history: capture completed native CEF navigations, search, remove individual entries and clear all. Persistence and navigation capture still require Windows runtime validation.
-- [~] Native CEF download handler saves to Downloads/SkAi, emits progress and exposes pause/resume/cancel/open/show actions. The list is not yet restored after browser restart.
+- [~] Native CEF download handler saves to Downloads/SkAi, emits progress and exposes pause/resume/cancel/open/show actions. Download history persists in the CEF UI profile; unfinished downloads are marked interrupted after restart. Windows runtime validation remains open.
 - [ ] Extension manager and documented compatibility policy.
 - [ ] Multiple profiles and isolated profile data.
 - [ ] Import/export of bookmarks and settings.
@@ -46,7 +46,7 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [~] Floating-window minimize, maximize, restore, close and native topmost behavior.
 - [~] Redock the assistant into the browser panel.
 - [~] Conversation and Local/Cloud mode persistence scaffolding.
-- [~] Local bookmarks/history use the CEF UI profile storage; data is capped at 2,000 recent history entries.
+- [~] Bookmarks, bookmark folders, history, recent download metadata and the last 50 HTTP(S) tabs use the CEF UI profile storage. History is capped at 2,000 entries and downloads at 200 records.
 - [ ] Verified cross-window and cross-session chat synchronization.
 - [ ] Multiple named conversations and search.
 - [ ] Explicit page-content transfer after a user action.
@@ -120,6 +120,6 @@ The mode selector belongs next to the assistant composer.
 
 ## Current milestone
 
-Native C++/Win32 + CEF shell with tabs/navigation controls, an independent assistant popup, local bookmarks/history screens, and a native CEF downloads manager is implemented in source. The current CEF build uses the post-CEF-138 bootstrap architecture and explicitly refuses to start without the sandbox handle.
+Native C++/Win32 + CEF shell with tabs/navigation controls, session restoration, bookmark folders/editing, local history, persistent download history and a native CEF downloads manager is implemented in source. The current CEF build uses the post-CEF-138 bootstrap architecture and explicitly refuses to start without the sandbox handle.
 
-JavaScript syntax and HTML-to-JS element-reference checks pass in the repository inspection. The Windows workflow has not yet produced a successful build artifact; its latest run is queued and no Windows compile/runtime result is claimed. No Windows runtime behavior is claimed as tested. Next gate: complete Windows CI build and native-window smoke test. After that: add session restore, multiple profiles, extension compatibility and site-permission management, then integrate local AI.
+JavaScript syntax and HTML-to-JS element-reference checks pass in the repository inspection. The Windows workflow has not yet produced a successful build artifact; its latest run is queued and no Windows compile/runtime result is claimed. No Windows runtime behavior is claimed as tested. Next gate: complete Windows CI build and native-window smoke test. After that: multiple profiles, extension compatibility, per-site permission management and browser settings, then integrate local AI.
