@@ -28,7 +28,7 @@
   const systemTheme=matchMedia("(prefers-color-scheme: light)");const applyTheme=()=>{document.body.classList.toggle("light",theme==="light"||(theme==="system"&&systemTheme.matches));$("theme-select").value=theme};systemTheme.addEventListener?.("change",()=>{if(theme==="system")applyTheme()});
   const applyMotion=()=>{document.body.classList.toggle("no-motion",!motion);$("motion-toggle").checked=motion};
   const applyScene=()=>{document.body.dataset.scene=scene;$("scene-select").value=scene};
-  const updateEngine=()=>{$("engine-quick").innerHTML=engines[engine].name+" <span>⌄</span>";$("engine-name").textContent=engines[engine].name.toUpperCase();$("engine-select").value=engine;if(assistantMode==="web")$("ai-scrim").querySelector(".model-strip b").textContent=engines[engine].name};
+  const updateEngine=()=>{$("engine-quick").innerHTML=engines[engine].name+" <span>⌄</span>";$("engine-name").textContent=engines[engine].name.toUpperCase();$("engine-select").value=engine};
   const show=(id)=>{$(id).hidden=false;document.body.style.overflow="hidden"};
   const hide=(id)=>{$(id).hidden=true;if($("ai-scrim").hidden&&$("settings-scrim").hidden)document.body.style.overflow=""};
   const toast=(s)=>{const el=$("toast");el.textContent=s;el.classList.add("show");setTimeout(()=>el.classList.remove("show"),2800)};
