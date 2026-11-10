@@ -79,24 +79,31 @@
     notify("Помощник открыт в отдельном окне");
   });
 
-  $(".mode-option").forEach(button => {
-    if (button.dataset.mode === mode) button.classList.add("active");
-    button.addEventListener("click", () => {
-    mode = button.dataset.mode;
-    try { localStorage.setItem(modeKey, mode); } catch (_) {}
-    $(".mode-option").forEach(item => item.classList.toggle("active", item === button));
+  function applyAssistantMode(persist = false) {
+    $$(".mode-option").forEach(button => {
+      button.classList.toggle("active", button.dataset.mode === mode);
+    });
     const note = $("#modelFootnote");
-    if (note) note.textContent = mode === "local"
-      ? "Работает на этом устройстве"
-      : "Облако · перед отправкой потребуется согласие";
+    if (note) {
+      note.textContent = mode === "local"
+        ? "Работает на этом устройстве"
+        : "Облако · перед отправкой потребуется согласие";
+    }
     const badge = $(".local-badge");
     if (badge) {
       badge.textContent = mode === "local" ? "LOCAL" : "CLOUD";
       badge.classList.toggle("cloud-badge", mode === "cloud");
     }
+    if (persist) {
+      try { localStorage.setItem(modeKey, mode); } catch (_) {}
+    }
+  }
+  applyAssistantMode();
+  $$(".mode-option").forEach(button => button.addEventListener("click", () => {
+    mode = button.dataset.mode;
+    applyAssistantMode(true);
     notify(mode === "local" ? "Выбран локальный ИИ" : "Выбрано облако. Передача данных пока отключена.");
-    });
-  });
+  }));
 
   function addMessage(kind, value) {
     conversation.push({ role: kind, text: value });
