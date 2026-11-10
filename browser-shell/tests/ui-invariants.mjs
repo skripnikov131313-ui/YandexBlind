@@ -187,4 +187,55 @@ assert.match(
   "The floating assistant must ignore stale completions."
 );
 
+assert.match(
+  aiSource,
+  /kModelMaximumBytes = 1500000000ULL/,
+  "The model download must have a hard upper size limit."
+);
+assert.match(
+  aiSource,
+  /if \(!FlushFileBuffers\(output\)\)/,
+  "The model installer must check that the verified file was flushed to disk."
+);
+assert.match(
+  aiSource,
+  /--alias Qwen3\.5-2B/,
+  "The local inference server alias must match the assistant model ID."
+);
+assert.match(
+  aiSource,
+  /CreateJobObjectW\(nullptr, nullptr\)/,
+  "The local inference server must run in a Windows Job Object."
+);
+assert.match(
+  aiSource,
+  /JOB_OBJECT_LIMIT_KILL_ON_JOB_CLOSE/,
+  "The local inference server must be terminated when its Job Object closes."
+);
+assert.match(
+  aiSource,
+  /AssignProcessToJobObject\(job, process\.hProcess\)/,
+  "The local inference process must be assigned to the lifetime Job Object."
+);
+assert.match(
+  aiSource,
+  /bool LaunchWorker/,
+  "Background AI tasks must report whether worker creation succeeded."
+);
+assert.match(
+  aiSource,
+  /if \(!started\)[\s\S]*?Не удалось запустить фоновую задачу локального ИИ/,
+  "A failed worker launch must complete the matching chat request with an error."
+);
+assert.match(
+  cmakeSource,
+  /file\(TO_CMAKE_PATH "\$\{CEF_LIB_DEBUG\}" CEF_LIB_DEBUG_NORMALIZED\)/,
+  "CEF library paths must be normalized for modern Windows CMake."
+);
+assert.match(
+  cmakeSource,
+  /file\(TO_CMAKE_PATH "\$\{CEF_LIB_RELEASE\}" CEF_LIB_RELEASE_NORMALIZED\)/,
+  "Both CEF debug and release library paths must be normalized."
+);
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");
