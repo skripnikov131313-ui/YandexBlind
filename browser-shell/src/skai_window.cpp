@@ -248,6 +248,15 @@ void SkAiOnUiClosed() {
 void SkAiOnAssistantClosed() {
   g_assistant_window = nullptr;
   g_assistant_client = nullptr;
+
+  if (!g_close_requested && g_ui_client && g_ui_client->GetBrowser()) {
+    const auto ui_browser = g_ui_client->GetBrowser();
+    const auto frame = ui_browser->GetMainFrame();
+    frame->ExecuteJavaScript(
+        L"window.skaiNative&&window.skaiNative.assistantClosed&&window.skaiNative.assistantClosed();",
+        frame->GetURL(), 0);
+  }
+
   BrowserClosedDuringShutdown();
 }
 
