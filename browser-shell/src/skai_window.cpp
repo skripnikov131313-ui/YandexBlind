@@ -828,6 +828,62 @@ void SkAiDismissPermission(std::uint64_t cef_prompt_id) {
   NotifyPermissionDismissed(request_id);
 }
 
+void SkAiSendSitePermissionList() {
+  LoadSitePermissionDecisions();
+  auto list = CefListValue::Create();
+  std::size_t index = 0;
+
+  for (const auto& [key, allow] : g_site_permission_decisions) {
+    const auto last_separator = key.rfind(L'|');
+    if (last_separator == std::wstring::npos) continue;
+    const auto previous_separator = key.rfind(L'|', last_separator - 1);
+    if (previous_separator == std::wstring::npos) continue;
+
+    const std::wstring origin = key.substr(0, previous_separator);
+    const std::wstring kind = key.substr(previous_separator + 1,
+                                         last_separator - previous_separator - 1);
+    const std::wstring mask_text = key.substr(last_separator + 1);
+    wchar_t* end = nullptr;
+    const unsigned long mask_value = std::wcstoul(mask_text.c_str(), &end, 10);
+    if (end == mask_text.c_str() || *end != L'\\0' ||
+        mask_value > UINT32_MAX) {
+      continue;
+    }
+
+    const bool media_request = kind == L"media";
+    auto item = CefDictionaryValue::Create();
+    item->SetString("key", key);
+    item->SetString("origin", origin);
+    item->SetString("description",
+                    DescribePermissionRequest(
+                        static_cast<std::uint32_t>(mask_value),
+                        media_request));
+    item->SetBool("allow", allow);
+    item->SetBool("media", media_request);
+    list->SetDictionary(index++, item);
+  }
+
+  auto value = CefValue::Create();
+  value->SetList(list);
+  const auto json = CefWriteJSON(value, JSON_WRITER_DEFAULT).ToWString();
+
+  if (!g_ui_client || !g_ui_client->GetBrowser()) return;
+  const auto browser = g_ui_client->GetBrowser();
+  const auto frame = browser->GetMainFrame();
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.sitePermissionsUpdated&&window.skaiNative.sitePermissionsUpdated(" +
+          json + L");",
+      frame->GetURL(), 0);
+}
+
+void SkAiRevokeSitePermission(const std::wstring& permission_key) {
+  LoadSitePermissionDecisions();
+  const auto erased = g_site_permission_decisions.erase(permission_key);
+  if (erased == 0) return;
+  SaveSitePermissionDecisions();
+  SkAiSendSitePermissionList();
+}
+
 void SkAiCancelPermissionsForTab(int tab_id) {
   for (auto it = g_pending_permissions.begin();
        it != g_pending_permissions.end();) {
