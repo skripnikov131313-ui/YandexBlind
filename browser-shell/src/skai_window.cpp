@@ -4,6 +4,7 @@
 #include "include/cef_values.h"
 #include "include/cef_parser.h"
 #include "skai_client.h"
+#include <windowsx.h>
 #include <filesystem>
 #include <map>
 #include <string>
