@@ -15,6 +15,20 @@
 #include <knownfolders.h>
 
 namespace {
+bool TryParseDownloadId(const CefString& input, uint32_t& download_id) {
+  const std::wstring value = input.ToWString();
+  if (value.empty()) return false;
+  wchar_t* end = nullptr;
+  errno = 0;
+  const unsigned long parsed = std::wcstoul(value.c_str(), &end, 10);
+  if (errno == ERANGE || end == value.c_str() || *end != L'\\0' ||
+      parsed > UINT_MAX) {
+    return false;
+  }
+  download_id = static_cast<uint32_t>(parsed);
+  return true;
+}
+
 bool TryParseTabId(const CefString& input, int& tab_id) {
   const std::wstring value = input.ToWString();
   if (value.empty()) {
@@ -148,6 +162,14 @@ bool SkAiClient::OnProcessMessageReceived(
       if (TryParseTabId(args->GetString(2), tab_id)) {
         SkAiCloseTab(tab_id);
       }
+    }
+    return true;
+  }
+
+  if (category == "download") {
+    uint32_t download_id = 0;
+    if (TryParseDownloadId(args->GetString(2), download_id)) {
+      SkAiDownloadAction(download_id, action.ToWString());
     }
     return true;
   }
