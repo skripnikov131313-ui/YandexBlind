@@ -9,14 +9,19 @@
 #include "include/cef_process_message.h"
 #include "include/cef_life_span_handler.h"
 #include "include/cef_display_handler.h"
+#include "include/cef_load_handler.h"
 
 class SkAiClient final : public CefClient,
                          public CefLifeSpanHandler,
-                         public CefDisplayHandler {
+                         public CefDisplayHandler,
+                         public CefLoadHandler {
  public:
   SkAiClient(HWND host_window, int tab_id, bool ui_browser);
   CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override { return this; }
   CefRefPtr<CefDisplayHandler> GetDisplayHandler() override { return this; }
+  CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
+  void OnLoadingStateChange(CefRefPtr<CefBrowser> browser, bool is_loading,
+      bool can_go_back, bool can_go_forward) override;
   bool OnProcessMessageReceived(CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefFrame> frame, CefProcessId source_process,
       CefRefPtr<CefProcessMessage> message) override;
