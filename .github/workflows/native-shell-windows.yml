@@ -13,13 +13,28 @@ on:
       - ".github/workflows/native-shell-windows.yml"
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   windows-x64:
-    runs-on: windows-2022
-    timeout-minutes: 35
+    runs-on: windows-2025
+    timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Verify Windows toolchain
+        shell: pwsh
+        run: |
+          cmake --version
+          node --version
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (Test-Path $vswhere) {
+            & $vswhere -latest -products '*' -property installationVersion
+          }
+          Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\Include" -Directory |
+            Select-Object -ExpandProperty Name
 
       - name: Download pinned CEF distribution
         shell: pwsh
@@ -38,11 +53,48 @@ jobs:
           if ($expected -ne $actual) { throw "CEF SHA-1 verification failed." }
           tar -xjf $archivePath -C $folder
           $cefRoot = Join-Path $folder "cef_binary_$($version)_windows64"
+          if (!(Test-Path (Join-Path $cefRoot "Release\bootstrap.exe"))) {
+            throw "Pinned CEF package does not contain Release\bootstrap.exe required for the sandbox bootstrap."
+          }
           "CEF_ROOT=$cefRoot" | Out-File -FilePath $env:GITHUB_ENV -Append
-          "CEF_ROOT=$cefRoot" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check browser-shell/ui/app.js
+          node --check browser-shell/ui/assistant.js
 
       - name: Configure native shell
-        run: cmake -S browser-shell -B build/skai -A x64 -DCEF_ROOT="$env:CEF_ROOT"
+        shell: pwsh
+        run: |
+          cmake -S browser-shell -B build/skai -A x64 -DCEF_ROOT="$env:CEF_ROOT" -DUSE_SANDBOX=ON
 
       - name: Build native shell
         run: cmake --build build/skai --config Release --parallel 2
+
+      - name: Verify packaged runtime
+        shell: pwsh
+        run: |
+          $bin = Join-Path $PWD "build/skai/bin/Release"
+          $required = @(
+            "SkAi.exe",
+            "SkAi.dll",
+            "libcef.dll",
+            "chrome_elf.dll",
+            "icudtl.dat",
+            "resources.pak",
+            "ui/index.html",
+            "ui/assistant.html"
+          )
+          foreach ($item in $required) {
+            $path = Join-Path $bin $item
+            if (!(Test-Path $path)) { throw "Required runtime file missing: $path" }
+          }
+          Get-ChildItem $bin -Force | Select-Object Name, Length
+
+      - name: Upload Windows x64 runtime
+        uses: actions/upload-artifact@v4
+        with:
+          name: skai-win-x64-runtime
+          path: build/skai/bin/Release/
+          if-no-files-found: error
+          retention-days: 14
