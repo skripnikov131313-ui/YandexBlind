@@ -16,7 +16,7 @@
 #include <knownfolders.h>
 
 namespace {
-bool TryParseDownloadId(const CefString& input, std::uint32_t& download_id) {
+bool TryParseDownloadId(const CefString& input, std::std::uint32_t& download_id) {
   const std::wstring value = input.ToWString();
   if (value.empty()) return false;
   wchar_t* end = nullptr;
@@ -168,10 +168,16 @@ bool SkAiClient::OnProcessMessageReceived(
   }
 
   if (category == "download") {
-    uint32_t download_id = 0;
+    std::uint32_t download_id = 0;
     if (TryParseDownloadId(args->GetString(2), download_id)) {
       SkAiDownloadAction(download_id, action.ToWString());
     }
+    return true;
+  }
+
+  if (category == "downloadPath") {
+    SkAiOpenDownloadedFile(args->GetString(2).ToWString(),
+                           action.ToWString());
     return true;
   }
 
