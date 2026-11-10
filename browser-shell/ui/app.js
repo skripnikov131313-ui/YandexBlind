@@ -13,16 +13,14 @@
     {name:"Brave", url:q=>"https://search.brave.com/search?q="+encodeURIComponent(q)},
     {name:"Startpage", url:q=>"https://www.startpage.com/sp/search?query="+encodeURIComponent(q)}
   ];
-  const sessionKey = "skai.session.tabs.v1";
-  let sessionToRestore = [];
+  let activeProfileName = "default";
   try {
-    const savedSession = JSON.parse(localStorage.getItem(sessionKey) || "[]");
-    if (Array.isArray(savedSession)) {
-      sessionToRestore = savedSession
-        .filter(item => item && typeof item.url === "string" && /^https?:\/\//i.test(item.url))
-        .slice(0, 50);
-    }
-  } catch (_) { sessionToRestore = []; }
+    const savedProfile = localStorage.getItem("skai.active.profile.v1") || "default";
+    if (/^[a-z0-9_-]{1,24}$/.test(savedProfile)) activeProfileName = savedProfile;
+  } catch (_) {}
+  const profileStorageKey = (key, profile = activeProfileName) => key + "." + profile;
+  let sessionKey = profileStorageKey("skai.session.tabs.v1");
+  let sessionToRestore = [];
 
   let providerIndex = 0;
   try {
@@ -40,8 +38,8 @@
   let mode = "local";
   let toastTimer = 0;
   let activePageLoading = false;
-  const conversationKey = "skai.conversation.v1";
-  const modeKey = "skai.assistant.mode.v1";
+  let conversationKey = profileStorageKey("skai.conversation.v1");
+  let modeKey = profileStorageKey("skai.assistant.mode.v1");
   let conversation = [];
   try { conversation = JSON.parse(localStorage.getItem(conversationKey) || "[]"); } catch (_) { conversation = []; }
   try { mode = localStorage.getItem(modeKey) || "local"; } catch (_) {}
@@ -259,10 +257,10 @@
   });
 
   $("#themeButton")?.addEventListener("click", cycleTheme);
-  const bookmarkKey = "skai.bookmarks.v1";
-  const bookmarkFoldersKey = "skai.bookmark.folders.v1";
-  const historyKey = "skai.history.v1";
-  const downloadsKey = "skai.downloads.v1";
+  let bookmarkKey = profileStorageKey("skai.bookmarks.v1");
+  let bookmarkFoldersKey = profileStorageKey("skai.bookmark.folders.v1");
+  let historyKey = profileStorageKey("skai.history.v1");
+  let downloadsKey = profileStorageKey("skai.downloads.v1");
   let bookmarks = [];
   let bookmarkFolders = ["Без папки"];
   let bookmarkFolderFilter = "*";
