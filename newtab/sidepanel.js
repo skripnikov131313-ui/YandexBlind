@@ -150,7 +150,10 @@
     $("read-page").disabled = true;
     $("read-page").textContent = "ЧИТАЕМ…";
     try {
-      const [tab] = await chrome.tabs.query({ active: true, lastFocusedWindow: true });
+      const browserWindow = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
+      const [tab] = browserWindow?.id != null
+        ? await chrome.tabs.query({ active: true, windowId: browserWindow.id })
+        : [];
       if (!tab || !tab.id || !/^https?:/.test(tab.url || "")) {
         throw new Error("Эта страница недоступна для чтения. Открой Sk/Ai кнопкой расширения на панели браузера и повтори действие.");
       }
