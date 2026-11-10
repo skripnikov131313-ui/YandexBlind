@@ -6,7 +6,8 @@
 
 int APIENTRY wWinMain(HINSTANCE instance, HINSTANCE, wchar_t*, int show_command) {
   CefMainArgs main_args(instance);
-  const int subprocess_code = CefExecuteProcess(main_args, nullptr, nullptr);
+  const auto app = new SkAiApp();
+  const int subprocess_code = CefExecuteProcess(main_args, app, nullptr);
   if (subprocess_code >= 0) return subprocess_code;
 
   CefSettings settings;
@@ -16,7 +17,6 @@ int APIENTRY wWinMain(HINSTANCE instance, HINSTANCE, wchar_t*, int show_command)
   settings.windowless_rendering_enabled = false;
   settings.log_severity = LOGSEVERITY_WARNING;
 
-  const auto app = new SkAiApp();
   if (!CefInitialize(main_args, settings, app, nullptr)) return CefGetExitCode();
 
   const HWND window = SkAiCreateMainWindow(instance, show_command);
