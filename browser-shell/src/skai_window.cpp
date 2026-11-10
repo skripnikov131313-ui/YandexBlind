@@ -26,6 +26,9 @@ struct Tab {
   int id = 0;
   CefRefPtr<SkAiClient> client;
   bool active = false;
+  bool can_go_back = false;
+  bool can_go_forward = false;
+  bool is_loading = false;
 };
 std::map<int, Tab> g_tabs;
 
@@ -321,6 +324,14 @@ void SkAiActivateTab(int tab_id) {
   g_active_tab_id = tab_id;
   LayoutChildren();
   SendTabSnapshot();
+  const auto active = g_tabs.find(tab_id);
+  if (active != g_tabs.end()) {
+    SkAiNotifyNavigationState(tab_id, active->second.can_go_back,
+                              active->second.can_go_forward,
+                              active->second.is_loading);
+  } else {
+    SkAiNotifyNavigationState(0, false, false, false);
+  }
 }
 
 void SkAiOnTabClosed(int tab_id) {
@@ -383,6 +394,8 @@ void SkAiBrowserAction(const std::wstring& action) {
     browser->GoForward();
   } else if (action == L"reload") {
     browser->Reload();
+  } else if (action == L"stop") {
+    browser->StopLoad();
   }
 }
 
@@ -414,6 +427,30 @@ void SkAiNotifyTabState(int tab_id, const std::wstring& title,
       L"window.skaiNative&&window.skaiNative.updateTab(" +
           std::to_wstring(tab_id) + L"," + json_string(title) + L"," +
           json_string(url) + L"," + (loading ? L"true" : L"false") + L");",
+      frame->GetURL(), 0);
+}
+
+void SkAiNotifyNavigationState(int tab_id, bool can_go_back,
+                               bool can_go_forward, bool is_loading) {
+  if (g_close_requested || !g_ui_client || !g_ui_client->GetBrowser()) {
+    return;
+  }
+
+  const auto tab = g_tabs.find(tab_id);
+  if (tab != g_tabs.end()) {
+    tab->second.can_go_back = can_go_back;
+    tab->second.can_go_forward = can_go_forward;
+    tab->second.is_loading = is_loading;
+  }
+
+  const auto browser = g_ui_client->GetBrowser();
+  const auto frame = browser->GetMainFrame();
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.navigationState(" +
+          std::to_wstring(tab_id) + L"," +
+          (can_go_back ? L"true" : L"false") + L"," +
+          (can_go_forward ? L"true" : L"false") + L"," +
+          (is_loading ? L"true" : L"false") + L");",
       frame->GetURL(), 0);
 }
 
