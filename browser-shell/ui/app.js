@@ -475,6 +475,57 @@
     });
   }
 
+  function refreshProfileControls() {
+    const select = $("#activeProfileSelect");
+    if (!select) return;
+    const current = activeProfileName;
+    select.replaceChildren();
+    knownProfiles.forEach(profile => {
+      const option = document.createElement("option");
+      option.value = profile.name;
+      option.textContent = profile.name === "default" ? "По умолчанию" : profile.name;
+      select.append(option);
+    });
+    select.value = current;
+    if (!select.value) select.value = "default";
+  }
+
+  function requestProfileSwitch(name) {
+    const target = String(name || "").trim().toLowerCase();
+    if (!/^[a-z0-9_-]{1,24}$/.test(target) || target === activeProfileName) return;
+    persistBrowserSession();
+    notify("Переключение профиля: " + target);
+    window.skaiNative?.switchProfile(target);
+  }
+
+  function restoreProfileSession() {
+    if (internalViewType) closeInternalView();
+    $(".tab").forEach(tab => {
+      if (Number(tab.dataset.tabId || 0) !== 0) tab.remove();
+    });
+    tabSequence = 1;
+    setActiveTabUi(homeTab);
+    window.skaiNative?.activateTab(0);
+    const restore = sessionToRestore.slice();
+    restore.forEach(item => createTab(item.url));
+    syncBookmarkButton();
+  }
+
+  function completeProfileSwitch(name) {
+    const normalized = String(name || "").trim().toLowerCase();
+    if (!/^[a-z0-9_-]{1,24}$/.test(normalized)) return;
+    loadProfileData(normalized);
+    profileStartupResolved = true;
+    const button = $("#profileButton");
+    if (button) {
+      button.textContent = normalized === "default" ? "D" : normalized.slice(0, 1).toUpperCase();
+      button.title = "Профиль: " + normalized;
+    }
+    refreshProfileControls();
+    restoreProfileSession();
+    notify("Активен профиль: " + (normalized === "default" ? "По умолчанию" : normalized));
+  }
+
   function renderSettingsContent(list) {
     const group = (title, description) => {
       const section = document.createElement("section");
@@ -573,11 +624,47 @@
     sitePermissionGroup.append(refreshPermissions);
     renderSavedSitePermissions();
 
-    const profileGroup = group("Профиль", "Данные браузера хранятся локально в профиле Windows.");
+    const profileGroup = group("Профили браузера", "Каждый профиль использует отдельное хранилище Chromium: cookies, cache, localStorage и данные сайтов.");
+    const profileSelect = select(
+      knownProfiles.map(profile => ({
+        value: profile.name,
+        label: profile.name === "default" ? "По умолчанию" : profile.name
+      })),
+      activeProfileName
+    );
+    profileSelect.id = "activeProfileSelect";
+    profileSelect.addEventListener("change", () => requestProfileSwitch(profileSelect.value));
+    field(profileGroup, "Активный профиль", "Переключение закрывает вкладки текущего профиля и восстанавливает его последнюю сессию.", profileSelect);
+
+    const createRow = document.createElement("div");
+    createRow.className = "profile-create-row";
+    const profileNameInput = document.createElement("input");
+    profileNameInput.type = "text";
+    profileNameInput.id = "newProfileName";
+    profileNameInput.maxLength = 24;
+    profileNameInput.placeholder = "work";
+    profileNameInput.setAttribute("aria-label", "Имя нового профиля");
+    const createProfileButton = document.createElement("button");
+    createProfileButton.type = "button";
+    createProfileButton.className = "settings-refresh";
+    createProfileButton.textContent = "Создать профиль";
+    createProfileButton.addEventListener("click", () => {
+      const name = profileNameInput.value.trim().toLowerCase();
+      if (!/^[a-z0-9_-]{1,24}$/.test(name) || name === "default") {
+        notify("Имя: латинские буквы, цифры, дефис или подчёркивание (до 24 символов)");
+        return;
+      }
+      window.skaiNative?.createProfile(name);
+      profileNameInput.value = "";
+    });
+    createRow.append(profileNameInput, createProfileButton);
+    profileGroup.append(createRow);
     const profileNote = document.createElement("div");
     profileNote.className = "settings-note";
-    profileNote.textContent = "Закладки, папки, история, история загрузок и последняя сессия хранятся в профиле Sk/Ai. Очистка cookies и данных сайтов будет добавлена отдельно.";
+    profileNote.textContent = "Закладки, папки, история, загрузки, разрешения и последняя сессия хранятся отдельно в каждом профиле. Для профилей создаются отдельные каталоги в локальных данных Sk/Ai.";
     profileGroup.append(profileNote);
+    refreshProfileControls();
+    window.skaiNative?.listProfiles();
   }
 
   function renderInternalView(type) {
