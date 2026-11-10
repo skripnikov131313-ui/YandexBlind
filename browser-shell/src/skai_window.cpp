@@ -8,6 +8,8 @@
 
 #include <windowsx.h>
 #include <filesystem>
+#include <fstream>
+#include <iterator>
 #include <map>
 #include <string>
 #include <vector>
@@ -60,9 +62,12 @@ struct PendingPermission {
   std::uint64_t cef_prompt_id = 0;
   CefRefPtr<CefPermissionPromptCallback> prompt_callback;
   CefRefPtr<CefMediaAccessCallback> media_callback;
+  std::wstring permission_key;
 };
 std::map<std::uint64_t, PendingPermission> g_pending_permissions;
 std::map<std::uint64_t, std::uint64_t> g_cef_prompt_to_request;
+std::map<std::wstring, bool> g_site_permission_decisions;
+bool g_permission_store_loaded = false;
 std::uint64_t g_next_permission_id = (1ULL << 52);
 
 std::wstring UiFile(const wchar_t* file) {
@@ -126,6 +131,94 @@ bool ResolveManagedDownloadPath(const std::wstring& raw_path,
 
   resolved_path = candidate;
   return true;
+}
+
+std::filesystem::path GetPermissionStorePath() {
+  PWSTR local = nullptr;
+  if (FAILED(SHGetKnownFolderPath(FOLDERID_LocalAppData, KF_FLAG_CREATE,
+                                 nullptr, &local)) || !local) {
+    return {};
+  }
+
+  const auto profile =
+      std::filesystem::path(local) / L"SkAi" / L"Profiles" / L"Default";
+  CoTaskMemFree(local);
+  std::error_code error;
+  std::filesystem::create_directories(profile, error);
+  if (error) {
+    return {};
+  }
+  return profile / L"permissions.json";
+}
+
+std::wstring MakePermissionDecisionKey(const std::wstring& origin,
+                                       std::uint32_t requested_permissions,
+                                       bool media_request) {
+  return origin + (media_request ? L"|media|" : L"|site|") +
+         std::to_wstring(requested_permissions);
+}
+
+void LoadSitePermissionDecisions() {
+  if (g_permission_store_loaded) {
+    return;
+  }
+  g_permission_store_loaded = true;
+
+  const auto path = GetPermissionStorePath();
+  if (path.empty()) {
+    return;
+  }
+
+  std::ifstream file(path, std::ios::binary);
+  if (!file) {
+    return;
+  }
+  const std::string json((std::istreambuf_iterator<char>(file)),
+                         std::istreambuf_iterator<char>());
+  if (json.empty()) {
+    return;
+  }
+
+  const auto value = CefParseJSON(json, JSON_PARSER_RFC);
+  if (!value || value->GetType() != VTYPE_DICTIONARY) {
+    return;
+  }
+
+  const auto dictionary = value->GetDictionary();
+  if (!dictionary || !dictionary->IsValid()) {
+    return;
+  }
+
+  CefDictionaryValue::KeyList keys;
+  if (!dictionary->GetKeys(keys)) {
+    return;
+  }
+  for (const auto& key : keys) {
+    if (dictionary->GetType(key) == VTYPE_BOOL) {
+      g_site_permission_decisions[key.ToWString()] =
+          dictionary->GetBool(key);
+    }
+  }
+}
+
+void SaveSitePermissionDecisions() {
+  const auto path = GetPermissionStorePath();
+  if (path.empty()) {
+    return;
+  }
+
+  auto dictionary = CefDictionaryValue::Create();
+  for (const auto& [key, allow] : g_site_permission_decisions) {
+    dictionary->SetBool(key, allow);
+  }
+
+  auto value = CefValue::Create();
+  value->SetDictionary(dictionary);
+  const auto json = CefWriteJSON(value, JSON_WRITER_DEFAULT).ToString();
+  std::ofstream file(path, std::ios::binary | std::ios::trunc);
+  if (file) {
+    file.write(json.data(), static_cast<std::streamsize>(json.size()));
+  }
 }
 
 std::wstring DescribePermissionRequest(std::uint32_t permissions,
