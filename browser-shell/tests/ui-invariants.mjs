@@ -30,4 +30,39 @@ assert.match(
   "New tabs must be created by the native CEF controller."
 );
 
+const assistantSource = readFileSync(
+  new URL("../ui/assistant.js", import.meta.url),
+  "utf8"
+);
+const nativeWindowSource = readFileSync(
+  new URL("../src/skai_window.cpp", import.meta.url),
+  "utf8"
+);
+
+assert.match(
+  assistantSource,
+  /skai\.conversation\.v1\."\+activeProfile/,
+  "Detached assistant conversation storage must be profile-scoped."
+);
+assert.match(
+  assistantSource,
+  /skai\.assistant\.mode\.v1\."\+activeProfile/,
+  "Detached assistant mode storage must be profile-scoped."
+);
+assert.match(
+  source,
+  /window\.addEventListener\("storage"/,
+  "Main assistant must listen for cross-window state updates."
+);
+assert.match(
+  nativeWindowSource,
+  /UiFile\(L"assistant\.html"\) \+ L"\?profile=" \+ g_active_profile/,
+  "Detached assistant must receive the active profile identifier."
+);
+assert.match(
+  nativeWindowSource,
+  /g_assistant_client->RequestClose\(\);/,
+  "Profile switching must close the detached assistant."
+);
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");
