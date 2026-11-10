@@ -16,7 +16,18 @@
 <div class="toolbar">
  <div class="nav-controls"><button class="icon-button" id="goBack" aria-label="Назад">‹</button><button class="icon-button" id="goForward" aria-label="Вперёд">›</button><button class="icon-button" id="reloadPage" aria-label="Обновить">↻</button></div>
  <div class="omnibox"><span class="secure-mark">▣</span><input id="addressInput" placeholder="Введите адрес или поисковый запрос" aria-label="Адрес или поисковый запрос" spellcheck="false"><button class="omnibox-action" id="bookmarkButton" aria-label="Добавить закладку">☆</button></div>
+ <button class="toolbar-icon" id="findButton" title="Найти на странице" aria-label="Найти на странице">⌕</button>
+ <div class="zoom-tools" aria-label="Масштаб страницы"><button class="toolbar-icon zoom-control" id="zoomOut" title="Уменьшить масштаб">−</button><span id="zoomLevel" aria-live="polite">100%</span><button class="toolbar-icon zoom-control" id="zoomIn" title="Увеличить масштаб">＋</button></div>
+ <button class="toolbar-icon" id="printPage" title="Печать страницы" aria-label="Печать страницы">▤</button>
  <button class="toolbar-icon" id="downloadsButton" title="Загрузки">↓</button><button class="profile-button" id="profileButton" title="Профиль">D</button><button class="toolbar-icon" id="themeButton" title="Сменить оформление">⋮</button>
+</div>
+<div class="findbar" id="findBar" hidden>
+ <label class="findbar-label" for="findInput">Найти</label>
+ <input id="findInput" type="search" placeholder="Текст на странице" aria-label="Текст для поиска на странице">
+ <span class="findbar-count" id="findCount" aria-live="polite">0 совпадений</span>
+ <button class="findbar-button" id="findPrevious" title="Предыдущее совпадение" aria-label="Предыдущее совпадение">↑</button>
+ <button class="findbar-button" id="findNext" title="Следующее совпадение" aria-label="Следующее совпадение">↓</button>
+ <button class="findbar-close" id="findClose" title="Закрыть поиск" aria-label="Закрыть поиск">×</button>
 </div>
 <div class="browser-body">
 <nav class="rail" aria-label="Навигация"><button class="rail-item selected" id="homeNav" title="Главная">⌂</button><button class="rail-item" title="Помощник" id="assistantRail">✧</button><button class="rail-item" id="historyNav" title="История">◷</button><button class="rail-item" id="downloadsNav" title="Загрузки">↓</button><button class="rail-item" title="Расширения">♧</button><button class="rail-item" id="settingsNav" title="Настройки">⚙</button><span class="rail-spacer"></span><button class="rail-item moon" title="Ночной режим">☾</button><span class="rail-toggle"></span></nav>
