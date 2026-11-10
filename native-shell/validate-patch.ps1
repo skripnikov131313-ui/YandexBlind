@@ -33,10 +33,20 @@ try {
         $url = $rawBase + $relative
         Write-Host ("Fetching pinned source: {0}" -f $relative)
         Invoke-WebRequest -Uri $url -OutFile $destination -UseBasicParsing
+
+        # Match Chromium's checked-out text form regardless of the hosted
+        # runner's PowerShell / Git line-ending defaults.
+        $sourceText = [IO.File]::ReadAllText($destination)
+        $sourceText = $sourceText.TrimStart([char]0xFEFF)
+        $sourceText = $sourceText.Replace("`r`n", "`n").Replace("`r", "`n")
+        $utf8NoBom = [Text.UTF8Encoding]::new($false)
+        [IO.File]::WriteAllText($destination, $sourceText, $utf8NoBom)
     }
 
     & git.exe init --quiet $sourceRoot
     if ($LASTEXITCODE -ne 0) { throw "Could not initialize temporary Git workspace." }
+    & git.exe -C $sourceRoot config core.autocrlf false
+    if ($LASTEXITCODE -ne 0) { throw "Could not disable Git line-ending conversion in the patch-check workspace." }
 
     Push-Location $sourceRoot
     try {
