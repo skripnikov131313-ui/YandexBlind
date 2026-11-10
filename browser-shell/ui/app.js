@@ -14,6 +14,15 @@
     {name:"Startpage", url:q=>"https://www.startpage.com/sp/search?query="+encodeURIComponent(q)}
   ];
   let providerIndex = 0;
+  try {
+    providerIndex = Number(localStorage.getItem("skai.search.provider.v1") || 0);
+  } catch (_) {}
+  if (!Number.isInteger(providerIndex) || providerIndex < 0 || providerIndex >= providers.length) {
+    providerIndex = 0;
+  }
+  let themeMode = "system";
+  try { themeMode = localStorage.getItem("skai.theme.mode.v1") || "system"; } catch (_) {}
+  if (!["system", "dark", "light"].includes(themeMode)) themeMode = "system";
   let mode = "local";
   let toastTimer = 0;
   const conversationKey = "skai.conversation.v1";
@@ -21,6 +30,25 @@
   let conversation = [];
   try { conversation = JSON.parse(localStorage.getItem(conversationKey) || "[]"); } catch (_) { conversation = []; }
   try { mode = localStorage.getItem(modeKey) || "local"; } catch (_) {}
+
+  const systemTheme = window.matchMedia("(prefers-color-scheme: light)");
+  function applyTheme() {
+    const theme = themeMode === "system" ? (systemTheme.matches ? "light" : "dark") : themeMode;
+    document.body.dataset.theme = theme;
+    document.body.dataset.themeMode = themeMode;
+    const button = $("#themeButton");
+    if (button) button.title = "Тема: " + (themeMode === "system" ? "как в Windows" : themeMode === "light" ? "светлая" : "тёмная");
+  }
+  function cycleTheme() {
+    themeMode = themeMode === "system" ? "dark" : themeMode === "dark" ? "light" : "system";
+    try { localStorage.setItem("skai.theme.mode.v1", themeMode); } catch (_) {}
+    applyTheme();
+    notify(themeMode === "system" ? "Тема Windows" : themeMode === "light" ? "Светлая тема" : "Тёмная тема");
+  }
+  applyTheme();
+  systemTheme.addEventListener?.("change", () => {
+    if (themeMode === "system") applyTheme();
+  });
 
   function notify(message) {
     if (!toast) return;
@@ -115,10 +143,16 @@
   }));
   $("#sharePage")?.addEventListener("click", () => notify("Передача страницы появится после подключения браузерного движка"));
 
-  function cycleProvider() {
-    providerIndex = (providerIndex + 1) % providers.length;
+  function syncProvider() {
     $("#engineButton").innerHTML = providers[providerIndex].name + " <span>⌄</span>";
     $("#currentEngine").textContent = providers[providerIndex].name;
+  }
+  syncProvider();
+  function cycleProvider() {
+    providerIndex = (providerIndex + 1) % providers.length;
+    try { localStorage.setItem("skai.search.provider.v1", String(providerIndex)); } catch (_) {}
+    syncProvider();
+    
     notify("Поисковая система: " + providers[providerIndex].name);
   }
   $("#engineButton")?.addEventListener("click", cycleProvider);
@@ -142,10 +176,7 @@
   $("#goForward")?.addEventListener("click", () => window.skaiNative?.forward());
   $("#reloadPage")?.addEventListener("click", () => window.skaiNative?.reload());
 
-  $("#themeButton")?.addEventListener("click", () => {
-    document.body.dataset.theme = document.body.dataset.theme === "light" ? "dark" : "light";
-    notify(document.body.dataset.theme === "light" ? "Светлая тема" : "Тёмная тема");
-  });
+  $("#themeButton")?.addEventListener("click", cycleTheme);
   $$(".shortcut-card[data-url]").forEach(card => card.addEventListener("click", () => {
     $("#addressInput").value = card.dataset.url;
     notify("Раздел откроется после подключения Sk/Ai Core");
@@ -251,10 +282,6 @@
   boundsObserver.observe($("#pageArea"));
   window.addEventListener("resize", updateContentBounds);
   requestAnimationFrame(updateContentBounds);
-  $(".rail-toggle")?.addEventListener("click", () => {
-    document.body.dataset.theme = document.body.dataset.theme === "light" ? "dark" : "light";
-  });
-  $(".rail-item.moon")?.addEventListener("click", () => {
-    document.body.dataset.theme = document.body.dataset.theme === "light" ? "dark" : "light";
-  });
+  $(".rail-toggle")?.addEventListener("click", cycleTheme);
+  $(".rail-item.moon")?.addEventListener("click", cycleTheme);
 })();
