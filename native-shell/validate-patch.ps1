@@ -48,8 +48,31 @@ try {
     & git.exe -C $sourceRoot config core.autocrlf false
     if ($LASTEXITCODE -ne 0) { throw "Could not disable Git line-ending conversion in the patch-check workspace." }
 
+    # Chromium-Gost's own prepare step applies its branding.patch before
+    # Sk/Ai overlays. Reproduce only that patch's BRANDING file hunk here,
+    # rather than applying its unrelated UI/resource changes to this small
+    # validation fixture.
+    $upstreamBrandingPatch = Join-Path $tempRoot "chromium-gost-branding.patch"
+    $upstreamBrandingUrl = "https://raw.githubusercontent.com/deemru/Chromium-Gost/$chromiumTag/patch/branding.patch"
+    Invoke-WebRequest -Uri $upstreamBrandingUrl -OutFile $upstreamBrandingPatch -UseBasicParsing
+    $upstreamText = [IO.File]::ReadAllText($upstreamBrandingPatch)
+    $upstreamText = $upstreamText.TrimStart([char]0xFEFF)
+    $upstreamText = $upstreamText.Replace("`r`n", "`n").Replace("`r", "`n")
+    $utf8NoBom = [Text.UTF8Encoding]::new($false)
+    [IO.File]::WriteAllText($upstreamBrandingPatch, $upstreamText, $utf8NoBom)
+
     Push-Location $sourceRoot
     try {
+        Write-Host "Applying the pinned Chromium-Gost branding state..."
+        & git.exe apply --check --include=chrome/app/theme/chromium/BRANDING $upstreamBrandingPatch
+        if ($LASTEXITCODE -ne 0) {
+            throw "The pinned Chromium-Gost branding.patch does not apply to Chromium 156."
+        }
+        & git.exe apply --include=chrome/app/theme/chromium/BRANDING $upstreamBrandingPatch
+        if ($LASTEXITCODE -ne 0) {
+            throw "Could not apply the Chromium-Gost BRANDING hunk to the validation fixture."
+        }
+
         foreach ($patch in $patches) {
             Write-Host ("Checking {0} against Chromium {1}..." -f $patch.Name, $chromiumTag) -ForegroundColor Cyan
             & git.exe apply --check --whitespace=error $patch.FullName
