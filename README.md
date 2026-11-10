@@ -1,11 +1,11 @@
-# Yandex Blind
+# Sk/Ai
 
-Yandex Blind is a Windows 11 x64 browser distribution built around Chromium-Gost, with a custom local start page and an embedded on-device Qwen assistant.
+Sk/Ai is a Windows 11 x64 browser distribution built around Chromium-Gost, with a custom local start page and an embedded on-device Qwen assistant.
 
 ## Included in this build
 
 - Chromium-Gost 156.0.8078.88 (x64), retaining its upstream ГОСТ TLS / msspi implementation.
-- Custom Yandex Blind start page with configurable search provider (Yandex, Google, Bing, DuckDuckGo, Brave Search, Startpage).
+- Custom Sk/Ai start page with configurable search provider (Yandex, Google, Bing, DuckDuckGo, Brave Search, Startpage).
 - Local Qwen3.5-2B model in GGUF Q4_K_M format (about 1.31 GB).
 - llama.cpp CPU inference runtime, launched silently and bound to 127.0.0.1 only.
 - Integrated assistant panel with text-file context for TXT, MD, CSV, LOG and JSON files.
