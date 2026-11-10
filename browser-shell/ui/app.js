@@ -115,6 +115,9 @@
   $("#addressInput")?.addEventListener("keydown", event => {
     if (event.key === "Enter") search(event.currentTarget.value);
   });
+  $("#goBack")?.addEventListener("click", () => window.skaiNative?.back());
+  $("#goForward")?.addEventListener("click", () => window.skaiNative?.forward());
+  $("#reloadPage")?.addEventListener("click", () => window.skaiNative?.reload());
 
   $("#themeButton")?.addEventListener("click", () => {
     document.body.dataset.theme = document.body.dataset.theme === "light" ? "dark" : "light";
@@ -128,6 +131,9 @@
     event.currentTarget.textContent = event.currentTarget.textContent === "☆" ? "★" : "☆";
     notify(event.currentTarget.textContent === "★" ? "Закладка добавлена (демо)" : "Закладка удалена (демо)");
   });
+
+  window.skaiNative = window.skaiNative || {};
+  window.skaiNative.addressChanged = url => { $("#addressInput").value = url; };
 
   function activateTab(tab) {
     $$(".tab").forEach(item => {
