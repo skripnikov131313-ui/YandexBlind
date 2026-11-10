@@ -44,4 +44,4 @@ void SkAiClient::OnAddressChange(CefRefPtr<CefBrowser>,CefRefPtr<CefFrame>f,cons
  else SkAiNotifyTabState(tab_id_,L"Загрузка…",u.ToWString(),true);
 }
 void SkAiClient::OnTitleChange(CefRefPtr<CefBrowser>,const CefString&t){if(!ui_browser_)SkAiNotifyTabState(tab_id_,t.ToWString(),browser_?browser_->GetMainFrame()->GetURL().ToWString():L"",false);}
-void SkAiClient::OnFaviconURLChange(CefRefPtr<CefBrowser>,const std::vector<CefString>&){}
+void SkAiClient::OnFaviconURLChange(CefRefPtr<CefBrowser>,const std::vector<CefString>& urls){if(!ui_browser_&&!urls.empty())SkAiNotifyTabFavicon(tab_id_,urls.front().ToWString());}
