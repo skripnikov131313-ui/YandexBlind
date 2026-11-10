@@ -9,6 +9,10 @@
 #include <cwchar>
 #include <sstream>
 #include <string>
+#include <filesystem>
+#include <system_error>
+#include <shlobj.h>
+#include <knownfolders.h>
 
 namespace {
 bool TryParseTabId(const CefString& input, int& tab_id) {
@@ -27,6 +31,66 @@ bool TryParseTabId(const CefString& input, int& tab_id) {
 
   tab_id = static_cast<int>(parsed);
   return true;
+}
+}  // namespace
+
+namespace {
+std::filesystem::path GetSkAiDownloadsDirectory() {
+  PWSTR downloads = nullptr;
+  if (SUCCEEDED(SHGetKnownFolderPath(FOLDERID_Downloads, KF_FLAG_CREATE,
+                                    nullptr, &downloads)) && downloads) {
+    std::filesystem::path directory =
+        std::filesystem::path(downloads) / L"SkAi";
+    CoTaskMemFree(downloads);
+
+    std::error_code error;
+    std::filesystem::create_directories(directory, error);
+    if (!error) {
+      return directory;
+    }
+  }
+  return {};
+}
+
+std::wstring SafeDownloadName(std::wstring name) {
+  for (auto& ch : name) {
+    if (ch < 32 || ch == L'<' || ch == L'>' || ch == L':' ||
+        ch == L'"' || ch == L'/' || ch == L'\\' ||
+        ch == L'|' || ch == L'?' || ch == L'*') {
+      ch = L'_';
+    }
+  }
+  while (!name.empty() && (name.back() == L'.' || name.back() == L' ')) {
+    name.pop_back();
+  }
+  if (name.empty() || name == L"." || name == L"..") {
+    return L"download";
+  }
+  return name;
+}
+
+std::filesystem::path MakeUniqueDownloadPath(
+    const std::filesystem::path& directory, const std::wstring& name) {
+  const auto safe_name = SafeDownloadName(name);
+  auto candidate = directory / safe_name;
+  std::error_code error;
+  if (!std::filesystem::exists(candidate, error) || error) {
+    return candidate;
+  }
+
+  const std::filesystem::path file_name(safe_name);
+  const auto stem = file_name.stem().wstring();
+  const auto extension = file_name.extension().wstring();
+  for (unsigned int suffix = 2; suffix < 10000; ++suffix) {
+    candidate = directory /
+        (stem + L" (" + std::to_wstring(suffix) + L")" + extension);
+    error.clear();
+    if (!std::filesystem::exists(candidate, error) || error) {
+      return candidate;
+    }
+  }
+  return directory /
+      (stem + L" (" + std::to_wstring(GetTickCount64()) + L")" + extension);
 }
 }  // namespace
 
@@ -205,6 +269,38 @@ void SkAiClient::OnLoadingStateChange(
     }
     SkAiNotifyNavigationState(tab_id_, can_go_back, can_go_forward, is_loading);
   }
+}
+
+bool SkAiClient::OnBeforeDownload(
+    CefRefPtr<CefBrowser> /*browser*/,
+    CefRefPtr<CefDownloadItem> download_item,
+    const CefString& suggested_name,
+    CefRefPtr<CefBeforeDownloadCallback> callback) {
+  if (!callback || !download_item || !download_item->IsValid()) {
+    return false;
+  }
+
+  const auto directory = GetSkAiDownloadsDirectory();
+  if (directory.empty()) {
+    // Preserve user choice if the standard Downloads folder is unavailable.
+    callback->Continue(SafeDownloadName(suggested_name.ToWString()), true);
+    return true;
+  }
+
+  const auto path = MakeUniqueDownloadPath(
+      directory, suggested_name.ToWString());
+  callback->Continue(path.wstring(), false);
+  return true;
+}
+
+void SkAiClient::OnDownloadUpdated(
+    CefRefPtr<CefBrowser> /*browser*/,
+    CefRefPtr<CefDownloadItem> download_item,
+    CefRefPtr<CefDownloadItemCallback> callback) {
+  if (!download_item || !download_item->IsValid()) {
+    return;
+  }
+  SkAiNotifyDownloadState(download_item, callback);
 }
 
 void SkAiClient::OnTitleChange(CefRefPtr<CefBrowser> /*browser*/,
