@@ -1,5 +1,6 @@
 #include "include/cef_app.h"
 #include "include/cef_command_line.h"
+#include "include/cef_sandbox_win.h"
 #include "skai_app.h"
 #include "skai_window.h"
 
@@ -56,14 +57,12 @@ int RunSkAi(HINSTANCE instance, int show_command, void* sandbox_info) {
 }  // namespace
 
 // The CEF bootstrap resolves this exact exported symbol from SkAi.dll.
-// CEF 151+ may append version metadata as the final argument. Keeping it
-// opaque lets this client ignore optional bootstrap metadata while forwarding
-// the sandbox handle required by CEF.
-extern "C" __declspec(dllexport) int RunWinMain(
+// Keep the exported entry point signature identical to cef_sandbox_win.h.
+CEF_BOOTSTRAP_EXPORT int RunWinMain(
     HINSTANCE instance,
-    LPWSTR /*command_line*/,
+    LPTSTR /*command_line*/,
     int show_command,
     void* sandbox_info,
-    void* /*version_info*/) {
+    cef_version_info_t* /*version_info*/) {
   return RunSkAi(instance, show_command, sandbox_info);
 }
