@@ -630,4 +630,10 @@ assert.match(
   "Windows CI must execute the native site tracker URL tests."
 );
 
+assert.match(nativeWindowSource, /class SkAiProfileRequestContextHandler/, "Each profile must have a CEF request-context handler.");
+assert.match(nativeWindowSource, /OnRequestContextInitialized\([\s\S]*ConfigureProfilePrivacyPreferences\(request_context\)/, "Cookie controls must be set after Chromium finishes initializing the request context.");
+assert.match(nativeWindowSource, /CreateContext\(context_settings, handler\)/, "The profile context must retain its initialization handler.");
+assert.match(nativeWindowSource, /SkAiProfileRequestContextHandler[\s\S]*?GetResourceRequestHandler\([\s\S]*?SkAiCreateTrackingResourceHandler\(\)/, "The context-level filter must also cover requests without browser/frame associations.");
+assert.match(clientSource, /CefRefPtr<CefResourceRequestHandler> SkAiCreateTrackingResourceHandler\(\)/, "Browser and profile request handlers must share one tracker filter.");
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");

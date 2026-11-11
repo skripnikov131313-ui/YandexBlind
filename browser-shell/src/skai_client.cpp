@@ -147,6 +147,10 @@ std::filesystem::path MakeUniqueDownloadPath(
 SkAiClient::SkAiClient(HWND host_window, int tab_id, bool ui_browser)
     : host_window_(host_window), tab_id_(tab_id), ui_browser_(ui_browser) {}
 
+CefRefPtr<CefResourceRequestHandler> SkAiCreateTrackingResourceHandler() {
+  return new SkAiTrackingResourceHandler();
+}
+
 CefRefPtr<CefResourceRequestHandler> SkAiClient::GetResourceRequestHandler(
     CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> frame,
     CefRefPtr<CefRequest> /*request*/, bool is_navigation, bool is_download,
@@ -157,7 +161,7 @@ CefRefPtr<CefResourceRequestHandler> SkAiClient::GetResourceRequestHandler(
   if (is_download || (is_navigation && frame && frame->IsMain())) {
     return nullptr;
   }
-  return new SkAiTrackingResourceHandler();
+  return SkAiCreateTrackingResourceHandler();
 }
 
 bool SkAiClient::OnProcessMessageReceived(

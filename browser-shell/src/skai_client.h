@@ -15,6 +15,9 @@
 #include "include/cef_permission_handler.h"
 #include "include/cef_request_handler.h"
 #include "include/cef_resource_request_handler.h"
+#include "include/cef_request.h"
+
+CefRefPtr<CefResourceRequestHandler> SkAiCreateTrackingResourceHandler();
 
 class SkAiClient final : public CefClient,
                          public CefLifeSpanHandler,

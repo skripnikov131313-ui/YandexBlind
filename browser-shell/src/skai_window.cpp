@@ -314,6 +314,34 @@ void ConfigureProfilePrivacyPreferences(
   }
 }
 
+class SkAiProfileRequestContextHandler final
+    : public CefRequestContextHandler {
+ public:
+  void OnRequestContextInitialized(
+      CefRefPtr<CefRequestContext> request_context) override {
+    // Preference registration is complete at this point. Applying the
+    // third-party cookie setting before this callback can silently fail.
+    ConfigureProfilePrivacyPreferences(request_context);
+  }
+
+  CefRefPtr<CefResourceRequestHandler> GetResourceRequestHandler(
+      CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> frame,
+      CefRefPtr<CefRequest> /*request*/, bool is_navigation, bool is_download,
+      const CefString& /*request_initiator*/,
+      bool& /*disable_default_handling*/) override {
+    // Client handlers cover regular frame requests. This context-level
+    // fallback also covers Service Worker/CefURLRequest traffic where CEF
+    // may not have a browser or frame to associate with the request.
+    if (is_download || (is_navigation && frame && frame->IsMain())) {
+      return nullptr;
+    }
+    return SkAiCreateTrackingResourceHandler();
+  }
+
+ private:
+  IMPLEMENT_REFCOUNTING(SkAiProfileRequestContextHandler);
+};
+
 CefRefPtr<CefRequestContext> GetOrCreateProfileContext(
     const std::wstring& raw_name, bool create_if_missing) {
   const auto name = NormalizeProfileName(raw_name);
@@ -336,9 +364,9 @@ CefRefPtr<CefRequestContext> GetOrCreateProfileContext(
   CefRequestContextSettings context_settings;
   CefString(&context_settings.cache_path) = (directory / L"Cache").wstring();
   context_settings.persist_session_cookies = true;
-  auto context = CefRequestContext::CreateContext(context_settings, nullptr);
+  auto handler = new SkAiProfileRequestContextHandler();
+  auto context = CefRequestContext::CreateContext(context_settings, handler);
   if (context) {
-    ConfigureProfilePrivacyPreferences(context);
     g_profile_contexts.emplace(name, context);
   }
   return context;
