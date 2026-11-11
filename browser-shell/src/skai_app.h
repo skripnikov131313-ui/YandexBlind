@@ -1,7 +1,10 @@
 #pragma once
 
 #include "include/cef_app.h"
+#include "include/cef_browser.h"
+#include "include/cef_frame.h"
 #include "include/cef_render_process_handler.h"
+#include "include/cef_v8.h"
 
 class SkAiApp final : public CefApp,
                       public CefBrowserProcessHandler,
