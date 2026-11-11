@@ -32,6 +32,8 @@
  let sharedPageContext = null;
  let pageContextPending = false;
  let aiSecurityAnalysisEnabled = true;
+ let pageContextGeneration = 0;
+ let pendingPageContextGeneration = 0;
  try { aiSecurityAnalysisEnabled = localStorage.getItem("skai.security.ai-analysis.v1") !== "false"; } catch (_) {}
 
  try {
@@ -210,14 +212,17 @@
   if (chip) chip.hidden = !sharedPageContext;
   if (title) title.textContent = sharedPageContext ? sharedPageContext.title || sharedPageContext.url : "";
   if (button) {
-   button.disabled = pageContextPending;
+   button.disabled = pageContextPending || !aiSecurityAnalysisEnabled;
    button.textContent = pageContextPending ? "…" : "⇧";
-   button.title = pageContextPending ? "Читаю текст страницы…" : "Передать текст активной страницы локальному ИИ";
+   button.title = !aiSecurityAnalysisEnabled
+    ? "Анализ страницы отключён в настройках защиты"
+    : pageContextPending ? "Читаю текст страницы…" : "Передать текст активной страницы локальному ИИ";
   }
  }
  $("#share-page")?.addEventListener("click", () => {
-  if (pageContextPending) return;
+  if (!aiSecurityAnalysisEnabled || pageContextPending) return;
   sharedPageContext = null;
+  pendingPageContextGeneration = ++pageContextGeneration;
   pageContextPending = true;
   renderSharedPageContext();
   if (!window.skaiNative?.shareCurrentPage) {
@@ -230,12 +235,19 @@
   window.skaiNative.shareCurrentPage();
  });
  $("#clear-shared-page")?.addEventListener("click", () => {
+  pageContextGeneration++;
+  pageContextPending = false;
   sharedPageContext = null;
   renderSharedPageContext();
  });
  window.skaiNative = window.skaiNative || {};
  window.skaiNative.pageContextReceived = result => {
   pageContextPending = false;
+  if (!aiSecurityAnalysisEnabled || pendingPageContextGeneration !== pageContextGeneration) {
+   sharedPageContext = null;
+   renderSharedPageContext();
+   return;
+  }
   if (!result || result.ok !== true) {
    renderSharedPageContext();
    modelDetail = String(result?.error || "Не удалось передать текст страницы");
@@ -283,6 +295,15 @@
  };
 
  window.addEventListener("storage", event => {
+  if (event.key === "skai.security.ai-analysis.v1") {
+   aiSecurityAnalysisEnabled = event.newValue !== "false";
+   if (!aiSecurityAnalysisEnabled) {
+    pageContextGeneration++;
+    pageContextPending = false;
+    sharedPageContext = null;
+   }
+   renderSharedPageContext();
+  }
   if (event.key === conversationKey) {
    try {
     const next = JSON.parse(event.newValue || "[]");
