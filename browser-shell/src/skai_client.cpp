@@ -483,7 +483,10 @@ bool SkAiClient::OnBeforeBrowse(
     CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> frame,
     CefRefPtr<CefRequest> request, bool /*user_gesture*/,
     bool /*is_redirect*/) {
-  if (!frame || !frame->IsMain() || !request) return false;
+  if (!frame || !frame->IsMain() || !request ||
+      request->GetMethod() != "GET") {
+    return false;
+  }
   const auto original_url = request->GetURL().ToWString();
   const auto cleaned_url = SkAiStripTrackingParameters(original_url);
   if (cleaned_url != original_url) {
