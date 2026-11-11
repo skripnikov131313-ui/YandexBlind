@@ -307,7 +307,7 @@ jobs:
           Copy-Item -Path "installer/README.md" -Destination $packageRoot -Force
           Set-Content -Path (Join-Path $packageRoot "VERSION.txt") -Value "0.3.0" -Encoding ascii
           $zip = Join-Path $PWD "dist/SkAi-win-x64.zip"
-          Compress-Archive -Path (Join-Path $packageRoot "*") -DestinationPath $zip -CompressionLevel Optimal -Force
+          Compress-Archive -Path (Join-Path $packageRoot "*") -DestinationPath $zip -CompressionLevel NoCompression -Force
           if (!(Test-Path $zip)) { throw "Per-user Windows package archive was not created." }
           Get-Item $zip | Select-Object FullName, Length
 
