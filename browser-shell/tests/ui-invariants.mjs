@@ -81,6 +81,10 @@ const clientSource = readFileSync(
   new URL("../src/skai_client.cpp", import.meta.url),
   "utf8"
 );
+const clientHeaderSource = readFileSync(
+  new URL("../src/skai_client.h", import.meta.url),
+  "utf8"
+);
 const bridgeSource = readFileSync(
   new URL("../src/skai_app.cpp", import.meta.url),
   "utf8"
@@ -210,7 +214,7 @@ assert.match(
   "The renderer must receive native CEF find result notifications."
 );
 assert.match(
-  clientSource,
+  clientHeaderSource,
   /GetFindHandler\(\) override \{ return this; \}/,
   "The native client must expose a CEF find handler."
 );
