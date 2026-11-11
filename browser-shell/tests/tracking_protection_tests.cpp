@@ -38,7 +38,6 @@ int main() {
       std::wcerr << L"FAIL: " << test.url << L" expected "
                  << (test.should_block ? L"blocked" : L"allowed")
                  << L"\n";
-                 << L"\n";
       return 1;
     }
   }
