@@ -23,7 +23,7 @@
 - A site's consent banner must not be auto-accepted or have an affirmative consent cookie fabricated.
 - Third-party cookies are blocked in Chromium.
 - A CEF cookie access filter blocks known advertising/analytics cookie names when cookies are saved from responses or sent with requests, including top-level navigations.
-- First-party cookies not matched by the known tracker-name list currently remain available for site sessions. This is a known privacy gap: first-party identifiers can use arbitrary names. A later cookie policy must distinguish session-critical state from analytics/advertising state, use ephemeral storage where possible, and expose any site exception to the user.
+- First-party cookies not matched by the known tracker-name list remain available during the active session for site functionality. Ordinary web tabs use an in-memory CEF request context with an empty cache path, so cookies, localStorage, IndexedDB and service-worker storage are not persisted across browser restarts. First-party identifiers can still be used during a session and can use arbitrary cookie names; a stricter all-cookies-off mode remains open.
 - A JavaScript-only fake cookie jar is not equivalent to a server session. It cannot authenticate a user or satisfy a server-side session requirement when the server expects a real cookie on an HTTP request.
 
 ## Telemetry and tracking
