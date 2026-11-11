@@ -50,6 +50,10 @@ class SkAiV8Bridge final : public CefV8Handler {
       send("assistant", L"toggle");
       return true;
     }
+    if (name == "shareCurrentPage") {
+      send("pageContext", L"share");
+      return true;
+    }
     if (name == "navigate") {
       if (!require_string(0, L"URL required")) return true;
       send("navigate", args[0]->GetStringValue().ToWString());
@@ -224,7 +228,7 @@ void SkAiApp::OnContextCreated(CefRefPtr<CefBrowser>,
   const auto api = CefV8Value::CreateObject(nullptr, nullptr);
   const char* const functions[] = {
       "minimize", "toggleMaximize", "close", "beginDrag",
-      "toggleFloatingAssistant", "navigate", "back", "forward",
+      "toggleFloatingAssistant", "shareCurrentPage", "navigate", "back", "forward",
       "reload", "stop", "browserAction", "newTab", "activateTab",
       "closeTab", "downloadAction", "openDownloadedFile",
       "resolvePermission", "listSitePermissions", "revokeSitePermission",

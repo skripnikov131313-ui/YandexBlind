@@ -164,6 +164,13 @@ bool SkAiClient::OnProcessMessageReceived(
     return true;
   }
 
+  if (category == "pageContext") {
+    if (action == "share") {
+      SkAiShareCurrentPage(browser);
+    }
+    return true;
+  }
+
   if (category == "ai") {
     if (action == "status") {
       SkAiAiQueryStatus(browser);

@@ -14,6 +14,7 @@ void SkAiActivateTab(int tab_id);
 void SkAiCloseTab(int tab_id);
 void SkAiOnTabClosed(int tab_id);
 void SkAiNavigateActive(const std::wstring& url);
+void SkAiShareCurrentPage(CefRefPtr<CefBrowser> ui_browser);
 void SkAiBrowserAction(const std::wstring& action,
                         const std::wstring& parameter = L"");
 void SkAiNotifyFindResult(int tab_id, int match_count,

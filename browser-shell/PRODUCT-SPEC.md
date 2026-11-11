@@ -50,7 +50,7 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [~] Bookmarks, bookmark folders, history, remembered site permissions, recent download metadata and the last 50 HTTP(S) tabs use the local CEF UI profile. History is capped at 2,000 entries and downloads at 200 records.
 - [~] Cross-window chat/mode synchronization via storage events and profile-scoped keys; same-origin behavior and persistence still require Windows CEF runtime validation.
 - [ ] Multiple named conversations and search.
-- [ ] Explicit page-content transfer after a user action.
+- [~] Explicit user-triggered page-text transfer from the active HTTP(S) tab into the docked or floating assistant, capped at 6,000 characters and kept in memory only. Web content is marked as untrusted material in the local model request; Windows runtime behavior remains to be tested.
 - [ ] Text/code and common document attachments.
 - [ ] Resizable docked panel and keyboard shortcuts.
 

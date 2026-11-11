@@ -5,6 +5,8 @@
 #include "include/cef_values.h"
 #include "include/cef_parser.h"
 #include "include/cef_request_context.h"
+#include "include/cef_string_visitor.h"
+#include "include/cef_task.h"
 #include "skai_client.h"
 #include "skai_ai.h"
 
@@ -87,6 +89,84 @@ std::wstring UiFile(const wchar_t* file) {
   const auto path = std::filesystem::path(exe).parent_path() / L"ui" / file;
   return L"file:///" + path.generic_wstring();
 }
+
+constexpr std::size_t kMaxSharedPageCharacters = 6000;
+
+class PageContextNotificationTask final : public CefTask {
+ public:
+  PageContextNotificationTask(CefRefPtr<CefBrowser> browser, std::wstring json)
+      : browser_(browser), json_(std::move(json)) {}
+
+  void Execute() override {
+    if (!browser_) return;
+    const auto frame = browser_->GetMainFrame();
+    if (!frame) return;
+    frame->ExecuteJavaScript(
+        L"window.skaiNative&&window.skaiNative.pageContextReceived&&"
+        L"window.skaiNative.pageContextReceived(" + json_ + L");",
+        frame->GetURL(), 0);
+  }
+
+ private:
+  CefRefPtr<CefBrowser> browser_;
+  std::wstring json_;
+  IMPLEMENT_REFCOUNTING(PageContextNotificationTask);
+};
+
+void NotifyPageContext(CefRefPtr<CefBrowser> browser,
+                       bool ok,
+                       const std::wstring& title,
+                       const std::wstring& url,
+                       const std::wstring& text,
+                       const std::wstring& error) {
+  if (!browser) return;
+  const auto dictionary = CefDictionaryValue::Create();
+  dictionary->SetBool("ok", ok);
+  dictionary->SetString("title", title);
+  dictionary->SetString("url", url);
+  dictionary->SetString("text", text);
+  dictionary->SetString("error", error);
+
+  const auto value = CefValue::Create();
+  value->SetDictionary(dictionary);
+  const std::wstring json = CefWriteJSON(value, JSON_WRITER_DEFAULT).ToWString();
+  if (!json.empty()) {
+    CefPostTask(TID_UI, new PageContextNotificationTask(browser, json));
+  }
+}
+
+class PageTextVisitor final : public CefStringVisitor {
+ public:
+  PageTextVisitor(CefRefPtr<CefBrowser> ui_browser,
+                  std::wstring title,
+                  std::wstring url)
+      : ui_browser_(ui_browser),
+        title_(std::move(title)),
+        url_(std::move(url)) {}
+
+  void Visit(const CefString& value) override {
+    std::wstring text = value.ToWString();
+    if (text.size() > kMaxSharedPageCharacters) {
+      text.resize(kMaxSharedPageCharacters);
+      if (!text.empty() && text.back() >= 0xD800 && text.back() <= 0xDBFF) {
+        text.pop_back();
+      }
+    }
+    if (text.find_first_not_of(L" \t\r\n") == std::wstring::npos) {
+      NotifyPageContext(ui_browser_, false, title_, url_, L"",
+                        L"На странице не найден доступный текст.");
+      return;
+    }
+    NotifyPageContext(ui_browser_, true, title_, url_, text, L"");
+  }
+
+ private:
+  CefRefPtr<CefBrowser> ui_browser_;
+  std::wstring title_;
+  std::wstring url_;
+  IMPLEMENT_REFCOUNTING(PageTextVisitor);
+};
+
 
 std::filesystem::path GetSkAiDataRoot() {
   PWSTR local = nullptr;
@@ -910,6 +990,43 @@ void SkAiNavigateActive(const std::wstring& url) {
   if (browser) {
     browser->GetMainFrame()->LoadURL(url);
   }
+}
+
+
+void SkAiShareCurrentPage(CefRefPtr<CefBrowser> ui_browser) {
+  if (g_close_requested) return;
+  if (!ui_browser) return;
+  const auto it = g_tabs.find(g_active_tab_id);
+  if (it == g_tabs.end() || it->second.closing || !it->second.client) {
+    NotifyPageContext(ui_browser, false, L"", L"", L"",
+                      L"Сначала откройте веб-страницу во вкладке браузера.");
+    return;
+  }
+
+  const auto browser = it->second.client->GetBrowser();
+  const auto frame = browser ? browser->GetMainFrame() : nullptr;
+  if (!frame) {
+    NotifyPageContext(ui_browser, false, L"", L"", L"",
+                      L"Не удалось получить активную страницу.");
+    return;
+  }
+
+  const std::wstring url = frame->GetURL().ToWString();
+  std::wstring normalized_url = url;
+  std::transform(normalized_url.begin(), normalized_url.end(),
+                 normalized_url.begin(), [](wchar_t ch) {
+                   return static_cast<wchar_t>(std::towlower(ch));
+                 });
+  if (normalized_url.rfind(L"https://", 0) != 0 &&
+      normalized_url.rfind(L"http://", 0) != 0) {
+    NotifyPageContext(ui_browser, false, L"", url, L"",
+                      L"Передача доступна только для открытых HTTP(S)-страниц.");
+    return;
+  }
+
+  const std::wstring title =
+      it->second.title.empty() ? url : it->second.title;
+  frame->GetText(new PageTextVisitor(ui_browser, title, url));
 }
 
 void SkAiBrowserAction(const std::wstring& action,
