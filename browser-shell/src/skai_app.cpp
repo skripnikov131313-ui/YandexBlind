@@ -6,7 +6,9 @@
 #include "include/cef_v8.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cwctype>
+#include <limits>
 #include <string>
 
 namespace {
@@ -60,21 +62,17 @@ class SkAiV8Bridge final : public CefV8Handler {
     }
     if (name == "browserAction") {
       if (!require_string(0, L"Browser action required")) return true;
-      values->SetString(2, args[0]->GetStringValue());
+      std::wstring parameter;
       if (args.size() > 1) {
         if (!args[1] || !args[1]->IsString()) {
           exception = L"Browser action parameter must be a string";
           return true;
         }
-        values->SetString(3, args[1]->GetStringValue());
+        parameter = args[1]->GetStringValue().ToWString();
       }
       values->SetString(0, "browser");
       values->SetString(1, args[0]->GetStringValue());
-      if (args.size() > 1) {
-        values->SetString(2, args[1]->GetStringValue());
-      } else {
-        values->SetString(2, "");
-      }
+      values->SetString(2, parameter);
       frame->SendProcessMessage(PID_BROWSER, message);
       return true;
     }
@@ -154,12 +152,19 @@ class SkAiV8Bridge final : public CefV8Handler {
       }
       std::wstring bounds;
       for (std::size_t index = 0; index < 4; ++index) {
-        if (!args[index] || !args[index]->IsInt()) {
-          exception = L"Content bounds must be integers";
+        if (!args[index] || !args[index]->IsNumber()) {
+          exception = L"Content bounds must be numeric";
+          return true;
+        }
+        const double coordinate = args[index]->GetDoubleValue();
+        if (!std::isfinite(coordinate) ||
+            coordinate < static_cast<double>(std::numeric_limits<int>::min()) ||
+            coordinate > static_cast<double>(std::numeric_limits<int>::max())) {
+          exception = L"Content bounds are outside the supported range";
           return true;
         }
         if (!bounds.empty()) bounds += L",";
-        bounds += std::to_wstring(args[index]->GetIntValue());
+        bounds += std::to_wstring(static_cast<int>(coordinate));
       }
       values->SetString(0, "layout");
       values->SetString(1, bounds);
