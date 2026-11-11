@@ -23,7 +23,7 @@
 - A site's consent banner must not be auto-accepted or have an affirmative consent cookie fabricated.
 - Third-party cookies are blocked in Chromium.
 - A CEF cookie access filter denies every real site cookie on both save and send, including top-level navigations and downloads.
-- A renderer-side `document.cookie` facade provides a per-session in-memory cookie jar for JavaScript compatibility. It does not write to Chromium’s cookie store and never adds a `Cookie` header to network requests.
+- A renderer-side `document.cookie` facade provides a per-session in-memory cookie jar for script-created cookies. Server `Set-Cookie` responses are discarded. The facade does not write to Chromium’s cookie store and never adds a `Cookie` header to network requests.
 - Ordinary web tabs use an in-memory CEF request context with an empty cache path, so localStorage, IndexedDB and service-worker storage are not persisted across browser restarts.
 - A local cookie facade is not a server session. Sites that require a server-issued cookie for authentication or server-side state may fail; there is no way to fake that server-side state without sending a real credential/session cookie.
 
