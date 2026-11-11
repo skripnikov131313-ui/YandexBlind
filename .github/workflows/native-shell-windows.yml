@@ -1,12 +1,20 @@
 name: Sk/Ai Native Shell
 
 on:
+  push:
+    branches:
+      - feature/skai-native-shell
+    paths:
+      - "browser-shell/**"
+      - "installer/**"
+      - ".github/workflows/native-shell-windows.yml"
   pull_request:
     branches:
       - main
       - feature/skai-native-shell
     paths:
       - "browser-shell/**"
+      - "installer/**"
       - ".github/workflows/native-shell-windows.yml"
   workflow_dispatch:
 
