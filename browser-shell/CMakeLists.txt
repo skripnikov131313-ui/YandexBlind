@@ -82,6 +82,7 @@ if(BUILD_TESTING)
     src/skai_tracking_protection.cpp
   )
   target_compile_features(skai_tracking_protection_tests PRIVATE cxx_std_20)
+  target_include_directories(skai_tracking_protection_tests PRIVATE src)
   add_test(NAME skai_tracking_protection COMMAND skai_tracking_protection_tests)
 endif()
 
