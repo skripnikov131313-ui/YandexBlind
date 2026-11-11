@@ -27,11 +27,11 @@ bool ParseHttpUrl(const CefString& url, std::string& host,
   CefURLParts parts;
   if (!CefParseURL(url, parts)) return false;
 
-  const std::string scheme = LowerAscii(parts.scheme.ToString());
+  const std::string scheme = LowerAscii(CefString(&parts.scheme).ToString());
   if (scheme != "http" && scheme != "https") return false;
 
-  host = LowerAscii(parts.host.ToString());
-  path = LowerAscii(parts.path.ToString());
+  host = LowerAscii(CefString(&parts.host).ToString());
+  path = LowerAscii(CefString(&parts.path).ToString());
   while (!host.empty() && host.back() == '.') host.pop_back();
   return !host.empty();
 }
@@ -260,7 +260,7 @@ bool StripCrossSiteNavigationIdentifiers(CefRefPtr<CefRequest> request,
     return false;
   }
 
-  const std::string query = parts.query.ToString();
+  const std::string query = CefString(&parts.query).ToString();
   if (query.empty()) return false;
 
   std::string filtered_query;
