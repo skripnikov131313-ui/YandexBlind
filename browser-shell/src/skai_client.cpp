@@ -6,6 +6,7 @@
 #include "include/cef_request_handler.h"
 #include "include/cef_resource_request_handler.h"
 #include "include/cef_request.h"
+#include "include/cef_cookie.h"
 #include "include/cef_parser.h"
 #include "include/cef_values.h"
 
@@ -21,7 +22,34 @@
 #include <knownfolders.h>
 
 namespace {
+class SkAiPrivacyCookieFilter final : public CefCookieAccessFilter {
+ public:
+  bool CanSendCookie(CefRefPtr<CefBrowser> /*browser*/,
+                     CefRefPtr<CefFrame> /*frame*/,
+                     CefRefPtr<CefRequest> /*request*/,
+                     const CefCookie& cookie) override {
+    return !SkAiShouldBlockTrackingCookie(cookie.name.ToWString());
+  }
+
+  bool CanSaveCookie(CefRefPtr<CefBrowser> /*browser*/,
+                     CefRefPtr<CefFrame> /*frame*/,
+                     CefRefPtr<CefRequest> /*request*/,
+                     CefRefPtr<CefResponse> /*response*/,
+                     const CefCookie& cookie) override {
+    return !SkAiShouldBlockTrackingCookie(cookie.name.ToWString());
+  }
+
+ private:
+  IMPLEMENT_REFCOUNTING(SkAiPrivacyCookieFilter);
+};
+
 class SkAiTrackingResourceHandler final : public CefResourceRequestHandler {
+ public:
+  CefRefPtr<CefCookieAccessFilter> GetCookieAccessFilter(
+      CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> /*frame*/,
+      CefRefPtr<CefRequest> /*request*/) override {
+    return new SkAiPrivacyCookieFilter();
+  }
  public:
   ReturnValue OnBeforeResourceLoad(
       CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> /*frame*/,
