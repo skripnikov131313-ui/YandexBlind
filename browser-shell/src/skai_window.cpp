@@ -94,34 +94,16 @@ std::wstring UiFile(const wchar_t* file) {
 
 constexpr std::size_t kMaxSharedPageCharacters = 6000;
 
-class PageContextNotificationTask final : public CefTask {
- public:
-  PageContextNotificationTask(CefRefPtr<CefBrowser> browser, std::wstring json)
-      : browser_(browser), json_(std::move(json)) {}
-
-  void Execute() override {
-    if (!browser_) return;
-    const auto frame = browser_->GetMainFrame();
-    if (!frame) return;
-    frame->ExecuteJavaScript(
-        L"window.skaiNative&&window.skaiNative.pageContextReceived&&"
-        L"window.skaiNative.pageContextReceived(" + json_ + L");",
-        frame->GetURL(), 0);
-  }
-
- private:
-  CefRefPtr<CefBrowser> browser_;
-  std::wstring json_;
-  IMPLEMENT_REFCOUNTING(PageContextNotificationTask);
-};
-
-void NotifyPageContext(CefRefPtr<CefBrowser> browser,
-                       bool ok,
-                       const std::wstring& title,
-                       const std::wstring& url,
-                       const std::wstring& text,
-                       const std::wstring& error) {
+void ExecutePageContextNotification(CefRefPtr<CefBrowser> browser,
+                                   bool ok,
+                                   const std::wstring& title,
+                                   const std::wstring& url,
+                                   const std::wstring& text,
+                                   const std::wstring& error) {
   if (!browser) return;
+  const auto frame = browser->GetMainFrame();
+  if (!frame) return;
+
   const auto dictionary = CefDictionaryValue::Create();
   dictionary->SetBool("ok", ok);
   dictionary->SetString("title", title);
@@ -132,10 +114,98 @@ void NotifyPageContext(CefRefPtr<CefBrowser> browser,
   const auto value = CefValue::Create();
   value->SetDictionary(dictionary);
   const std::wstring json = CefWriteJSON(value, JSON_WRITER_DEFAULT).ToWString();
-  if (!json.empty()) {
-    CefPostTask(TID_UI, new PageContextNotificationTask(browser, json));
-  }
+  if (json.empty()) return;
+
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.pageContextReceived&&"
+      L"window.skaiNative.pageContextReceived(" + json + L");",
+      frame->GetURL(), 0);
 }
+
+class PageContextNotificationTask final : public CefTask {
+ public:
+  PageContextNotificationTask(CefRefPtr<CefBrowser> browser,
+                              bool ok,
+                              std::wstring title,
+                              std::wstring url,
+                              std::wstring text,
+                              std::wstring error)
+      : browser_(browser),
+        ok_(ok),
+        title_(std::move(title)),
+        url_(std::move(url)),
+        text_(std::move(text)),
+        error_(std::move(error)) {}
+
+  void Execute() override {
+    ExecutePageContextNotification(browser_, ok_, title_, url_, text_, error_);
+  }
+
+ private:
+  CefRefPtr<CefBrowser> browser_;
+  bool ok_;
+  std::wstring title_;
+  std::wstring url_;
+  std::wstring text_;
+  std::wstring error_;
+  IMPLEMENT_REFCOUNTING(PageContextNotificationTask);
+};
+
+void NotifyPageContext(CefRefPtr<CefBrowser> browser,
+                       bool ok,
+                       const std::wstring& title,
+                       const std::wstring& url,
+                       const std::wstring& text,
+                       const std::wstring& error) {
+  if (!browser) return;
+  CefPostTask(TID_UI, new PageContextNotificationTask(
+      browser, ok, title, url, text, error));
+}
+
+class PageTextSnapshotTask final : public CefTask {
+ public:
+  PageTextSnapshotTask(CefRefPtr<CefBrowser> ui_browser,
+                       CefRefPtr<CefFrame> source_frame,
+                       std::wstring profile,
+                       std::wstring title,
+                       std::wstring url,
+                       std::wstring text,
+                       std::wstring error)
+      : ui_browser_(ui_browser),
+        source_frame_(source_frame),
+        profile_(std::move(profile)),
+        title_(std::move(title)),
+        url_(std::move(url)),
+        text_(std::move(text)),
+        error_(std::move(error)) {}
+
+  void Execute() override {
+    const std::wstring current_url =
+        source_frame_ ? source_frame_->GetURL().ToWString() : L"";
+    if (profile_ != g_active_profile || current_url != url_) {
+      ExecutePageContextNotification(
+          ui_browser_, false, title_, url_, L"",
+          L"Профиль или страница изменились во время чтения. Повторите передачу.");
+      return;
+    }
+    const bool ok = error_.empty() && !text_.empty();
+    ExecutePageContextNotification(
+        ui_browser_, ok, title_, url_, ok ? text_ : L"",
+        ok ? L"" : (error_.empty()
+                         ? L"На странице не найден доступный текст."
+                         : error_));
+  }
+
+ private:
+  CefRefPtr<CefBrowser> ui_browser_;
+  CefRefPtr<CefFrame> source_frame_;
+  std::wstring profile_;
+  std::wstring title_;
+  std::wstring url_;
+  std::wstring text_;
+  std::wstring error_;
+  IMPLEMENT_REFCOUNTING(PageTextSnapshotTask);
+};
 
 class PageTextVisitor final : public CefStringVisitor {
  public:
@@ -151,13 +221,6 @@ class PageTextVisitor final : public CefStringVisitor {
         profile_(std::move(profile)) {}
 
   void Visit(const CefString& value) override {
-    const std::wstring current_url =
-        source_frame_ ? source_frame_->GetURL().ToWString() : L"";
-    if (profile_ != g_active_profile || current_url != url_) {
-      NotifyPageContext(ui_browser_, false, title_, url_, L"",
-                        L"Профиль или страница изменились во время чтения. Повторите передачу.");
-      return;
-    }
     std::wstring text = value.ToWString();
     if (text.size() > kMaxSharedPageCharacters) {
       text.resize(kMaxSharedPageCharacters);
@@ -165,12 +228,12 @@ class PageTextVisitor final : public CefStringVisitor {
         text.pop_back();
       }
     }
-    if (text.find_first_not_of(L" \t\r\n") == std::wstring::npos) {
-      NotifyPageContext(ui_browser_, false, title_, url_, L"",
-                        L"На странице не найден доступный текст.");
-      return;
-    }
-    NotifyPageContext(ui_browser_, true, title_, url_, text, L"");
+    const bool has_text =
+        text.find_first_not_of(L" \t\r\n") != std::wstring::npos;
+    CefPostTask(TID_UI, new PageTextSnapshotTask(
+        ui_browser_, source_frame_, profile_, title_, url_,
+        has_text ? std::move(text) : L"",
+        has_text ? L"" : L"На странице не найден доступный текст."));
   }
 
  private:
@@ -181,7 +244,6 @@ class PageTextVisitor final : public CefStringVisitor {
   std::wstring profile_;
   IMPLEMENT_REFCOUNTING(PageTextVisitor);
 };
-
 
 std::filesystem::path GetSkAiDataRoot() {
   PWSTR local = nullptr;

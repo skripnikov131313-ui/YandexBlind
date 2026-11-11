@@ -544,4 +544,14 @@ assert.match(
   "The floating assistant must replace page snapshots explicitly."
 );
 
+assert.match(
+  nativeWindowSource,
+  /class PageTextSnapshotTask final : public CefTask/,
+  "The asynchronous page snapshot must be validated on the CEF UI thread."
+);
+assert.match(
+  nativeWindowSource,
+  /CefPostTask\(TID_UI, new PageTextSnapshotTask/,
+  "CEF page text must be marshalled to the UI thread before validation."
+);
 process.stdout.write("Sk/Ai UI invariants: OK\n");
