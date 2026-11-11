@@ -108,12 +108,12 @@ assert.match(
 );
 assert.match(
   clientSource,
-  /CanSendCookie[\s\S]*?SkAiShouldBlockTrackingCookie/,
+  /CanSendCookie[\s\S]*?return false/,
   "Known tracker cookies must be blocked before being sent."
 );
 assert.match(
   clientSource,
-  /CanSaveCookie[\s\S]*?SkAiShouldBlockTrackingCookie/,
+  /CanSaveCookie[\s\S]*?return false/,
   "Known tracker cookies must be blocked before being persisted."
 );
 assert.match(
@@ -179,6 +179,21 @@ assert.match(
   sitePrivacySource,
   /doNotTrack/,
   "Web pages must receive the Do Not Track opt-out signal."
+);
+assert.match(
+  sitePrivacySource,
+  /Object\.defineProperty\(Document\.prototype, "cookie"/,
+  "Site JavaScript must receive the local-only cookie compatibility facade."
+);
+assert.match(
+  sitePrivacySource,
+  /localCookieStore\.set/,
+  "Script-created cookies must be stored only in the in-memory facade."
+);
+assert.match(
+  sitePrivacySource,
+  /Navigator\.prototype, "sendBeacon"/,
+  "Obvious first-party telemetry beacons must be suppressed locally."
 );
 assert.match(
   sitePrivacySource,
