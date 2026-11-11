@@ -48,4 +48,4 @@ The supplied Sk/Ai reference screenshot is the visual source of truth. New scree
 
 ## Implementation status
 
-The HTML/CSS/JS UI is integrated with a native CEF/Win32 controller in source: tabs, navigation, loading state, search routing, docked assistant and a floating native assistant window. It has not yet passed Windows CI or a Windows 11 runtime test. Local Qwen inference, cloud-provider connections and privacy filtering are not implemented in the native shell. UI labels must not imply unavailable model/security functionality is active.
+The HTML/CSS/JS UI is integrated with a native CEF/Win32 controller in source: tabs, navigation, loading state, search routing, docked assistant and a floating native assistant window. It has not yet passed a successful Windows CI build or a Windows 11 runtime test. The native shell includes source for local Qwen inference, a non-transmitting Cloud placeholder, known tracker-host filtering, third-party-cookie blocking and GET tracking-parameter cleanup; these controls still require Windows build/runtime and compatibility validation. UI labels must not imply unavailable model/security functionality is active.
