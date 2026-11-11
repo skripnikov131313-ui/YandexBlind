@@ -883,6 +883,10 @@ assert.match(securitySource, /source == L"https" && target == L"http"/, "HTTPS-t
 assert.match(securitySource, /В адресе присутствуют встроенные учётные данные/, "Credential-bearing navigation URLs must be recorded.");
 assert.match(securitySource, /HasPunycodeLabel\(host\)/, "Punycode hostnames must be flagged for review.");
 assert.match(clientSource, /SkAiSecurityEventType::suspicious_navigation/, "Navigation risk must enter the native security journal.");
+assert.match(clientSource, /SkAiNotifySecurityWarning\(/, "Navigation risk signals must be surfaced immediately in the browser UI.");
+assert.match(nativeWindowSource, /void SkAiNotifySecurityWarning\(/, "The native UI bridge must expose a dedicated security-warning callback.");
+assert.match(securityUi, /window\.skaiNative\.securityWarning = \(summary, evidence\)/, "The browser UI must display native navigation warnings.");
+assert.match(securityUi, /notify\(detail \? title \+ " · " \+ detail : title\)/, "Security warning text must be rendered through the safe toast text path.");
 
 assert.match(source, /if \(id\.startsWith\("security-"\)\)[\s\S]*?localAiBusy = false/, "Security analysis must release the shared local model lock when its request completes.");
 assert.match(source, /securityAnalysisPending = false;\s*securityAnalysisResult = ""/, "Disabling security analysis must suppress its result without orphaning the in-flight model request.");
