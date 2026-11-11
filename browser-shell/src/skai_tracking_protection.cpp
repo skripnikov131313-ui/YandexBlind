@@ -5,6 +5,7 @@
 #include <cwctype>
 #include <string>
 #include <string_view>
+#include <vector>
 
 namespace {
 constexpr std::array<std::wstring_view, 52> kBlockedTrackerDomains = {
@@ -133,4 +134,98 @@ bool SkAiShouldBlockTrackingRequest(const std::wstring& raw_url) {
     return true;
   }
   return false;
+}
+
+namespace {
+std::wstring NormalizeTrackingKey(std::wstring_view raw_key) {
+  std::wstring decoded;
+  decoded.reserve(raw_key.size());
+  for (std::size_t i = 0; i < raw_key.size(); ++i) {
+    wchar_t ch = raw_key[i];
+    if (ch == L'%' && i + 2 < raw_key.size()) {
+      const auto hex = [](wchar_t value) -> int {
+        if (value >= L'0' && value <= L'9') return value - L'0';
+        if (value >= L'a' && value <= L'f') return value - L'a' + 10;
+        if (value >= L'A' && value <= L'F') return value - L'A' + 10;
+        return -1;
+      };
+      const int high = hex(raw_key[i + 1]);
+      const int low = hex(raw_key[i + 2]);
+      if (high >= 0 && low >= 0) {
+        decoded.push_back(static_cast<wchar_t>((high << 4) | low));
+        i += 2;
+        continue;
+      }
+    }
+    decoded.push_back(ch == L'+' ? L' ' : ch);
+  }
+  std::transform(decoded.begin(), decoded.end(), decoded.begin(),
+                 [](wchar_t value) {
+                   return static_cast<wchar_t>(std::towlower(value));
+                 });
+  return decoded;
+}
+
+bool IsTrackingParameter(std::wstring_view raw_key) {
+  static constexpr std::array<std::wstring_view, 35> kTrackingParameters = {
+      L"utm_id", L"utm_source", L"utm_medium", L"utm_campaign",
+      L"utm_term", L"utm_content", L"utm_source_platform",
+      L"utm_creative_format", L"utm_marketing_tactic",
+      L"gclid", L"dclid", L"gbraid", L"wbraid", L"fbclid",
+      L"msclkid", L"ttclid", L"twclid", L"li_fat_id",
+      L"mc_cid", L"mc_eid", L"igshid", L"yclid", L"ysclid",
+      L"_ga", L"_gl", L"_gid", L"_gac", L"_fbp", L"_fbc",
+      L"srsltid", L"epik", L"irclickid", L" ScCid", L"oly_anon_id",
+      L"oly_enc_id"
+  };
+  const auto key = NormalizeTrackingKey(raw_key);
+  return std::find(kTrackingParameters.begin(), kTrackingParameters.end(),
+                   key) != kTrackingParameters.end();
+}
+}  // namespace
+
+std::wstring SkAiStripTrackingParameters(const std::wstring& url) {
+  const auto scheme_end = url.find(L"://");
+  if (scheme_end == std::wstring::npos) return url;
+  const auto scheme = std::wstring_view(url).substr(0, scheme_end);
+  if (scheme != L"http" && scheme != L"https") return url;
+
+  const auto query_start = url.find(L'?', scheme_end + 3);
+  if (query_start == std::wstring::npos) return url;
+  const auto fragment_start = url.find(L'#', query_start + 1);
+  const auto query_end = fragment_start == std::wstring::npos
+      ? url.size() : fragment_start;
+  const auto query = std::wstring_view(url).substr(
+      query_start + 1, query_end - query_start - 1);
+
+  std::vector<std::wstring_view> kept;
+  bool removed = false;
+  std::size_t start = 0;
+  while (start <= query.size()) {
+    const auto amp = query.find(L'&', start);
+    const auto end = amp == std::wstring_view::npos ? query.size() : amp;
+    const auto pair = query.substr(start, end - start);
+    const auto equals = pair.find(L'=');
+    const auto key = pair.substr(0, equals);
+    if (IsTrackingParameter(key)) {
+      removed = true;
+    } else {
+      kept.push_back(pair);
+    }
+    if (amp == std::wstring_view::npos) break;
+    start = amp + 1;
+  }
+
+  if (!removed) return url;
+
+  std::wstring result = url.substr(0, query_start);
+  for (const auto pair : kept) {
+    if (result.back() != L'?') result.push_back(L'&');
+    else if (!kept.empty() && &pair == nullptr) {}
+    result.append(pair);
+  }
+  if (fragment_start != std::wstring::npos) {
+    result.append(url.substr(fragment_start));
+  }
+  return result;
 }
