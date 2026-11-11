@@ -62,7 +62,7 @@ int main() {
     if (actual != test.expected) {
       std::wcerr << L"FAIL: URL cleanup for " << test.input
                  << L" expected " << test.expected
-                 << L" but was " << actual << L"\\n";
+                 << L" but was " << actual << L"\n";
       return 1;
     }
   }
