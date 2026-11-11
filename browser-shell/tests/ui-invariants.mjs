@@ -682,5 +682,10 @@ assert.match(
   /AppendSwitchWithValue\("enable-features"/,
   "Fingerprinting protection feature switches must be applied to CEF processes."
 );
+assert.match(
+  appSource,
+  /if \(!process_type\.empty\(\) \|\| !command_line\) return;/,
+  "Feature switches must only be modified in the browser process."
+);
 
 process.stdout.write("Sk/Ai UI invariants: OK\n");
