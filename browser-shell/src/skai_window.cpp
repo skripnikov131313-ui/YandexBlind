@@ -11,6 +11,7 @@
 #include "include/cef_task.h"
 #include "skai_client.h"
 #include "skai_ai.h"
+#include "skai_security.h"
 
 #include <windowsx.h>
 #include <algorithm>
@@ -1319,6 +1320,35 @@ void SkAiNotifyNavigationState(int tab_id, bool can_go_back,
           (can_go_back ? L"true" : L"false") + L"," +
           (can_go_forward ? L"true" : L"false") + L"," +
           (is_loading ? L"true" : L"false") + L");",
+      frame->GetURL(), 0);
+}
+
+void SkAiSendSecurityEvents() {
+  if (g_close_requested || !g_ui_client || !g_ui_client->GetBrowser()) return;
+  const auto events = SkAiGetSecurityEvents(200);
+  const auto list = CefListValue::Create();
+  for (std::size_t index = 0; index < events.size(); ++index) {
+    const auto& event = events[index];
+    const auto item = CefDictionaryValue::Create();
+    item->SetInt("id", static_cast<int>(event.id & 0x7fffffff));
+    item->SetDouble("timestamp", static_cast<double>(event.timestamp_unix_ms));
+    item->SetInt("type", static_cast<int>(event.type));
+    item->SetInt("severity", static_cast<int>(event.severity));
+    item->SetString("origin", event.origin);
+    item->SetString("summary", event.summary);
+    item->SetString("evidence", event.evidence);
+    list->SetDictionary(static_cast<int>(index), item);
+  }
+  const auto value = CefValue::Create();
+  value->SetList(list);
+  const auto json = CefWriteJSON(value, JSON_WRITER_DEFAULT).ToWString();
+  if (json.empty()) return;
+  const auto browser = g_ui_client->GetBrowser();
+  const auto frame = browser->GetMainFrame();
+  if (!frame) return;
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.securityEventsUpdated&&"
+      L"window.skaiNative.securityEventsUpdated(" + json + L");",
       frame->GetURL(), 0);
 }
 
