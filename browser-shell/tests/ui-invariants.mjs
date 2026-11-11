@@ -669,7 +669,7 @@ assert.match(
 );
 assert.match(
   appSource,
-  /EnableFingerprintingProtectionFilter:activation_level\/enabled\/enable_only_if_3pc_blocked\/true/,
+  /EnableFingerprintingProtectionFilter:activation_level\/enabled\/[\s\S]*?enable_only_if_3pc_blocked\/true/,
   "Chromium's fingerprinting resource filter must be enabled only with third-party cookies blocked."
 );
 assert.match(
