@@ -31,6 +31,8 @@
  let requestSequence = 0;
  let sharedPageContext = null;
  let pageContextPending = false;
+ let aiSecurityAnalysisEnabled = true;
+ try { aiSecurityAnalysisEnabled = localStorage.getItem("skai.security.ai-analysis.v1") !== "false"; } catch (_) {}
 
  try {
   const savedMode = localStorage.getItem(modeKey) || "local";
