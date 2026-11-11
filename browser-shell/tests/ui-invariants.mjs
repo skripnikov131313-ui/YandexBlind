@@ -38,6 +38,11 @@ const nativeWindowSource = readFileSync(
   new URL("../src/skai_window.cpp", import.meta.url),
   "utf8"
 );
+assert.match(
+  nativeWindowSource,
+  /#include "include\/cef_request_context_handler\.h"/,
+  "CEF request-context creation must include the complete request-context handler type."
+);
 
 assert.match(
   assistantSource,

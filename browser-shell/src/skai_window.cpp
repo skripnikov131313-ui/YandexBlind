@@ -5,6 +5,7 @@
 #include "include/cef_values.h"
 #include "include/cef_parser.h"
 #include "include/cef_request_context.h"
+#include "include/cef_request_context_handler.h"
 #include "include/cef_string_visitor.h"
 #include "include/cef_task.h"
 #include "skai_client.h"
