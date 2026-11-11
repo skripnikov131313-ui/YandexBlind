@@ -886,3 +886,6 @@ assert.match(clientSource, /SkAiSecurityEventType::suspicious_navigation/, "Navi
 
 assert.match(source, /if \(id\.startsWith\("security-"\)\)[\s\S]*?localAiBusy = false/, "Security analysis must release the shared local model lock when its request completes.");
 assert.match(source, /securityAnalysisPending = false;\s*securityAnalysisResult = ""/, "Disabling security analysis must suppress its result without orphaning the in-flight model request.");
+
+assert.match(source, /if \(id !== securityAnalysisRequestId\) return;[\s\S]*?localAiBusy = false/, "Stale security analysis callbacks must not unlock a different profile's AI request.");
+assert.match(source, /securityAnalysisRequestId = "";\s*securityAnalysisPending = false;\s*securityAnalysisResult = ""/, "Profile switching must invalidate prior profile security analysis state.");
