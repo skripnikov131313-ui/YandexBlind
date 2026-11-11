@@ -152,11 +152,17 @@ class SkAiV8Bridge final : public CefV8Handler {
       }
       std::wstring bounds;
       for (std::size_t index = 0; index < 4; ++index) {
-        if (!args[index] || !args[index]->IsNumber()) {
+        if (!args[index] ||
+            (!args[index]->IsInt() && !args[index]->IsUInt() &&
+             !args[index]->IsDouble())) {
           exception = L"Content bounds must be numeric";
           return true;
         }
-        const double coordinate = args[index]->GetDoubleValue();
+        const double coordinate = args[index]->IsInt()
+            ? static_cast<double>(args[index]->GetIntValue())
+            : args[index]->IsUInt()
+                ? static_cast<double>(args[index]->GetUIntValue())
+                : args[index]->GetDoubleValue();
         if (!std::isfinite(coordinate) ||
             coordinate < static_cast<double>(std::numeric_limits<int>::min()) ||
             coordinate > static_cast<double>(std::numeric_limits<int>::max())) {
