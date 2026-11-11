@@ -851,5 +851,5 @@ assert.match(clientSource, /SkAiSecurityEventType::permission_requested/);
 assert.match(clientSource, /SkAiSecurityEventType::download_started/);
 assert.match(clientSource, /SkAiSecurityEventType::download_completed/);
 assert.match(clientSource, /SkAiSecurityEventType::navigation_redirect/);
-assert.match(cmakeSource, /src\\/skai_security\\.cpp/);
+assert.ok(cmakeSource.includes("src/skai_security.cpp"));
 assert.match(cmakeSource, /skai_security_journal_tests/);
