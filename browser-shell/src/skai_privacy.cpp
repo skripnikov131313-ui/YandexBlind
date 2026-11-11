@@ -299,20 +299,23 @@ bool ShouldBlockTrackerRequest(const CefString& request_url,
   std::string resource_path;
   if (!ParseHttpUrl(request_url, resource_host, resource_path)) return false;
 
-  if (IsKnownTrackerHost(resource_host)) return true;
-
   if (request_initiator.empty()) return false;
   std::string initiator_host;
   std::string initiator_path;
   if (!ParseHttpUrl(request_initiator, initiator_host, initiator_path)) {
     return false;
   }
+  if (!IsCrossSite(resource_host, initiator_host)) return false;
+
+  // Known tracker hosts are blocked only when embedded or requested by a
+  // different site. Direct navigation to the host and same-site resources
+  // remain available.
+  if (IsKnownTrackerHost(resource_host)) return true;
 
   // Generic pixel/beacon paths are blocked only when requested cross-site.
   // This avoids disabling a first-party API simply because its URL contains
   // words such as "collect" or "analytics".
-  return IsCrossSite(resource_host, initiator_host) &&
-         IsTrackingEndpointPath(resource_path);
+  return IsTrackingEndpointPath(resource_path);
 }
 
 class SkAiPrivacyResourceRequestHandler final

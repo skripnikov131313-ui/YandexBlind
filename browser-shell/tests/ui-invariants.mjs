@@ -688,4 +688,10 @@ assert.match(
   "Feature switches must only be modified in the browser process."
 );
 
+assert.match(
+  privacySource,
+  /request_initiator\.empty\(\)\) return false;[\s\S]*?if \(!IsCrossSite\(resource_host, initiator_host\)\) return false;[\s\S]*?if \(IsKnownTrackerHost\(resource_host\)\) return true;/,
+  "Known tracker domains must be blocked only for cross-site requests, not direct user navigation."
+);
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");
