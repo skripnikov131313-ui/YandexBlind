@@ -2,6 +2,10 @@
 
 #include "skai_window.h"
 #include "skai_ai.h"
+#include "skai_tracking_protection.h"
+#include "include/cef_request_handler.h"
+#include "include/cef_resource_request_handler.h"
+#include "include/cef_request.h"
 #include "include/cef_parser.h"
 #include "include/cef_values.h"
 
@@ -17,6 +21,23 @@
 #include <knownfolders.h>
 
 namespace {
+class SkAiTrackingResourceHandler final : public CefResourceRequestHandler {
+ public:
+  ReturnValue OnBeforeResourceLoad(
+      CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> /*frame*/,
+      CefRefPtr<CefRequest> request,
+      CefRefPtr<CefCallback> /*callback*/) override {
+    if (request && SkAiShouldBlockTrackingRequest(
+                       request->GetURL().ToWString())) {
+      return RV_CANCEL;
+    }
+    return RV_CONTINUE;
+  }
+
+ private:
+  IMPLEMENT_REFCOUNTING(SkAiTrackingResourceHandler);
+};
+
 bool TryParseDownloadId(const CefString& input, uint32_t& download_id) {
   const std::wstring value = input.ToWString();
   if (value.empty()) return false;
@@ -125,6 +146,19 @@ std::filesystem::path MakeUniqueDownloadPath(
 
 SkAiClient::SkAiClient(HWND host_window, int tab_id, bool ui_browser)
     : host_window_(host_window), tab_id_(tab_id), ui_browser_(ui_browser) {}
+
+CefRefPtr<CefResourceRequestHandler> SkAiClient::GetResourceRequestHandler(
+    CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> frame,
+    CefRefPtr<CefRequest> /*request*/, bool is_navigation, bool is_download,
+    const CefString& /*request_initiator*/,
+    bool& /*disable_default_handling*/) {
+  // Never filter top-level navigation or explicit downloads. Subframe
+  // navigations and all other subresources still pass through the tracker list.
+  if (is_download || (is_navigation && frame && frame->IsMain())) {
+    return nullptr;
+  }
+  return new SkAiTrackingResourceHandler();
+}
 
 bool SkAiClient::OnProcessMessageReceived(
     CefRefPtr<CefBrowser> browser,

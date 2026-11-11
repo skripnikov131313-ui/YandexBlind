@@ -594,4 +594,28 @@ assert.match(
   /CefPostTask\(TID_UI, new PageTextSnapshotTask/,
   "CEF page text must be marshalled to the UI thread before validation."
 );
+const trackingHeaderSource = readFileSync(
+  new URL("../src/skai_tracking_protection.h", import.meta.url),
+  "utf8"
+);
+const trackingSource = readFileSync(
+  new URL("../src/skai_tracking_protection.cpp", import.meta.url),
+  "utf8"
+);
+assert.match(clientHeaderSource, /GetRequestHandler\(\) override \{ return this; \}/, "The native client must install a site request filter.");
+assert.match(clientSource, /SkAiTrackingResourceHandler/, "External site requests must pass through the tracker filter.");
+assert.match(clientSource, /return RV_CANCEL/, "Known tracker requests must be cancelled before loading.");
+assert.match(clientSource, /is_navigation && frame && frame->IsMain\\(\\)/, "Top-level site navigation must remain allowed.");
+assert.match(trackingHeaderSource, /SkAiShouldBlockTrackingRequest/, "Site tracker filtering must be isolated from app analytics.");
+assert.match(trackingSource, /hotjar\\.com/, "Session-recording providers must be covered.");
+assert.match(trackingSource, /fullstory\\.com/, "Session-recording providers must be covered.");
+assert.match(trackingSource, /clarity\\.ms/, "Session-recording providers must be covered.");
+assert.match(trackingSource, /fingerprintjs\\.com/, "Known browser fingerprinting scripts must be covered.");
+assert.match(trackingSource, /analytics\\.tiktok\\.com/, "Known behavioural analytics endpoints must be covered.");
+assert.match(trackingSource, /www\\.facebook\\.com/, "Facebook tracking pixels must be filtered by endpoint, not by blocking the whole site.");
+assert.match(trackingSource, /path\\.rfind\\(L"\\/tr\\/", 0\\)/, "Only Facebook's tracking pixel route should be blocked.");
+assert.match(nativeWindowSource, /profile\\.cookie_controls_mode/, "Each persistent browser profile must configure Chromium cookie controls.");
+assert.match(nativeWindowSource, /value->SetInt\\(1\\)/, "Chromium must block third-party cookies while retaining first-party site sessions.");
+assert.match(source, /Sk\\/Ai не добавляет собственную аналитику или телеметрию/, "The browser's own UI must remain free of analytics and telemetry.");
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");

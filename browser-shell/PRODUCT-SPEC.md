@@ -80,8 +80,8 @@ The mode selector belongs next to the assistant composer.
 
 - [~] No project analytics SDK or telemetry endpoint in the native-shell source.
 - [~] Local UI assets are bundled; no font/CDN is required.
-- [ ] Maintainable ad/tracker filter lists and network request filtering.
-- [ ] Configurable third-party cookie restrictions while preserving first-party sessions.
+- [~] Native CEF request filtering blocks a curated list of known third-party ad, analytics, session-replay and fingerprinting endpoints on subresource requests; top-level navigation and downloads are preserved. List coverage and compatibility testing remain open.
+- [~] Chromium per-profile cookie controls are configured to block third-party cookies while retaining first-party cookies. Runtime verification and per-site exceptions remain open.
 - [~] Per-origin permission decisions are stored in the local profile; the settings UI lists remembered allow/deny choices and supports revocation. Unremembered requests are denied unless the user explicitly allows them.
 - [~] Standard Chromium certificate validation and sandbox are retained in the intended build configuration; this still requires Windows runtime verification.
 - [ ] Verify Chromium Safe Browsing and security services in the packaged runtime.

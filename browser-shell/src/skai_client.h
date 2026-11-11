@@ -13,6 +13,8 @@
 #include "include/cef_load_handler.h"
 #include "include/cef_download_handler.h"
 #include "include/cef_permission_handler.h"
+#include "include/cef_request_handler.h"
+#include "include/cef_resource_request_handler.h"
 
 class SkAiClient final : public CefClient,
                          public CefLifeSpanHandler,
@@ -20,7 +22,8 @@ class SkAiClient final : public CefClient,
                          public CefFindHandler,
                          public CefLoadHandler,
                          public CefDownloadHandler,
-                         public CefPermissionHandler {
+                         public CefPermissionHandler,
+                         public CefRequestHandler {
  public:
   SkAiClient(HWND host_window, int tab_id, bool ui_browser);
   CefRefPtr<CefLifeSpanHandler> GetLifeSpanHandler() override { return this; }
@@ -29,6 +32,12 @@ class SkAiClient final : public CefClient,
   CefRefPtr<CefLoadHandler> GetLoadHandler() override { return this; }
   CefRefPtr<CefDownloadHandler> GetDownloadHandler() override { return this; }
   CefRefPtr<CefPermissionHandler> GetPermissionHandler() override { return this; }
+  CefRefPtr<CefRequestHandler> GetRequestHandler() override { return this; }
+  CefRefPtr<CefResourceRequestHandler> GetResourceRequestHandler(
+      CefRefPtr<CefBrowser> browser, CefRefPtr<CefFrame> frame,
+      CefRefPtr<CefRequest> request, bool is_navigation, bool is_download,
+      const CefString& request_initiator,
+      bool& disable_default_handling) override;
   bool OnRequestMediaAccessPermission(CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefFrame> frame, const CefString& requesting_origin,
       uint32_t requested_permissions,

@@ -1069,7 +1069,7 @@
     const privacyGroup = group("Приватность", "Текущий статус функций нативной версии браузера.");
     const privacyNote = document.createElement("div");
     privacyNote.className = "settings-note";
-    privacyNote.textContent = "Sk/Ai не добавляет собственную аналитику или телеметрию. Облачный ИИ пока отключён. Сайты и выбранная поисковая система получают обычные сетевые запросы, необходимые для загрузки страниц.";
+    privacyNote.textContent = "Sk/Ai не добавляет собственную аналитику, запись сессий или собственные идентификаторы. Для сайтов включена базовая фильтрация известных сторонних аналитических, session-replay и fingerprinting-доменов; запросы верхнего уровня не блокируются. Chromium также блокирует сторонние cookies, сохраняя first-party cookies и входы в аккаунты. Это не устраняет fingerprinting, выполняемый собственным JavaScript сайта, и не очищает localStorage или IndexedDB.";
     privacyGroup.append(privacyNote);
 
     const sitePermissionGroup = group("Разрешения сайтов", "Решения, которые вы отметили как запомненные. Их можно отозвать в любой момент.");

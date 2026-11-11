@@ -288,6 +288,32 @@ std::filesystem::path GetProfileDirectory(const std::wstring& name) {
   return root / L"Profiles" / name;
 }
 
+void ConfigureProfilePrivacyPreferences(
+    CefRefPtr<CefRequestContext> context) {
+  if (!context) return;
+
+  // Chromium CookieControlsMode: 1 = block third-party cookies.
+  // First-party cookies remain available for normal site sign-in sessions.
+  const CefString preference_name = "profile.cookie_controls_mode";
+  if (!context->HasPreference(preference_name) ||
+      !context->CanSetPreference(preference_name)) {
+    OutputDebugStringW(
+        L"Sk/Ai: third-party cookie preference is not available in this CEF context.\n");
+    return;
+  }
+
+  auto value = CefValue::Create();
+  if (!value) return;
+  value->SetInt(1);
+  CefString error;
+  if (!context->SetPreference(preference_name, value, error)) {
+    const std::wstring message =
+        L"Sk/Ai: unable to set third-party cookie protection: " +
+        error.ToWString() + L"\n";
+    OutputDebugStringW(message.c_str());
+  }
+}
+
 CefRefPtr<CefRequestContext> GetOrCreateProfileContext(
     const std::wstring& raw_name, bool create_if_missing) {
   const auto name = NormalizeProfileName(raw_name);
@@ -311,7 +337,10 @@ CefRefPtr<CefRequestContext> GetOrCreateProfileContext(
   CefString(&context_settings.cache_path) = (directory / L"Cache").wstring();
   context_settings.persist_session_cookies = true;
   auto context = CefRequestContext::CreateContext(context_settings, nullptr);
-  if (context) g_profile_contexts.emplace(name, context);
+  if (context) {
+    ConfigureProfilePrivacyPreferences(context);
+    g_profile_contexts.emplace(name, context);
+  }
   return context;
 }
 
