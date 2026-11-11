@@ -248,6 +248,41 @@ const workflowSource = readFileSync(
 );
 
 assert.match(
+  source,
+  /skai\.security\.ai-analysis\.v1/,
+  "The Protection settings must persist the AI security-analysis preference."
+);
+assert.match(
+  source,
+  /"ИИ-анализ безопасности"/,
+  "The browser settings must expose an explicit AI security-analysis switch."
+);
+assert.match(
+  source,
+  /if \(!aiSecurityAnalysisEnabled\)[\s\S]*?sharedPageContext = null/,
+  "Turning off AI page analysis must clear any staged page context."
+);
+assert.match(
+  source,
+  /if \(!aiSecurityAnalysisEnabled\)[\s\S]*?return;[\s\S]*?sharedPageContext = \{/,
+  "A delayed page snapshot must be discarded after AI analysis is disabled."
+);
+assert.match(
+  aiSource,
+  /GetRuntimeDirectory\(\) \/ kModelFileName/,
+  "The native AI runtime must prefer the model bundled with the browser."
+);
+assert.match(
+  workflowSource,
+  /runtime\/llama\/qwen3\.5-2b-Q4_K_M\.gguf/,
+  "The Windows installer must contain the pinned local AI model."
+);
+assert.match(
+  workflowSource,
+  /Get-FileHash -Path \$modelFile -Algorithm SHA256/,
+  "CI must verify the bundled model hash before packaging."
+);
+assert.match(
   aiSource,
   /qwen3\.5-2b-Q4_K_M\.gguf/,
   "The local model filename must be pinned."
