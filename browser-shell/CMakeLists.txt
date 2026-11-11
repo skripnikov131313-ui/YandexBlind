@@ -19,15 +19,8 @@ if(NOT DEFINED CEF_ROOT)
   endif()
 endif()
 
-# Normalize Windows drive paths before passing them into CEF helper macros.
-# CMake 4.x rejects sequences such as "\\a" when a helper interpolates a
-# native Windows path into a string/list expression.
 file(TO_CMAKE_PATH "${CEF_ROOT}" CEF_ROOT)
-
-# CEF 138+ uses the bootstrap architecture for the Chromium sandbox.
-# Do not build a regular EXE with the obsolete cef_sandbox.lib approach.
 set(USE_SANDBOX ON CACHE BOOL "Use the supported CEF Windows bootstrap sandbox" FORCE)
-
 list(APPEND CMAKE_MODULE_PATH "${CEF_ROOT}/cmake")
 find_package(CEF REQUIRED)
 include("${CEF_ROOT}/cmake/cef_macros.cmake")
@@ -51,16 +44,17 @@ add_library(SkAi SHARED
   src/skai_window.cpp
   src/skai_ai.cpp
   src/skai_tracking_protection.cpp
+  src/skai_security.cpp
   src/skai_app.h
   src/skai_client.h
   src/skai_window.h
   src/skai_ai.h
   src/skai_tracking_protection.h
+  src/skai_security.h
 )
 
 target_include_directories(SkAi PRIVATE src "${CEF_INCLUDE_PATH_NORMALIZED}")
 SET_LIBRARY_TARGET_PROPERTIES(SkAi)
-
 target_compile_definitions(SkAi PRIVATE UNICODE _UNICODE NOMINMAX WIN32_LEAN_AND_MEAN WINVER=0x0A00 _WIN32_WINNT=0x0A00)
 
 target_link_libraries(SkAi PRIVATE
@@ -84,6 +78,14 @@ if(BUILD_TESTING)
   target_compile_features(skai_tracking_protection_tests PRIVATE cxx_std_20)
   target_include_directories(skai_tracking_protection_tests PRIVATE src)
   add_test(NAME skai_tracking_protection COMMAND skai_tracking_protection_tests)
+
+  add_executable(skai_security_journal_tests
+    tests/security_journal_tests.cpp
+    src/skai_security.cpp
+  )
+  target_compile_features(skai_security_journal_tests PRIVATE cxx_std_20)
+  target_include_directories(skai_security_journal_tests PRIVATE src)
+  add_test(NAME skai_security_journal COMMAND skai_security_journal_tests)
 endif()
 
 set_target_properties(SkAi PROPERTIES
@@ -93,7 +95,6 @@ set_target_properties(SkAi PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
 )
 
-# bootstrap.exe loads SkAi.dll and passes the sandbox handle into RunWinMain.
 COPY_SINGLE_FILE(SkAi "${CEF_BINARY_DIR_NORMALIZED}/bootstrap.exe" "$<TARGET_FILE_DIR:SkAi>/SkAi.exe")
 COPY_FILES(SkAi "${CEF_BINARY_FILES_NORMALIZED}" "${CEF_BINARY_DIR_NORMALIZED}" "$<TARGET_FILE_DIR:SkAi>")
 COPY_FILES(SkAi "${CEF_RESOURCE_FILES_NORMALIZED}" "${CEF_RESOURCE_DIR_NORMALIZED}" "$<TARGET_FILE_DIR:SkAi>")
