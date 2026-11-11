@@ -2,6 +2,7 @@
 #include <windows.h>
 #include <cstdint>
 #include <string>
+#include "include/cef_browser.h"
 #include "include/cef_download_handler.h"
 #include "include/cef_download_item.h"
 #include "include/cef_permission_handler.h"

@@ -501,4 +501,14 @@ assert.doesNotMatch(
   "Shared page text must not be persisted to localStorage."
 );
 
+assert.match(
+  source,
+  /function loadProfileData\([\s\S]*?sharedPageContext = null/,
+  "Ephemeral page context must be cleared when the browser profile changes."
+);
+assert.doesNotMatch(
+  source.slice(source.indexOf("window.skaiNative.localAiResult"), source.indexOf("function sendPrompt")),
+  /sharedPageContext = null/,
+  "Successful or failed AI replies must not discard page context needed for follow-up questions."
+);
 process.stdout.write("Sk/Ai UI invariants: OK\n");
