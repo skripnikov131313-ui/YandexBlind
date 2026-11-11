@@ -52,6 +52,8 @@ struct Tab {
 };
 std::map<int, Tab> g_tabs;
 std::map<std::wstring, CefRefPtr<CefRequestContext>> g_profile_contexts;
+// Web content gets an in-memory context; site cookies/storage die with the process.
+std::map<std::wstring, CefRefPtr<CefRequestContext>> g_site_contexts;
 std::wstring g_active_profile = L"default";
 
 int g_next_tab_id = 1;
@@ -369,6 +371,24 @@ CefRefPtr<CefRequestContext> GetOrCreateProfileContext(
   if (context) {
     g_profile_contexts.emplace(name, context);
   }
+  return context;
+}
+
+CefRefPtr<CefRequestContext> GetOrCreateSiteContext(
+    const std::wstring& raw_name) {
+  const auto name = NormalizeProfileName(raw_name);
+  if (name.empty()) return nullptr;
+
+  const auto existing = g_site_contexts.find(name);
+  if (existing != g_site_contexts.end()) return existing->second;
+
+  // An empty cache_path creates an off-the-record, in-memory CEF context.
+  // Browser chrome keeps its separate persistent profile context for UI state.
+  CefRequestContextSettings context_settings;
+  context_settings.persist_session_cookies = false;
+  auto handler = new SkAiProfileRequestContextHandler();
+  auto context = CefRequestContext::CreateContext(context_settings, handler);
+  if (context) g_site_contexts.emplace(name, context);
   return context;
 }
 
@@ -998,7 +1018,7 @@ void SkAiCreateTab(const std::wstring& url, bool activate) {
     return;
   }
 
-  const auto request_context = GetOrCreateProfileContext(g_active_profile, true);
+  const auto request_context = GetOrCreateSiteContext(g_active_profile);
   if (!request_context) {
     NotifyProfileError(L"Не удалось открыть профиль браузера.");
     return;
