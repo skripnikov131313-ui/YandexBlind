@@ -1256,7 +1256,7 @@
         row.dataset.severity = String(event.severity || 0);
         content.append(title, detail);
         row.append(content);
-        filteredList.append(row);
+        list.append(row);
       });
       const footer = $("#internalViewFooter");
       footer.replaceChildren();
@@ -1271,10 +1271,8 @@
       clear.textContent = "Очистить журнал";
       clear.addEventListener("click", () => window.skaiNative?.clearSecurityEvents());
       footer.append(refresh, clear);
-      window.skaiNative?.getSecurityEvents();
       return;
     }
-    const filteredList = list;
     const allItems = type === "bookmarks" ? bookmarks :
       type === "history" ? historyItems : downloads;
     const searchInput = $("#internalViewSearch");
@@ -1438,6 +1436,7 @@
     window.skaiNative?.activateTab(0);
     setActiveTabUi(homeTab);
     renderInternalView(type);
+    if (type === "security") window.skaiNative?.getSecurityEvents();
   }
   function closeInternalView() {
     internalViewType = "";
@@ -1541,7 +1540,7 @@
   window.skaiNative = window.skaiNative || {};
   window.skaiNative.securityEventsUpdated = items => {
     securityEvents = Array.isArray(items) ? items.filter(item => item && typeof item === "object") : [];
-    if (internalViewType === "security") renderSecurityEventRows();
+    if (internalViewType === "security") renderInternalView("security");
   };
   window.skaiNative.addressChanged = url => {
     $("#addressInput").value = url;
