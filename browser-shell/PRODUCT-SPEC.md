@@ -80,7 +80,7 @@ The mode selector belongs next to the assistant composer.
 
 - [~] No project analytics SDK or telemetry endpoint in the native-shell source.
 - [~] Local UI assets are bundled; no font/CDN is required.
-- [~] Native CEF request filtering blocks a curated list of known third-party ad, analytics, session-replay and fingerprinting endpoints on subresource requests; top-level navigation and downloads are preserved. List coverage and compatibility testing remain open. The URL matching logic has dedicated native C++ unit tests in Windows CI.
+- [~] Native CEF request filtering blocks a curated list of known third-party ad, analytics, session-replay, fingerprinting and remote consent-management endpoints on subresource requests; top-level navigation and downloads are preserved. List coverage and compatibility testing remain open. The URL matching logic has dedicated native C++ unit tests in Windows CI.
 - [~] Chromium per-profile cookie controls are configured to block third-party cookies while retaining first-party cookies. Runtime verification and per-site exceptions remain open.
 - [~] A CEF cookie access filter rejects known advertising and analytics cookie identifiers on both save and send, including top-level navigations. Ordinary first-party session cookies remain allowed for site functionality; first-party identifier detection and an all-cookies-off/local-cookie-emulation mode remain open.
 - [~] Known marketing/click-attribution IDs are stripped from HTTP(S) GET navigation URLs while functional parameters, fragments and POST navigations are preserved. First-party JavaScript fingerprinting and site `localStorage`/IndexedDB identifiers are not neutralized.
