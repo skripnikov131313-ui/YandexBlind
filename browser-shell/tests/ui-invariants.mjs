@@ -158,7 +158,7 @@ assert.match(
 );
 assert.match(
   sitePrivacySource,
-  /IsHttpPageFrame\(frame\) InstallSitePrivacyCompatibility\(context\)/,
+  /if \(IsHttpPageFrame\(frame\)\) InstallSitePrivacyCompatibility\(context\)/,
   "The compatibility shim must be restricted to HTTP(S) site frames."
 );
 assert.match(
