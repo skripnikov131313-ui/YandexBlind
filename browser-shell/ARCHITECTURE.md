@@ -92,3 +92,8 @@ The Settings → Protection preference `skai.security.ai-analysis.v1` defaults t
 The native security event journal is process-local and bounded to the latest 200 records. It stores an event ID, timestamp, event category, severity, origin, short summary and bounded evidence. It deliberately does not store full URLs, query strings, cookies, credentials, page text, local file contents or profile data. Current CEF event sources include known tracker blocks, main-frame redirects, permission requests and download start/completion/cancellation.
 
 The journal is a foundation for the Security Center, not yet the complete user-facing feature. It is not persisted across restarts, does not yet stream events into the browser UI, and does not yet submit event evidence to Qwen. The next implementation milestone is a read-only native-to-UI event feed with filtering/clearing controls, followed by a consent-gated local AI explanation pipeline. Deterministic CEF enforcement remains independent of AI availability and output.
+
+
+## Security Center UI event feed
+
+The trusted browser chrome can request the native process-local security journal through the CEF V8 bridge. The Security Center renders event type, severity, timestamp, source origin and bounded evidence; it supports filtering, refresh and clearing the in-memory journal. The feed is read-only and does not expose page content, cookies, full URLs or local file contents. Events currently include tracker blocks, main-frame redirects, permission requests and user permission decisions, and download lifecycle transitions. AI interpretation of the feed is not yet wired; this interface currently displays deterministic native event records only.
