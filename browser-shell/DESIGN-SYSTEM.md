@@ -13,6 +13,7 @@ The supplied Sk/Ai reference screenshot is the visual source of truth. New scree
 - Deep graphite/navy glass surfaces, restrained blue-violet borders and subtle backdrop blur.
 - Aurora atmosphere: violet, electric blue, cyan and teal highlights.
 - Start page with northern-lights / mountain-lake atmosphere and centered Sk/Ai wordmark above search.
+- One-shot startup wordmark reveal: the slash receives a brief light pulse, then `Ai` resolves from the slash with a short, restrained blur/slide animation; reduced-motion mode disables it.
 - Translucent blue glass cards, clear icon colors and fine low-contrast borders.
 - Assistant surface in dark navy; Local identity is mint/teal, Cloud identity is violet.
 - Avoid generic gray SaaS styling, excessive pill shapes, plastic gloss and heavy bloom.
