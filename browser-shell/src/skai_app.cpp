@@ -293,6 +293,15 @@ void InstallSitePrivacyCompatibility(CefRefPtr<CefV8Context> context) {
     });
   } catch (_) {}
 
+  try {
+    Object.defineProperty(Navigator.prototype, "doNotTrack", {
+      configurable: true, get: () => "1"
+    });
+    Object.defineProperty(window, "doNotTrack", {
+      configurable: true, get: () => "1"
+    });
+  } catch (_) {}
+
   // IAB TCF compatibility reports denial, never fabricated consent.
   const deniedPurposes = Object.create(null);
   for (let id = 1; id <= 24; id++) deniedPurposes[id] = false;
