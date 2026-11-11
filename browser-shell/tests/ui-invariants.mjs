@@ -153,6 +153,16 @@ assert.match(
 );
 assert.match(
   sitePrivacySource,
+  /globalPrivacyControl/,
+  "Web pages must receive the Global Privacy Control signal."
+);
+assert.match(
+  sitePrivacySource,
+  /doNotTrack/,
+  "Web pages must receive the Do Not Track opt-out signal."
+);
+assert.match(
+  sitePrivacySource,
   /window\.gtag = function\(\) \{\}/,
   "Analytics calls must have a local no-op compatibility surface."
 );
