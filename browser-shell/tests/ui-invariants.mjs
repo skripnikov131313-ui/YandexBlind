@@ -197,6 +197,21 @@ assert.match(
 );
 assert.match(
   sitePrivacySource,
+  /Object\.defineProperty\(window, "fetch"/,
+  "Common first-party telemetry fetches must be suppressed locally."
+);
+assert.match(
+  sitePrivacySource,
+  /XMLHttpRequest\.prototype, "open"/,
+  "XHR telemetry endpoints must be identified before transmission."
+);
+assert.match(
+  sitePrivacySource,
+  /XMLHttpRequest\.prototype, "send"/,
+  "XHR telemetry endpoints must receive a local empty response."
+);
+assert.match(
+  sitePrivacySource,
   /window\.gtag = function\(\) \{\}/,
   "Analytics calls must have a local no-op compatibility surface."
 );
