@@ -339,6 +339,9 @@
     if (isError) notify(answer);
   };
 
+  // Check the bundled local model during startup; AI is part of the browser.
+  window.skaiNative?.aiStatus();
+
   function sendPrompt(value) {
     const prompt = value.trim();
     if (!prompt || localAiBusy) return;
