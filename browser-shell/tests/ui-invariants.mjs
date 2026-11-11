@@ -462,6 +462,12 @@ assert.match(
 );
 assert.match(
   nativeWindowSource,
+  /profile_ != g_active_profile \|\| current_url != url_/,
+  "A delayed page-text response must be discarded after profile or navigation changes."
+);
+
+assert.match(
+  nativeWindowSource,
   /kMaxSharedPageCharacters = 6000/,
   "Transferred page text must have a strict size limit."
 );

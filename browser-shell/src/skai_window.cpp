@@ -2,6 +2,7 @@
 
 #include "include/cef_browser.h"
 #include "include/cef_client.h"
+#include "include/cef_frame.h"
 #include "include/cef_values.h"
 #include "include/cef_parser.h"
 #include "include/cef_request_context.h"
@@ -139,13 +140,24 @@ void NotifyPageContext(CefRefPtr<CefBrowser> browser,
 class PageTextVisitor final : public CefStringVisitor {
  public:
   PageTextVisitor(CefRefPtr<CefBrowser> ui_browser,
+                  CefRefPtr<CefFrame> source_frame,
                   std::wstring title,
-                  std::wstring url)
+                  std::wstring url,
+                  std::wstring profile)
       : ui_browser_(ui_browser),
+        source_frame_(source_frame),
         title_(std::move(title)),
-        url_(std::move(url)) {}
+        url_(std::move(url)),
+        profile_(std::move(profile)) {}
 
   void Visit(const CefString& value) override {
+    const std::wstring current_url =
+        source_frame_ ? source_frame_->GetURL().ToWString() : L"";
+    if (profile_ != g_active_profile || current_url != url_) {
+      NotifyPageContext(ui_browser_, false, title_, url_, L"",
+                        L"Профиль или страница изменились во время чтения. Повторите передачу.");
+      return;
+    }
     std::wstring text = value.ToWString();
     if (text.size() > kMaxSharedPageCharacters) {
       text.resize(kMaxSharedPageCharacters);
@@ -163,8 +175,10 @@ class PageTextVisitor final : public CefStringVisitor {
 
  private:
   CefRefPtr<CefBrowser> ui_browser_;
+  CefRefPtr<CefFrame> source_frame_;
   std::wstring title_;
   std::wstring url_;
+  std::wstring profile_;
   IMPLEMENT_REFCOUNTING(PageTextVisitor);
 };
 
@@ -1027,7 +1041,7 @@ void SkAiShareCurrentPage(CefRefPtr<CefBrowser> ui_browser) {
 
   const std::wstring title =
       it->second.title.empty() ? url : it->second.title;
-  frame->GetText(new PageTextVisitor(ui_browser, title, url));
+  frame->GetText(new PageTextVisitor(ui_browser, frame, title, url, g_active_profile));
 }
 
 void SkAiBrowserAction(const std::wstring& action,
