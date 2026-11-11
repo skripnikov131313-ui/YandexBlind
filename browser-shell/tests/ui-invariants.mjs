@@ -760,7 +760,7 @@ assert.match(trackingSource, /www\.facebook\.com/, "Facebook tracking pixels mus
 assert.match(trackingSource, /path\.rfind\(L"\/tr\/", 0\)/, "Only Facebook's tracking pixel route should be blocked.");
 assert.match(nativeWindowSource, /profile\.cookie_controls_mode/, "Each persistent browser profile must configure Chromium cookie controls.");
 assert.match(nativeWindowSource, /value->SetInt\(1\)/, "Chromium must block third-party cookies while retaining first-party site sessions.");
-assert.match(source, /Sk\/Ai не добавляет собственную аналитику/, "The browser's own UI must remain free of analytics and telemetry.");
+assert.match(source, /Sk\\/Ai не содержит собственной аналитики/, "The browser's own UI must remain free of analytics and telemetry.");
 assert.doesNotMatch(source, /(google-analytics|hotjar|fullstory|clarity\.ms|fingerprintjs)/, "The browser UI must not load third-party analytics or fingerprinting SDKs.");
 
 assert.match(
