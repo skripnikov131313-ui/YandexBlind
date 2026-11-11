@@ -80,8 +80,11 @@ The mode selector belongs next to the assistant composer.
 
 - [~] No project analytics SDK or telemetry endpoint in the native-shell source.
 - [~] Local UI assets are bundled; no font/CDN is required.
-- [ ] Maintainable ad/tracker filter lists and network request filtering.
-- [ ] Configurable third-party cookie restrictions while preserving first-party sessions.
+- [~] CEF request-context filter blocks curated third-party analytics, advertising, session-replay and pixel domains; generic tracking paths are filtered only on cross-site requests. A larger maintained list and runtime compatibility validation remain open.
+- [~] Chromium third-party cookies are blocked per profile through `profile.cookie_controls_mode`; first-party cookies remain enabled for normal sign-in. Windows runtime verification and site exceptions remain open.
+- [~] `Sec-GPC: 1` is sent to websites as a global privacy opt-out signal; it is advisory and does not itself block tracking.
+- [~] Cross-site requests omit high-entropy UA Client Hint headers; cross-site main-frame GET navigations remove common advertising click IDs and `utm_*` attribution parameters. Runtime compatibility validation remains open.
+- [~] Chromium native Fingerprinting Protection Filter enabled in regular browsing for third-party fingerprinting resources; CNAME alias checks enabled. Direct Canvas/WebGL readback, font enumeration, JS User-Agent Client Hints, device/sensor APIs and storage partitioning still need separate compatibility review. No blanket API spoofing is enabled.
 - [~] Per-origin permission decisions are stored in the local profile; the settings UI lists remembered allow/deny choices and supports revocation. Unremembered requests are denied unless the user explicitly allows them.
 - [~] Standard Chromium certificate validation and sandbox are retained in the intended build configuration; this still requires Windows runtime verification.
 - [ ] Verify Chromium Safe Browsing and security services in the packaged runtime.

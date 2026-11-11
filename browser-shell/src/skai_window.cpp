@@ -10,6 +10,7 @@
 #include "include/cef_string_visitor.h"
 #include "include/cef_task.h"
 #include "skai_client.h"
+#include "skai_privacy.h"
 #include "skai_ai.h"
 
 #include <windowsx.h>
@@ -310,7 +311,8 @@ CefRefPtr<CefRequestContext> GetOrCreateProfileContext(
   CefRequestContextSettings context_settings;
   CefString(&context_settings.cache_path) = (directory / L"Cache").wstring();
   context_settings.persist_session_cookies = true;
-  auto context = CefRequestContext::CreateContext(context_settings, nullptr);
+  auto context = CefRequestContext::CreateContext(
+      context_settings, SkAiCreatePrivacyRequestContextHandler());
   if (context) g_profile_contexts.emplace(name, context);
   return context;
 }
