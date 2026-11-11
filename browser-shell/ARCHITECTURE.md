@@ -59,3 +59,22 @@ The existing extension-based branch is retained as a separate prototype/referenc
 ## Per-user installation
 
 The release package includes PowerShell install/uninstall scripts. Installation is scoped to the current Windows user under `%LOCALAPPDATA%/Programs/SkAi`; no administrator elevation is requested. The installer adds a Start menu shortcut and a per-user Installed Apps record. Uninstall removes only program files and shortcuts and deliberately preserves browser data and downloaded models under `%LOCALAPPDATA%/SkAi`. The Windows CI assembles a ZIP package after the runtime smoke test.
+
+
+## AI-first product rule
+
+Sk/Ai ships as one integrated browser application. The assistant UI, native bridge, inference controller, model manager and security-analysis orchestration are built into the native package; they are not a browser extension or a separately installed companion app. The current model weights are a separately provisioned data asset because the GGUF is approximately 1.4 GB. Provisioning must be automatic on first launch, with visible progress and retry/cancel controls; the user must not have to discover a separate "install AI" feature. The browser shell and deterministic security protections work during provisioning. Local inference is the default, and no silent cloud fallback is permitted.
+
+## Integrated security architecture
+
+The security system is deliberately split between enforcement and explanation:
+
+- **Native policy engine — authoritative.** It evaluates URL/origin and redirect chains, CEF resource requests, permission prompts, download metadata and browser isolation rules. Its decisions are deterministic and do not depend on model availability or model output. Critical blocks happen synchronously at the browser boundary where possible.
+- **Local AI security analyst — advisory.** It receives only bounded structured evidence and optional user-selected page text. It can identify phishing language, impersonation, suspicious forms, social engineering, risky permission requests and download context; explain why a deterministic rule fired; and summarize a site's risk. It cannot grant permissions, allow a request, change protection settings, execute code, access secrets or call privileged native functions.
+- **Security Center — user-facing control plane.** It presents protection status, per-site analysis, blocked requests, redirect and download warnings, permission decisions, and evidence-based explanations. It remains available when local inference is not ready.
+
+All web-derived content is tainted as untrusted data. Prompt instructions embedded in page text, DOM, metadata, filenames or documents are quoted evidence, never authority. Model output is treated as untrusted too: the native layer validates any proposed action against a strict allowlist and still requires a separate user gesture. There is no model-generated direct execution path.
+
+The AI analysis request schema should be narrow and versioned. It may include canonical URL/origin, redirect chain, Chromium certificate-validation outcome, permission request type, download source/name/MIME/size, and a bounded excerpt selected for analysis. It must not include all tabs, full history, cookies, credentials, local files or profile databases by default. Analysis stays on the loopback local runtime. Cloud analysis remains disabled until a provider is implemented with a per-transfer data preview and explicit consent.
+
+The first implementation milestone is to build a native security controller and a versioned security-event model, connect deterministic CEF enforcement events to it, and expose read-only structured evidence to the local AI. Do not wire AI output directly into CEF request handlers or permission decisions.
