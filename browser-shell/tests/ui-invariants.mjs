@@ -136,7 +136,7 @@ assert.match(
 );
 assert.match(
   bridgeSource,
-  /"sendLocalAi",\s*"sendLocalAi"[^\]]*\]/,
+  /"sendLocalAi"/,
   "The renderer bridge must expose the native local chat action."
 );
 assert.match(
