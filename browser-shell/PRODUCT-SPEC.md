@@ -26,7 +26,7 @@ GOST TLS, Russian root certificate overrides and CryptoPro CSP are out of scope.
 - [~] Native CEF download handler saves to Downloads/SkAi, emits progress and exposes pause/resume/cancel/open/show actions. Download history persists in the CEF UI profile; unfinished downloads are marked interrupted after restart. Windows runtime validation remains open.
 - [ ] Extension manager and documented compatibility policy.
 - [~] Multiple named profiles with separate CEF request contexts/cache directories; UI state is namespaced per profile. Windows runtime isolation and profile-switch lifecycle still require validation.
-- [ ] Import/export of bookmarks and settings.
+- [~] Import/export of bookmarks uses a versioned JSON schema, validates HTTP(S) URLs, deduplicates imported entries and rejects files over 5 MiB. Export/import of the remaining settings is not implemented.
 - [~] Find-in-page via CEF FindHandler, previous/next match navigation, print and zoom controls are wired to the active native browser. Windows runtime testing remains pending.
 - [~] Keyboard shortcuts for address focus, tabs, navigation, history, downloads, bookmarks, find-in-page and zoom. Runtime validation remains pending.
 - [ ] Fullscreen and developer tools.

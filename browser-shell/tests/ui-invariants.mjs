@@ -532,4 +532,16 @@ assert.match(source, /key === "h"[\s\S]*?openInternalView\("history"\)/, "Ctrl+H
 assert.match(source, /key === "j"[\s\S]*?openInternalView\("downloads"\)/, "Ctrl+J must open downloads.");
 assert.match(source, /key === "d"[\s\S]*?toggleBookmark\(\)/, "Ctrl+D must toggle the current bookmark.");
 
+
+assert.match(
+  source,
+  /sharedPageContext = null;[\s\S]*?pageContextPending = true;[\s\S]*?shareCurrentPage/,
+  "A new page-share action must clear the previous snapshot before reading."
+);
+assert.match(
+  assistantSource,
+  /sharedPageContext = null;[\s\S]*?pageContextPending = true;[\s\S]*?shareCurrentPage/,
+  "The floating assistant must replace page snapshots explicitly."
+);
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");

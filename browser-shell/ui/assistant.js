@@ -211,9 +211,17 @@
  }
  $("#share-page")?.addEventListener("click", () => {
   if (pageContextPending) return;
+  sharedPageContext = null;
   pageContextPending = true;
   renderSharedPageContext();
-  window.skaiNative?.shareCurrentPage();
+  if (!window.skaiNative?.shareCurrentPage) {
+   pageContextPending = false;
+   renderSharedPageContext();
+   modelDetail = "Нативная передача страницы недоступна";
+   renderStatus();
+   return;
+  }
+  window.skaiNative.shareCurrentPage();
  });
  $("#clear-shared-page")?.addEventListener("click", () => {
   sharedPageContext = null;
