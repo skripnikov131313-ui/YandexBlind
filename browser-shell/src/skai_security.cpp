@@ -69,6 +69,20 @@ SkAiNavigationRisk SkAiClassifyNavigationRisk(
   return result;
 }
 
+SkAiNavigationRisk SkAiClassifyRedirectChainRisk(unsigned int redirect_count) {
+  SkAiNavigationRisk result;
+  if (redirect_count >= 16) {
+    result.detected = true;
+    result.severity = SkAiSecuritySeverity::high;
+    result.evidence = L"В одной навигации произошло 16 или более перенаправлений; проверьте цепочку адресов";
+  } else if (redirect_count >= 8) {
+    result.detected = true;
+    result.severity = SkAiSecuritySeverity::medium;
+    result.evidence = L"В одной навигации произошло 8 или более перенаправлений; это эвристический сигнал, а не доказательство фишинга";
+  }
+  return result;
+}
+
 std::uint64_t SkAiRecordSecurityEvent(
     SkAiSecurityEventType type, SkAiSecuritySeverity severity,
     const std::wstring& origin, const std::wstring& summary,
