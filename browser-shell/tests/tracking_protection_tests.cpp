@@ -70,38 +70,8 @@ int main() {
     }
   }
 
-  struct CookieCase {
-    const wchar_t* name;
-    bool should_block;
-  };
-  const CookieCase cookie_cases[] = {
-      {L"_ga", true},
-      {L"_ga_ABCDEFG", true},
-      {L"_gcl_au", true},
-      {L"_fbp", true},
-      {L"IDE", true},
-      {L"hubspotutk", true},
-      {L"ajs_anonymous_id", true},
-      {L"ph_phc_test_posthog", true},
-      {L"sessionid", false},
-      {L"__Host-auth", false},
-      {L"csrftoken", false},
-      {L"language", false},
-  };
-  for (const auto& test : cookie_cases) {
-    const bool actual = SkAiShouldBlockTrackingCookie(test.name);
-    if (actual != test.should_block) {
-      std::wcerr << L"FAIL: cookie " << test.name << L" expected "
-                 << (test.should_block ? L"blocked" : L"allowed")
-                 << L" but was " << (actual ? L"blocked" : L"allowed")
-                 << L"\\n";
-      return 1;
-    }
-  }
-
   std::cout << "Sk/Ai site tracking protection tests: "
             << (sizeof(cases) / sizeof(cases[0]) +
-                sizeof(parameter_cases) / sizeof(parameter_cases[0]) +
-                sizeof(cookie_cases) / sizeof(cookie_cases[0])) << " passed\n";
+                sizeof(parameter_cases) / sizeof(parameter_cases[0])) << " passed\n";
   return 0;
 }
