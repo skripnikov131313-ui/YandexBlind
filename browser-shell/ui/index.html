@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="color-scheme" content="dark light">
+<title>Sk/Ai Browser</title><link rel="stylesheet" href="styles.css">
+</head>
+<body data-theme="dark" data-scene="aurora">
+<div class="aurora-bg"></div><div class="landscape"><div class="mountain mountain-left"></div><div class="mountain mountain-right"></div><div class="lake"></div></div>
+<main class="browser-window" id="browserWindow">
+<header class="titlebar">
+ <div class="brand-lockup"><span class="brand-mark">Sk<span>/</span><b>Ai</b></span></div>
+ <div class="tabs" id="tabs" role="tablist" aria-label="Вкладки"><button class="tab active" role="tab" aria-selected="true" data-title="Новая вкладка"><span class="tab-favicon">◉</span><span class="tab-name">Новая вкладка</span><span class="tab-close">×</span></button></div>
+ <button class="new-tab" id="newTab" aria-label="Новая вкладка">＋</button>
+ <div class="window-actions"><button id="nativeMinimize" aria-label="Свернуть">—</button><button id="nativeMaximize" aria-label="Развернуть">□</button><button class="close-window" id="nativeClose" aria-label="Закрыть">×</button></div>
+</header>
+<div class="toolbar">
+ <div class="nav-controls"><button class="icon-button" id="goBack" aria-label="Назад">‹</button><button class="icon-button" id="goForward" aria-label="Вперёд">›</button><button class="icon-button" id="reloadPage" aria-label="Обновить">↻</button></div>
+ <div class="omnibox"><span class="secure-mark">▣</span><input id="addressInput" placeholder="Введите адрес или поисковый запрос" aria-label="Адрес или поисковый запрос" spellcheck="false"><button class="omnibox-action" id="bookmarkButton" aria-label="Добавить закладку">☆</button></div>
+ <button class="toolbar-icon" id="findButton" title="Найти на странице" aria-label="Найти на странице">⌕</button>
+ <div class="zoom-tools" aria-label="Масштаб страницы"><button class="toolbar-icon zoom-control" id="zoomOut" title="Уменьшить масштаб">−</button><span id="zoomLevel" aria-live="polite">100%</span><button class="toolbar-icon zoom-control" id="zoomIn" title="Увеличить масштаб">＋</button></div>
+ <button class="toolbar-icon" id="printPage" title="Печать страницы" aria-label="Печать страницы">▤</button>
+ <button class="toolbar-icon" id="downloadsButton" title="Загрузки">↓</button><button class="profile-button" id="profileButton" title="Профиль">D</button><button class="toolbar-icon" id="themeButton" title="Сменить оформление">⋮</button>
+</div>
+<div class="findbar" id="findBar" hidden>
+ <label class="findbar-label" for="findInput">Найти</label>
+ <input id="findInput" type="search" placeholder="Текст на странице" aria-label="Текст для поиска на странице">
+ <span class="findbar-count" id="findCount" aria-live="polite">0 совпадений</span>
+ <button class="findbar-button" id="findPrevious" title="Предыдущее совпадение" aria-label="Предыдущее совпадение">↑</button>
+ <button class="findbar-button" id="findNext" title="Следующее совпадение" aria-label="Следующее совпадение">↓</button>
+ <button class="findbar-close" id="findClose" title="Закрыть поиск" aria-label="Закрыть поиск">×</button>
+</div>
+<div class="browser-body">
+<nav class="rail" aria-label="Навигация"><button class="rail-item selected" id="homeNav" title="Главная">⌂</button><button class="rail-item" title="Помощник" id="assistantRail">✧</button><button class="rail-item" id="historyNav" title="История">◷</button><button class="rail-item" id="securityNav" title="Центр безопасности">⬡</button><button class="rail-item" id="downloadsNav" title="Загрузки">↓</button><button class="rail-item" title="Расширения">♧</button><button class="rail-item" id="settingsNav" title="Настройки">⚙</button><span class="rail-spacer"></span><button class="rail-item moon" title="Ночной режим">☾</button><span class="rail-toggle"></span></nav>
+<section class="page-area" id="pageArea"><div class="page-scroll"><section class="internal-view" id="internalView" hidden><div class="internal-view-header"><div><span class="internal-eyebrow">SK/AI LIBRARY</span><h1 id="internalViewTitle">Закладки</h1><p id="internalViewDescription">Сохранённые страницы на этом устройстве</p></div><button id="internalViewClose" aria-label="Закрыть раздел">×</button></div><div class="bookmark-folder-tools" id="bookmarkFolderTools" hidden><select id="bookmarkFolderFilter" aria-label="Фильтр папок"></select><div class="bookmark-folder-create"><input id="newBookmarkFolderName" maxlength="32" placeholder="Новая папка" aria-label="Название новой папки"><button id="newBookmarkFolder" type="button">＋ Папка</button><button id="renameBookmarkFolder" type="button">Переименовать</button><button id="deleteBookmarkFolder" type="button">Удалить папку</button></div></div><div class="internal-view-search-wrap"><input id="internalViewSearch" class="internal-view-search" type="search" placeholder="Поиск по названию или адресу" aria-label="Поиск по закладкам и истории"></div><div class="internal-view-list" id="internalViewList"></div><div class="internal-view-empty" id="internalViewEmpty" hidden>Пока здесь пусто.</div><div class="internal-view-footer" id="internalViewFooter"></div></section>
+ <div class="hero-brand"><div class="hero-logo">Sk<span>/</span><b>Ai</b></div><p>Умный браузер. Ваши правила.</p><i></i></div>
+ <div class="search-card"><span class="search-symbol">⌕</span><input id="homeSearch" placeholder="Найти что-то важное..." aria-label="Поиск"><button class="search-engine" id="engineButton">Яндекс <span>⌄</span></button><button class="search-submit" id="homeSearchSubmit" aria-label="Искать">→</button><div class="search-hint">Поиск через <b id="currentEngine">Яндекс</b></div></div>
+ <div class="shortcut-grid">
+ <button class="shortcut-card" data-url="skai://bookmarks"><span class="shortcut-icon bookmarks">▦</span><span><b>Закладки</b><small>Сохранённые страницы</small></span><span class="shortcut-arrow">›</span></button>
+ <button class="shortcut-card" data-url="skai://privacy"><span class="shortcut-icon privacy">♢</span><span><b>Приватность</b><small>Контроль данных и трекеров</small></span><span class="shortcut-arrow">›</span></button>
+ <button class="shortcut-card" data-url="skai://extensions"><span class="shortcut-icon extensions">▦</span><span><b>Расширения</b><small>Больше возможностей</small></span><span class="shortcut-arrow">›</span></button>
+ <button class="shortcut-card" data-url="skai://themes"><span class="shortcut-icon themes">◉</span><span><b>Темы</b><small>Оформление</small></span><span class="shortcut-arrow">›</span></button>
+ </div>
+ <div class="privacy-strip"><span class="privacy-shield">✓</span><span>Встроенная аналитика Sk/Ai не используется</span><div class="privacy-wave"></div><span class="privacy-version">♢ &nbsp;Sk/Ai v1.0 · Стандартная защита Chromium</span></div>
+ <div class="page-footer"><span>Sk/Ai <b>DESKTOP</b></span><span>Сделано для вашего спокойного фокуса <i>✧</i></span></div>
+</div></section>
+<aside class="assistant-panel" id="assistantPanel"><div class="permission-prompts" id="permissionPrompts" aria-live="polite" hidden></div>
+ <div class="assistant-header"><div class="assistant-title"><div class="assistant-avatar">◢</div><div><b>Sk/Ai Assistant</b><small>Встроенный помощник</small></div></div><span class="local-badge">LOCAL</span><div class="assistant-window-tools"><button title="Настройки">⚙</button><button id="floatAssistant" title="Плавающее окно">↗</button><button id="collapseAssistant" title="Свернуть">−</button><button id="hideAssistant" title="Закрыть">×</button></div></div>
+ <div class="mode-switch mode-switch-wide"><button class="mode-option active" data-mode="local"><span class="mode-dot local-dot"></span>✧ Локальный ИИ</button><button class="mode-option" data-mode="cloud"><span class="mode-dot cloud-dot"></span>☁ Облако</button><button class="mode-option" data-mode="search" title="Открыть поиск в выбранной поисковой системе"><span class="mode-dot search-dot"></span>⌕ Поиск</button></div>
+ <div class="model-card"><span class="model-status pending" id="modelStatus"></span><div class="model-copy"><b>Qwen 3.5 · 2B</b><small id="modelFootnote">Проверяем локальную модель…</small></div><button class="model-install-button" id="installLocalModel" type="button">Установить · 1,3 ГБ</button></div>
+ <div class="security-card"><span class="security-icon">⬡</span><div><div class="security-title">Анализ угроз <b class="pending">Не подключён</b></div><p>Локальный анализ страниц будет доступен после подключения модели. Сейчас этот модуль не блокирует сайты и скрипты.</p></div><span class="model-chevron">›</span></div>
+ <div class="chat-area" id="chatArea"><div class="assistant-intro"><div class="intro-spark">✧</div><div><b>Привет! Чем могу помочь?</b><p>Задавайте вопросы, ищите информацию или попросите проанализировать страницу.</p></div></div><div class="suggestion-list"><button class="suggestion" data-prompt="Объясни, что умеет Sk/Ai."><span>✧</span> Что умеет Sk/Ai? <i>↗</i></button><button class="suggestion" data-prompt="Помоги проанализировать текущую страницу."><span>⌁</span> Проанализировать страницу <i>↗</i></button></div></div>
+ <div class="composer-wrap"><div class="composer-tools"><button title="Прикрепить файл">♧</button><button title="Изображение">▧</button><button title="Код">&lt;/&gt;</button><button title="Очистить диалог">♜</button><button id="sharePage" title="Передать текст активной страницы">⇧</button></div><div class="shared-page-context" id="sharedPageContext" hidden><span class="shared-page-copy"><b>Контекст страницы</b><small id="sharedPageTitle"></small></span><button type="button" id="clearSharedPage" title="Удалить контекст страницы">×</button></div><div class="composer"><textarea id="promptInput" rows="1" placeholder="Спросите о чём угодно..."></textarea><div class="composer-bottom"><div class="composer-actions"><button class="attach-button" title="Прикрепить">＋</button><button class="send-button" id="sendPrompt" title="Отправить">→</button></div></div></div></div>
+</aside><button class="assistant-reopen" id="reopenAssistant" title="Показать помощника">✧</button>
+</div><div class="statusbar"><span><i class="status-dot"></i> Sk/Ai · Ваше пространство</span><span>LOCAL FIRST <b>·</b> PRIVACY BY DESIGN</span></div>
+</main><div class="toast" id="toast" role="status"></div><script src="app.js"></script>
+</body></html>

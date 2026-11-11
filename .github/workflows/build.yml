@@ -1,9 +1,11 @@
-name: Build Yandex Blind for Windows
+name: Build Sk/Ai for Windows
 
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches:
+      - main
+      - feature/sk-ai-privacy-security
     paths:
       - ".github/workflows/build.yml"
       - "installer/**"
@@ -19,6 +21,19 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Set up Node.js for extension validation
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Validate extension manifest and JavaScript
+        shell: pwsh
+        run: |
+          Get-Content -Raw "newtab/manifest.json" | ConvertFrom-Json | Out-Null
+          node --check "newtab/background.js"
+          node --check "newtab/newtab.js"
+          node --check "newtab/sidepanel.js"
 
       - name: Download and verify Chromium-Gost x64 ZIP
         shell: pwsh
@@ -70,7 +85,7 @@ jobs:
           "Qwen3.5-2B Q4_K_M SHA256: $actualModelSha" | Out-File "dist\payload\AI\MODEL.txt" -Encoding utf8
           "llama.cpp runtime: $runtimeTag (Windows x64 CPU)" | Out-File "dist\payload\AI\RUNTIME.txt" -Encoding utf8
 
-      - name: Prepare Yandex Blind files
+      - name: Prepare Sk/Ai files
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force -Path "dist\payload\Browser", "dist\payload\NewTab" | Out-Null
@@ -79,9 +94,9 @@ jobs:
           Copy-Item "installer\YandexBlind.vbs" "dist\payload\YandexBlind.vbs" -Force
           Copy-Item "dist\UPSTREAM.txt" "dist\payload\UPSTREAM.txt" -Force
           @"
-          Yandex Blind bundles llama.cpp as a local inference runtime.
+          Sk/Ai bundles llama.cpp as a local inference runtime.
           Runtime source: https://github.com/ggml-org/llama.cpp
-          Model: Qwen3.5-2B-GGUF (Q4_K_M), Apache-2.0
+          Model: Qwen3.5-2B-GGUF (Q4_K_M)
           Model source: https://huggingface.co/gguf/Qwen3.5-2B-GGUF
           The AI server binds only to 127.0.0.1 and is launched only while the browser is open.
           "@ | Out-File "dist\payload\AI\THIRD_PARTY_NOTICES.txt" -Encoding utf8
@@ -97,12 +112,12 @@ jobs:
           if (-not (Test-Path $iscc)) { throw "Inno Setup compiler not found: $iscc" }
           & $iscc "installer\YandexBlind.iss"
           if ($LASTEXITCODE -ne 0) { throw "Inno Setup failed with exit code $LASTEXITCODE" }
-          if (-not (Test-Path "dist\YandexBlind-Setup.exe")) { throw "Installer output is missing." }
+          if (-not (Test-Path "dist\SkAi-Windows11-x64-Setup.exe")) { throw "Installer output is missing." }
 
       - name: Upload installer
         uses: actions/upload-artifact@v4
         with:
-          name: YandexBlind-Windows11-x64
-          path: dist/YandexBlind-Setup.exe
+          name: SkAi-Windows11-x64
+          path: dist/SkAi-Windows11-x64-Setup.exe
           if-no-files-found: error
           retention-days: 14
