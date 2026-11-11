@@ -173,6 +173,21 @@ jobs:
           if (!$qwenLicenseText.Contains("Apache License") -or !$qwenLicenseText.Contains("Version 2.0")) {
             throw "The pinned Qwen model license is missing or is not Apache-2.0."
           }
+
+          # Ship the local AI weights with Sk/Ai: AI is a core browser subsystem,
+          # not an optional post-install download.
+          $modelFile = Join-Path $runtime "qwen3.5-2b-Q4_K_M.gguf"
+          Invoke-WebRequest -Uri "https://huggingface.co/gguf/Qwen3.5-2B-GGUF/resolve/19bb3a8fe3d2976d563e3c61e69c75e61806f2bc/qwen3.5-2b-Q4_K_M.gguf" -OutFile $modelFile
+          $modelItem = Get-Item $modelFile
+          if ($modelItem.Length -ne 1406600000) {
+            throw "Bundled Qwen model has unexpected size: $($modelItem.Length) bytes."
+          }
+          $modelHash = (Get-FileHash -Path $modelFile -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($modelHash -ne "9a3d0aa6c920f096441139b6a254542da855223fdad06855ea00c6c087fd713d") {
+            throw "Bundled Qwen model SHA-256 verification failed."
+          }
+          Write-Host "Verified bundled Qwen model: $($modelItem.Length) bytes, SHA-256 $modelHash"
+
           @(
             "Model: Qwen3.5-2B Q4_K_M GGUF",
             "GGUF source: https://huggingface.co/gguf/Qwen3.5-2B-GGUF",
@@ -231,6 +246,7 @@ jobs:
             "runtime/llama/LICENSE-Qwen3.5-2B.txt",
             "runtime/llama/MODEL-INFO.txt",
             "runtime/llama/BUILD-INFO.txt",
+            "runtime/llama/qwen3.5-2b-Q4_K_M.gguf",
             "runtime/llama/ggml-cpu-x64.dll",
             "runtime/llama/ggml-cpu-sse42.dll",
             "runtime/llama/ggml-cpu-haswell.dll"
@@ -238,6 +254,12 @@ jobs:
           foreach ($item in $required) {
             $path = Join-Path $bin $item
             if (!(Test-Path $path)) { throw "Required runtime file missing: $path" }
+          }
+          $model = Join-Path $bin "runtime/llama/qwen3.5-2b-Q4_K_M.gguf"
+          if ((Get-Item $model).Length -ne 1406600000) { throw "Bundled AI model size verification failed." }
+          $modelHash = (Get-FileHash -Path $model -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($modelHash -ne "9a3d0aa6c920f096441139b6a254542da855223fdad06855ea00c6c087fd713d") {
+            throw "Bundled AI model hash verification failed."
           }
           if (!(Test-Path (Join-Path $bin "locales\en-US.pak"))) {
             throw "CEF locale resources were not packaged."
