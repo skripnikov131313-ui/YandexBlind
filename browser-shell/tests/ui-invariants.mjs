@@ -848,6 +848,8 @@ assert.match(securitySource, /kMaxEvidence = 512/);
 assert.match(securitySource, /SkAiClearSecurityEvents/);
 assert.match(clientSource, /SkAiSecurityEventType::tracker_blocked/);
 assert.match(clientSource, /SkAiSecurityEventType::permission_requested/);
+assert.match(clientSource, /category == "securityEvents"/);
+assert.match(cmakeSource, /skai_security_journal_tests/);
 assert.match(clientSource, /SkAiSecurityEventType::download_started/);
 assert.match(clientSource, /SkAiSecurityEventType::download_completed/);
 assert.match(clientSource, /SkAiSecurityEventType::navigation_redirect/);
