@@ -323,6 +323,33 @@ void InstallSitePrivacyCompatibility(CefRefPtr<CefV8Context> context) {
     }
   };
   const localCookieStore = getLocalCookieStore();
+  const cookieStorageKey = "__skai_cookie_compat_v1";
+  const syncLocalCookieStore = () => {
+    try {
+      const serialized = localStorage.getItem(cookieStorageKey);
+      const entries = serialized ? JSON.parse(serialized) : [];
+      if (!Array.isArray(entries)) return;
+      localCookieStore.clear();
+      for (const entry of entries) {
+        if (Array.isArray(entry) && entry.length === 2) {
+          localCookieStore.set(entry[0], entry[1]);
+        }
+      }
+    } catch (_) {}
+  };
+  const persistLocalCookieStore = () => {
+    try {
+      localStorage.setItem(
+        cookieStorageKey, JSON.stringify(Array.from(localCookieStore.entries()))
+      );
+    } catch (_) {}
+  };
+  syncLocalCookieStore();
+  try {
+    window.addEventListener("storage", event => {
+      if (event.key === cookieStorageKey) syncLocalCookieStore();
+    });
+  } catch (_) {}
   const cookiePathMatches = (requestPath, cookiePath) =>
     requestPath === cookiePath ||
     requestPath.startsWith(cookiePath.endsWith("/")
@@ -331,6 +358,7 @@ void InstallSitePrivacyCompatibility(CefRefPtr<CefV8Context> context) {
     Object.defineProperty(Document.prototype, "cookie", {
       configurable: false,
       get() {
+        syncLocalCookieStore();
         const host = location.hostname.toLowerCase();
         const path = location.pathname || "/";
         const securePage = location.protocol === "https:";
@@ -339,6 +367,7 @@ void InstallSitePrivacyCompatibility(CefRefPtr<CefV8Context> context) {
         for (const [key, cookie] of localCookieStore.entries()) {
           if (cookie.expires && cookie.expires <= now) {
             localCookieStore.delete(key);
+            persistLocalCookieStore();
             continue;
           }
           const domainMatches = host === cookie.domain ||
@@ -393,9 +422,11 @@ void InstallSitePrivacyCompatibility(CefRefPtr<CefV8Context> context) {
         const id = domain + "|" + path + "|" + name;
         if ((maxAge !== null && maxAge <= 0) || (expires && expires <= Date.now())) {
           localCookieStore.delete(id);
+          persistLocalCookieStore();
           return;
         }
         localCookieStore.set(id, { name, value, domain, hostOnly, path, expires, secure });
+        persistLocalCookieStore();
       }
     });
   } catch (_) {}
