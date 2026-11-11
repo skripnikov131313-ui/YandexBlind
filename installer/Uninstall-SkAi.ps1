@@ -11,15 +11,18 @@ $registryPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\SkAi"
 if ((Get-Process -Name "SkAi" -ErrorAction SilentlyContinue)) {
     throw "Close Sk/Ai before uninstalling it. The running browser was not stopped."
 }
+$desktopShortcutCreated = $false
 if (Test-Path -LiteralPath $registryPath) {
-    $registeredLocation = (Get-ItemProperty -Path $registryPath -Name "InstallLocation" -ErrorAction SilentlyContinue).InstallLocation
+    $uninstallInfo = Get-ItemProperty -Path $registryPath
+    $registeredLocation = $uninstallInfo.InstallLocation
     if ($registeredLocation -and [System.IO.Path]::GetFullPath($registeredLocation) -ne $expectedRoot) {
         throw "The uninstall record points to a different directory. No files were removed."
     }
+    $desktopShortcutCreated = ($uninstallInfo.SkAiDesktopShortcutCreated -eq 1)
 }
 
 if (Test-Path -LiteralPath $startMenuFolder) { Remove-Item -LiteralPath $startMenuFolder -Recurse -Force }
-if (Test-Path -LiteralPath $desktopShortcutPath) { Remove-Item -LiteralPath $desktopShortcutPath -Force }
+if ($desktopShortcutCreated -and (Test-Path -LiteralPath $desktopShortcutPath)) { Remove-Item -LiteralPath $desktopShortcutPath -Force }
 if (Test-Path -LiteralPath $registryPath) { Remove-Item -LiteralPath $registryPath -Recurse -Force }
 if (Test-Path -LiteralPath $installRoot) { Remove-Item -LiteralPath $installRoot -Recurse -Force }
 
