@@ -28,7 +28,7 @@ class SkAiPrivacyCookieFilter final : public CefCookieAccessFilter {
                      CefRefPtr<CefFrame> /*frame*/,
                      CefRefPtr<CefRequest> /*request*/,
                      const CefCookie& cookie) override {
-    return !SkAiShouldBlockTrackingCookie(cookie.name.ToWString());
+    return false;  // Never attach real site cookies to HTTP requests.
   }
 
   bool CanSaveCookie(CefRefPtr<CefBrowser> /*browser*/,
@@ -36,7 +36,7 @@ class SkAiPrivacyCookieFilter final : public CefCookieAccessFilter {
                      CefRefPtr<CefRequest> /*request*/,
                      CefRefPtr<CefResponse> /*response*/,
                      const CefCookie& cookie) override {
-    return !SkAiShouldBlockTrackingCookie(cookie.name.ToWString());
+    return false;  // Never persist cookies returned by site servers.
   }
 
  private:
