@@ -88,7 +88,7 @@ const clientSource = readFileSync(
 );
 assert.match(
   clientSource,
-  /OnBeforeBrowse[\\s\\S]*?frame->IsMain\\(\\)[\\s\\S]*?GetMethod\\(\\) != "GET"[\\s\\S]*?SkAiStripTrackingParameters/,
+  /OnBeforeBrowse[\\s\\S]*?frame->IsMain\\(\\)[\\s\\S]*?GetMethod\\(\\) != "GET"[\\s\\S]*?SkAiStripTrackingParameters[\\s\\S]*?frame->LoadURL/,
   "Tracking query cleanup must be limited to top-level GET navigations and preserve form POSTs."
 );
 assert.match(
