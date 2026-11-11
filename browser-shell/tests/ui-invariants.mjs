@@ -877,3 +877,9 @@ assert.match(source, /недоверенными данными/, "Security anal
 assert.match(source, /Анализировать локально/, "Security Center must expose an explicit local analysis control.");
 
 assert.match(source, /securityAnalysisRequestId = "";[\s\S]*?securityAnalysisPending = false;[\s\S]*?securityAnalysisResult = ""/, "Disabling AI analysis must invalidate pending Security Center results.");
+
+assert.match(clientSource, /void RecordNavigationRisk\(/, "Main-frame navigation must receive deterministic risk heuristics.");
+assert.match(clientSource, /source_scheme == L"https" && target_scheme == L"http"/, "HTTPS-to-HTTP redirects must be recorded as risks.");
+assert.match(clientSource, /В адресе присутствуют встроенные учётные данные/, "Credential-bearing navigation URLs must be recorded.");
+assert.match(clientSource, /target_host\.rfind\(L"xn--"/, "Punycode hostnames must be flagged for review.");
+assert.match(clientSource, /SkAiSecurityEventType::suspicious_navigation/, "Navigation risk must enter the native security journal.");
