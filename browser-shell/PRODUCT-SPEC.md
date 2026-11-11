@@ -129,3 +129,43 @@ The mode selector belongs next to the assistant composer.
 Native C++/Win32 + CEF shell with tabs/navigation controls, session restoration, bookmark folders/editing, local history, persistent download history, native permission prompts and remembered per-site permission management is implemented in source. The current CEF build uses the post-CEF-138 bootstrap architecture and explicitly refuses to start without the sandbox handle.
 
 JavaScript syntax and HTML-to-JS element-reference checks pass in the repository inspection. The Windows workflow has not yet produced a successful build artifact; its latest run is queued and no Windows compile/runtime result is claimed. No Windows runtime behavior is claimed as tested. Next gate: complete Windows CI build and native-window smoke test. After that: multiple profiles, extension compatibility, cookie/cache/site-data controls and broader browser settings, then integrate local AI.
+
+
+## 9. AI is a core browser subsystem — not an add-on
+
+The assistant is a first-class part of Sk/Ai from the first launch. It is not an extension, optional plugin, website, or separately installed application.
+
+- [~] The assistant shell, native bridge, local inference orchestration and docked/floating UI are shipped inside the Sk/Ai application package.
+- [ ] First-run provisioning is automatic: on first launch, Sk/Ai checks the pinned local model and downloads/verifies it without requiring the user to discover or install a separate AI component. The UI must clearly show progress, allow pause/cancel/retry, and explain the one-time network transfer and disk requirement.
+- [ ] The browser remains usable while model provisioning runs; AI-dependent actions show a clear "initializing" state rather than appearing absent.
+- [ ] The local model is the default AI route. No prompt, page text, browsing history, URL, file or security event may silently fall back to a cloud provider.
+- [ ] Assistant context is available to browser-native tools only through explicit, scoped internal APIs. Page content is always untrusted input, never executable instructions or trusted policy.
+- [ ] AI has a dedicated Security Center surface and can explain browser protection decisions, inspect a user-selected page, summarize permission risks and help the user understand suspicious downloads, redirects and domains.
+- [ ] AI may recommend or explain security actions, but must not be the sole enforcement mechanism. Deterministic native policy decides whether a request, permission, download or navigation is blocked or allowed.
+- [ ] Critical enforcement remains active if the model is missing, downloading, stopped, overloaded, or returns malformed/adversarial output.
+- [ ] Security analysis runs locally by default. Any future cloud analysis requires a per-action preview of exactly what data leaves the device and explicit confirmation.
+
+## 10. Integrated browser security intelligence
+
+Security is a continuous browser subsystem, not a chatbot feature. It consists of three cooperating layers:
+
+1. **Native enforcement layer (authoritative):** CEF request policy, safe URL parsing, redirect checks, permission mediation, download validation, isolation boundaries and deterministic allow/block rules. This layer must never wait for AI inference.
+2. **Local security analysis layer:** the bundled Sk/Ai AI runtime analyzes page text and metadata, explains suspicious patterns, summarizes permission requests, flags likely phishing/social engineering and provides a human-readable reason with confidence and evidence.
+3. **Security Center UI:** persistent protection status, per-site risk summary, blocked-request log, permission decisions, suspicious download warnings, and an explanation/action history.
+
+Required safeguards:
+- Treat all page text, DOM text, metadata, filenames, certificate display strings and downloaded document contents as untrusted. They may contain prompt injection and must never override system policy or trigger privileged actions.
+- Never expose native bridge functions, local file access, browser profile data, credentials, cookies, API keys or unrestricted filesystem/network access to ordinary web pages or to model-generated code.
+- Use structured, bounded evidence for analysis: canonical URL/origin, redirect chain, certificate validation result supplied by Chromium, permission requests, download metadata, and selected visible page text. Do not send full browsing history by default.
+- AI findings are advisory and must include the observed evidence. Unknown or low-confidence cases must be labelled uncertain, not declared safe.
+- A malicious page cannot ask the assistant to disable protection, grant permissions, export data, open a local file or execute a browser action. Privileged actions require a separate user gesture and native policy validation.
+- Provide a clear "AI unavailable" state while deterministic protection continues to operate.
+- Add adversarial tests for prompt injection in page content, misleading URLs, IDN/homograph domains, redirect chains, fake browser warnings, malicious filenames and AI output requesting privileged actions.
+
+Acceptance gates:
+- Unit tests prove deterministic blocking and permission rules do not call the model.
+- Renderer tests prove untrusted web pages cannot access the Sk/Ai native bridge or Security Center privileged actions.
+- Prompt-injection tests prove page content cannot change policy, authorize actions or cause data disclosure.
+- Network tests prove local security analysis does not contact cloud endpoints.
+- UI tests prove every security warning identifies evidence and distinguishes an enforced block from an AI advisory.
+- Security Center and assistant remain usable with the model not yet downloaded; enforcement remains fully active.
