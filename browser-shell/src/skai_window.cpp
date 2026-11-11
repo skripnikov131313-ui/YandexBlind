@@ -131,12 +131,6 @@ CefRefPtr<CefRequestContext> GetOrCreateProfileContext(
   const auto existing = g_profile_contexts.find(name);
   if (existing != g_profile_contexts.end()) return existing->second;
 
-  if (name == L"default") {
-    auto global_context = CefRequestContext::GetGlobalContext();
-    if (global_context) g_profile_contexts.emplace(name, global_context);
-    return global_context;
-  }
-
   const auto directory = GetProfileDirectory(name);
   if (directory.empty()) return nullptr;
 
@@ -151,6 +145,7 @@ CefRefPtr<CefRequestContext> GetOrCreateProfileContext(
   CefRequestContextSettings context_settings;
   CefString(&context_settings.cache_path) = (directory / L"Cache").wstring();
   context_settings.persist_session_cookies = true;
+  context_settings.persist_user_preferences = true;
   auto context = CefRequestContext::CreateContext(context_settings, nullptr);
   if (context) g_profile_contexts.emplace(name, context);
   return context;
