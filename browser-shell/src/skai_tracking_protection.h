@@ -9,3 +9,6 @@ bool SkAiShouldBlockTrackingRequest(const std::wstring& url);
 // Removes known marketing/click-attribution parameters without changing
 // credentials, functional query parameters, path, origin or fragment.
 std::wstring SkAiStripTrackingParameters(const std::wstring& url);
+
+// Returns true for well-known advertising and analytics cookie identifiers.
+bool SkAiShouldBlockTrackingCookie(const std::wstring& name);
