@@ -1649,6 +1649,11 @@
     securityEvents = Array.isArray(items) ? items.filter(item => item && typeof item === "object") : [];
     if (internalViewType === "security") renderInternalView("security");
   };
+  window.skaiNative.securityWarning = (summary, evidence) => {
+    const title = String(summary || "Предупреждение безопасности").slice(0, 120);
+    const detail = String(evidence || "").slice(0, 240);
+    notify(detail ? title + " · " + detail : title);
+  };
   window.skaiNative.addressChanged = url => {
     $("#addressInput").value = url;
     syncBookmarkButton();
