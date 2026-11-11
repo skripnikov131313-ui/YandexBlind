@@ -329,7 +329,7 @@ void InstallSitePrivacyCompatibility(CefRefPtr<CefV8Context> context) {
       ? cookiePath : cookiePath + "/");
   try {
     Object.defineProperty(Document.prototype, "cookie", {
-      configurable: true,
+      configurable: false,
       get() {
         const host = location.hostname.toLowerCase();
         const path = location.pathname || "/";
@@ -400,19 +400,88 @@ void InstallSitePrivacyCompatibility(CefRefPtr<CefV8Context> context) {
     });
   } catch (_) {}
 
-  // Suppress obvious first-party telemetry beacons without intercepting
-  // ordinary application fetch/XHR traffic.
+  // Suppress common first-party telemetry paths while leaving ordinary
+  // application API traffic untouched. A suppressed call receives an empty
+  // successful response so analytics code does not retry or break page startup.
+  const telemetryPath = /(?:^|\/)(?:analytics|telemetry|collect|beacon|pixel)(?:\/|$)/i;
+  const isTelemetryUrl = input => {
+    try {
+      const raw = typeof input === "string" ? input
+        : input && typeof input.url === "string" ? input.url : String(input);
+      return telemetryPath.test(new URL(raw, location.href).pathname);
+    } catch (_) {
+      return false;
+    }
+  };
   try {
-    const originalSendBeacon = Navigator.prototype.sendBeacon;
-    const telemetryPath = /(?:^|\/)(?:analytics|telemetry|collect|beacon|pixel)(?:\/|$)/i;
     Object.defineProperty(Navigator.prototype, "sendBeacon", {
-      configurable: true,
-      value(url, data) {
-        let path = "";
-        try { path = new URL(String(url), location.href).pathname; } catch (_) {}
-        if (telemetryPath.test(path)) return true;
-        return typeof originalSendBeacon === "function"
-          ? originalSendBeacon.call(this, url, data) : false;
+      configurable: false,
+      writable: false,
+      value() { return true; }
+    });
+  } catch (_) {}
+  try {
+    const originalFetch = window.fetch;
+    if (typeof originalFetch === "function") {
+      Object.defineProperty(window, "fetch", {
+        configurable: false,
+        writable: false,
+        value(input, init) {
+          if (isTelemetryUrl(input)) {
+            return Promise.resolve(new Response(null, {
+              status: 204, statusText: "No Content"
+            }));
+          }
+          return originalFetch.call(this, input, init);
+        }
+      });
+    }
+  } catch (_) {}
+  try {
+    const originalOpen = XMLHttpRequest.prototype.open;
+    const originalSend = XMLHttpRequest.prototype.send;
+    Object.defineProperty(XMLHttpRequest.prototype, "open", {
+      configurable: false,
+      writable: false,
+      value(method, url) {
+        this.__skaiTelemetrySuppressed = isTelemetryUrl(url);
+        this.__skaiAsyncRequest = arguments.length < 3 || arguments[2] !== false;
+        return originalOpen.apply(this, arguments);
+      }
+    });
+    Object.defineProperty(XMLHttpRequest.prototype, "send", {
+      configurable: false,
+      writable: false,
+      value(body) {
+        if (!this.__skaiTelemetrySuppressed) {
+          return originalSend.apply(this, arguments);
+        }
+        const xhr = this;
+        const complete = () => {
+          try {
+            Object.defineProperties(xhr, {
+              readyState: { configurable: true, get: () => 4 },
+              status: { configurable: true, get: () => 204 },
+              statusText: { configurable: true, get: () => "No Content" },
+              responseText: { configurable: true, get: () => "" },
+              response: { configurable: true, get: () => null },
+              getAllResponseHeaders: {
+                configurable: true, value: () => ""
+              },
+              getResponseHeader: {
+                configurable: true, value: () => null
+              }
+            });
+          } catch (_) {}
+          try {
+            xhr.dispatchEvent(new Event("readystatechange"));
+            xhr.dispatchEvent(new Event("load"));
+            xhr.dispatchEvent(new Event("loadend"));
+          } catch (_) {}
+        };
+        if (this.__skaiAsyncRequest) queueMicrotask(complete);
+        else complete();
+        return undefined;
       }
     });
   } catch (_) {}
