@@ -171,18 +171,25 @@ std::filesystem::path GetModelDirectory() {
   return error ? std::filesystem::path{} : directory;
 }
 
-std::filesystem::path GetModelPath() {
-  const auto directory = GetModelDirectory();
-  return directory.empty() ? std::filesystem::path{}
-                           : directory / kModelFileName;
-}
-
 std::filesystem::path GetRuntimeDirectory() {
   wchar_t executable[MAX_PATH]{};
   const DWORD length = GetModuleFileNameW(nullptr, executable, MAX_PATH);
   if (length == 0 || length >= MAX_PATH) return {};
   return std::filesystem::path(executable).parent_path() /
          L"runtime" / L"llama";
+}
+
+std::filesystem::path GetModelPath() {
+  // Prefer the model shipped inside the Sk/Ai installation. The per-user
+  // model directory remains a fallback for older or lightweight packages.
+  const auto bundled = GetRuntimeDirectory() / kModelFileName;
+  std::error_code error;
+  if (std::filesystem::is_regular_file(bundled, error) && !error) {
+    return bundled;
+  }
+  const auto directory = GetModelDirectory();
+  return directory.empty() ? std::filesystem::path{}
+                           : directory / kModelFileName;
 }
 
 std::string ToLowerHex(const std::vector<UCHAR>& bytes) {
