@@ -1,0 +1,42 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "block"
+    },
+    "condition": {
+      "requestDomains": [
+        "doubleclick.net",
+        "googlesyndication.com",
+        "googleadservices.com",
+        "googletagmanager.com",
+        "google-analytics.com",
+        "connect.facebook.net",
+        "facebook.net",
+        "hotjar.com",
+        "segment.io",
+        "segment.com",
+        "amplitude.com",
+        "mixpanel.com",
+        "scorecardresearch.com",
+        "adnxs.com",
+        "taboola.com",
+        "outbrain.com",
+        "criteo.com",
+        "adform.net",
+        "adsrvr.org",
+        "quantserve.com",
+        "newrelic.com",
+        "clarity.ms"
+      ],
+      "resourceTypes": [
+        "script",
+        "xmlhttprequest",
+        "image",
+        "sub_frame",
+        "ping"
+      ]
+    }
+  }
+]

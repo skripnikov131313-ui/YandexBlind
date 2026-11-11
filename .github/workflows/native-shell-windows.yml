@@ -1,0 +1,300 @@
+name: Sk/Ai Native Shell
+
+on:
+  push:
+    branches:
+      - feature/skai-native-shell
+    paths:
+      - "browser-shell/**"
+      - "installer/**"
+      - ".github/workflows/native-shell-windows.yml"
+  pull_request:
+    branches:
+      - main
+      - feature/skai-native-shell
+    paths:
+      - "browser-shell/**"
+      - "installer/**"
+      - ".github/workflows/native-shell-windows.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: skai-native-shell-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  windows-x64:
+    runs-on: windows-2025
+    timeout-minutes: 90
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Verify Windows toolchain
+        shell: pwsh
+        run: |
+          cmake --version
+          node --version
+          $vswhere = "${env:ProgramFiles(x86)}\Microsoft Visual Studio\Installer\vswhere.exe"
+          if (Test-Path $vswhere) {
+            & $vswhere -latest -products '*' -property installationVersion
+          }
+          Get-ChildItem "${env:ProgramFiles(x86)}\Windows Kits\10\Include" -Directory |
+            Select-Object -ExpandProperty Name
+
+      - name: Download pinned CEF distribution
+        shell: pwsh
+        run: |
+          $version = "154.0.34+g14c5a08+chromium-154.0.8037.98"
+          $archive = "cef_binary_$($version)_windows64.tar.bz2"
+          $base = "https://cef-builds.spotifycdn.com/$archive"
+          $encoded = $base.Replace("+", "%2B")
+          $folder = Join-Path $env:RUNNER_TEMP "cef"
+          New-Item -ItemType Directory -Force -Path $folder | Out-Null
+          $archivePath = Join-Path $folder $archive
+          Invoke-WebRequest -Uri "$encoded.sha1" -OutFile "$archivePath.sha1"
+          Invoke-WebRequest -Uri $encoded -OutFile $archivePath
+          $expected = (Get-Content "$archivePath.sha1" -Raw).Trim().Split(" ")[0].ToLowerInvariant()
+          $actual = (Get-FileHash $archivePath -Algorithm SHA1).Hash.ToLowerInvariant()
+          if ($expected -ne $actual) { throw "CEF SHA-1 verification failed." }
+          tar -xjf $archivePath -C $folder
+          $cefRoot = Join-Path $folder "cef_binary_$($version)_windows64"
+          if (!(Test-Path (Join-Path $cefRoot "Release\bootstrap.exe"))) {
+            throw "Pinned CEF package does not contain Release\bootstrap.exe required for the sandbox bootstrap."
+          }
+          "CEF_ROOT=$cefRoot" | Out-File -FilePath $env:GITHUB_ENV -Append
+
+      - name: Check JavaScript syntax and UI invariants
+        run: |
+          node --check browser-shell/ui/app.js
+          node --check browser-shell/ui/assistant.js
+          node browser-shell/tests/ui-invariants.mjs
+
+      - name: Validate per-user installer scripts
+        shell: pwsh
+        run: |
+          $scripts = @(
+            "installer/Install-SkAi.ps1",
+            "installer/Uninstall-SkAi.ps1"
+          )
+          foreach ($path in $scripts) {
+            $tokens = $null
+            $parseErrors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile(
+              (Join-Path $PWD $path), [ref]$tokens, [ref]$parseErrors
+            )
+            if ($parseErrors.Count -gt 0) {
+              $parseErrors | ForEach-Object { Write-Error $_.Message }
+              throw "PowerShell syntax validation failed: $path"
+            }
+          }
+
+      - name: Configure native shell
+        shell: pwsh
+        run: |
+          cmake -S browser-shell -B build/skai -A x64 -DCEF_ROOT="$env:CEF_ROOT" -DUSE_SANDBOX=ON
+
+      - name: Build native shell
+        run: cmake --build build/skai --config Release --parallel 2
+
+      - name: Run site tracking protection unit tests
+        run: ctest --test-dir build/skai -C Release --output-on-failure
+
+      - name: Build pinned llama.cpp CPU runtime
+        shell: pwsh
+        run: |
+          $llamaSource = Join-Path $env:RUNNER_TEMP "llama.cpp-v0.9.0"
+          $llamaBuild = Join-Path $env:RUNNER_TEMP "llama-build"
+          git clone --depth 1 --branch v0.9.0 --recursive https://github.com/ggml-org/llama.cpp.git $llamaSource
+          if ($LASTEXITCODE -ne 0) { throw "Could not fetch pinned llama.cpp v0.9.0 source." }
+          $llamaCommit = (git -C $llamaSource rev-parse HEAD).Trim()
+          if ($llamaCommit -ne "cd959bae99ff4bed22bef2604f45241c09bbb8c8") {
+            throw "llama.cpp tag v0.9.0 resolved to an unexpected commit: $llamaCommit"
+          }
+
+          $cmakeArgs = @(
+            "-S", $llamaSource,
+            "-B", $llamaBuild,
+            "-A", "x64",
+            "-DLLAMA_BUILD_SERVER=ON",
+            "-DLLAMA_BUILD_COMMON=ON",
+            "-DLLAMA_BUILD_TOOLS=ON",
+            "-DLLAMA_BUILD_TESTS=OFF",
+            "-DLLAMA_BUILD_EXAMPLES=OFF",
+            "-DLLAMA_BUILD_APP=OFF",
+            "-DLLAMA_BUILD_UI=OFF",
+            "-DLLAMA_USE_PREBUILT_UI=OFF",
+            "-DLLAMA_SUBPROCESS=OFF",
+            "-DLLAMA_OPENSSL=OFF",
+            "-DGGML_NATIVE=OFF",
+            "-DGGML_SSE42=OFF",
+            "-DGGML_AVX=OFF",
+            "-DGGML_AVX2=OFF",
+            "-DGGML_OPENMP=OFF",
+            "-DGGML_CUDA=OFF",
+            "-DGGML_VULKAN=OFF",
+            "-DBUILD_SHARED_LIBS=ON",
+            "-DGGML_BACKEND_DL=ON",
+            "-DGGML_CPU_ALL_VARIANTS=ON",
+            "-DCMAKE_RUNTIME_OUTPUT_DIRECTORY=$llamaBuild/bin",
+            "-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=$llamaBuild/bin"
+          )
+          & cmake @cmakeArgs
+          if ($LASTEXITCODE -ne 0) { throw "llama.cpp CMake configuration failed." }
+
+          cmake --build $llamaBuild --config Release --target llama-server --parallel 2
+          if ($LASTEXITCODE -ne 0) { throw "llama-server CPU build failed." }
+
+          $server = Get-ChildItem $llamaBuild -Filter "llama-server.exe" -Recurse -File |
+            Where-Object { $_.FullName -match "[\\/]Release[\\/]llama-server\.exe$" } |
+            Select-Object -First 1
+          if (!$server) { throw "llama-server.exe was not produced by the pinned build." }
+
+          $runtime = Join-Path $PWD "build/skai/bin/Release/runtime/llama"
+          New-Item -ItemType Directory -Force -Path $runtime | Out-Null
+          $runtimeFiles = Join-Path $llamaBuild "bin/Release"
+          if (!(Test-Path (Join-Path $runtimeFiles "llama-server.exe"))) {
+            $runtimeFiles = $server.DirectoryName
+          }
+          Copy-Item -Path (Join-Path $runtimeFiles "*") -Destination $runtime -Recurse -Force
+
+          $backendFiles = Get-ChildItem $llamaBuild -Filter "ggml-cpu-*.dll" -Recurse -File
+          if (!$backendFiles) { throw "No runtime-dispatched CPU backend DLLs were found anywhere in the llama.cpp build tree." }
+          foreach ($backend in $backendFiles) {
+            Copy-Item -LiteralPath $backend.FullName -Destination (Join-Path $runtime $backend.Name) -Force
+          }
+
+          Copy-Item -Path (Join-Path $llamaSource "LICENSE") -Destination (Join-Path $runtime "LICENSE-llama.cpp.txt") -Force
+
+          $qwenRevision = "15852e8c16360a2fea060d615a32b45270f8a8fc8"
+          $qwenLicense = Join-Path $runtime "LICENSE-Qwen3.5-2B.txt"
+          Invoke-WebRequest -Uri "https://huggingface.co/Qwen/Qwen3.5-2B/resolve/$qwenRevision/LICENSE" -OutFile $qwenLicense
+          $qwenLicenseText = Get-Content $qwenLicense -Raw
+          if (!$qwenLicenseText.Contains("Apache License") -or !$qwenLicenseText.Contains("Version 2.0")) {
+            throw "The pinned Qwen model license is missing or is not Apache-2.0."
+          }
+          @(
+            "Model: Qwen3.5-2B Q4_K_M GGUF",
+            "GGUF source: https://huggingface.co/gguf/Qwen3.5-2B-GGUF",
+            "GGUF revision: 19bb3a8fe3d2976d563e3c61e69c75e61806f2bc",
+            "GGUF file: qwen3.5-2b-Q4_K_M.gguf",
+            "SHA-256: 9a3d0aa6c920f096441139b6a254542da855223fdad06855ea00c6c087fd713d",
+            "Upstream model: https://huggingface.co/Qwen/Qwen3.5-2B",
+            "Upstream revision: $qwenRevision",
+            "License: Apache-2.0"
+          ) | Set-Content -Path (Join-Path $runtime "MODEL-INFO.txt") -Encoding utf8
+
+          @(
+            "Runtime: llama.cpp v0.9.0",
+            "Commit: $llamaCommit",
+            "Backend: CPU only",
+            "GPU backends: disabled",
+            "Server bind: 127.0.0.1"
+          ) | Set-Content -Path (Join-Path $runtime "BUILD-INFO.txt") -Encoding utf8
+
+          $packagedServer = Join-Path $runtime "llama-server.exe"
+          if (!(Test-Path $packagedServer)) { throw "Could not package llama-server.exe." }
+          $cpuBackends = Get-ChildItem $runtime -Filter "ggml-cpu-*.dll" -File
+          if (!$cpuBackends -or $cpuBackends.Count -lt 2) {
+            throw "Runtime-dispatched CPU backend variants were not packaged."
+          }
+          if (!(Test-Path (Join-Path $runtime "ggml-cpu-x64.dll"))) {
+            throw "Universal x64 CPU fallback backend is missing."
+          }
+          if (!(Test-Path (Join-Path $runtime "ggml-cpu-haswell.dll"))) {
+            throw "AVX2/Haswell CPU backend is missing."
+          }
+          Get-ChildItem $cpuBackends | Select-Object Name, Length
+          & $packagedServer --version
+          if ($LASTEXITCODE -ne 0) { throw "Packaged llama-server could not start." }
+          Get-ChildItem $runtime -File | Select-Object Name, Length
+
+      - name: Verify packaged runtime
+        shell: pwsh
+        run: |
+          $bin = Join-Path $PWD "build/skai/bin/Release"
+          $required = @(
+            "SkAi.exe",
+            "SkAi.dll",
+            "libcef.dll",
+            "chrome_elf.dll",
+            "icudtl.dat",
+            "resources.pak",
+            "ui/index.html",
+            "ui/assistant.html",
+            "ui/assistant.css",
+            "ui/assistant.js",
+            "chrome_100_percent.pak",
+            "chrome_200_percent.pak",
+            "runtime/llama/llama-server.exe",
+            "runtime/llama/LICENSE-llama.cpp.txt",
+            "runtime/llama/LICENSE-Qwen3.5-2B.txt",
+            "runtime/llama/MODEL-INFO.txt",
+            "runtime/llama/BUILD-INFO.txt",
+            "runtime/llama/ggml-cpu-x64.dll",
+            "runtime/llama/ggml-cpu-sse42.dll",
+            "runtime/llama/ggml-cpu-haswell.dll"
+          )
+          foreach ($item in $required) {
+            $path = Join-Path $bin $item
+            if (!(Test-Path $path)) { throw "Required runtime file missing: $path" }
+          }
+          if (!(Test-Path (Join-Path $bin "locales\en-US.pak"))) {
+            throw "CEF locale resources were not packaged."
+          }
+          Get-ChildItem $bin -Force | Select-Object Name, Length
+
+      - name: Native window smoke test
+        shell: pwsh
+        run: |
+          $exe = Join-Path $PWD "build/skai/bin/Release/SkAi.exe"
+          $process = Start-Process -FilePath $exe -PassThru
+          try {
+            $deadline = (Get-Date).AddSeconds(35)
+            $windowFound = $false
+            while ((Get-Date) -lt $deadline) {
+              Start-Sleep -Seconds 1
+              $process.Refresh()
+              if ($process.HasExited) {
+                throw "Sk/Ai exited early with code $($process.ExitCode)."
+              }
+              if ($process.MainWindowHandle -ne 0) {
+                $windowFound = $true
+                break
+              }
+            }
+            if (!$windowFound) {
+              throw "Sk/Ai did not create a visible native window within 35 seconds."
+            }
+          }
+          finally {
+            if (!$process.HasExited) {
+              Stop-Process -Id $process.Id -Force
+            }
+          }
+
+      - name: Assemble per-user Windows package
+        shell: pwsh
+        run: |
+          $release = Join-Path $PWD "build/skai/bin/Release"
+          $packageRoot = Join-Path $PWD "dist/SkAi"
+          New-Item -ItemType Directory -Force -Path $packageRoot | Out-Null
+          Copy-Item -Path (Join-Path $release "*") -Destination $packageRoot -Recurse -Force
+          Copy-Item -Path "installer/Install-SkAi.ps1" -Destination $packageRoot -Force
+          Copy-Item -Path "installer/Uninstall-SkAi.ps1" -Destination $packageRoot -Force
+          Copy-Item -Path "installer/README.md" -Destination $packageRoot -Force
+          Set-Content -Path (Join-Path $packageRoot "VERSION.txt") -Value "0.3.0" -Encoding ascii
+          $zip = Join-Path $PWD "dist/SkAi-win-x64.zip"
+          Compress-Archive -Path (Join-Path $packageRoot "*") -DestinationPath $zip -CompressionLevel Optimal -Force
+          if (!(Test-Path $zip)) { throw "Per-user Windows package archive was not created." }
+          Get-Item $zip | Select-Object FullName, Length
+
+      - name: Upload Windows x64 package
+        uses: actions/upload-artifact@v4
+        with:
+          name: skai-win-x64-package
+          path: |
+            build/skai/bin/Release/
+            dist/SkAi-win-x64.zip
+          if-no-files-found: error
+          retention-days: 14
