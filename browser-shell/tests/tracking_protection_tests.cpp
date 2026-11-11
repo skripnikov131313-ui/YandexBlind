@@ -40,6 +40,33 @@ int main() {
     }
   }
 
+  struct ParameterCase {
+    const wchar_t* input;
+    const wchar_t* expected;
+  };
+  const ParameterCase parameter_cases[] = {
+      {L"https://example.com/page?utm_source=mail&gclid=abc&lang=ru#section",
+       L"https://example.com/page?lang=ru#section"},
+      {L"https://example.com/?fbclid=123", L"https://example.com/"},
+      {L"https://example.com/?%75tm_source=ads&keep=a%26b",
+       L"https://example.com/?keep=a%26b"},
+      {L"https://example.com/?foo=1&bar=2",
+       L"https://example.com/?foo=1&bar=2"},
+      {L"file:///C:/SkAi/ui/index.html?utm_source=local",
+       L"file:///C:/SkAi/ui/index.html?utm_source=local"},
+      {L"https://example.com/path?utm_campaign=spring#top",
+       L"https://example.com/path#top"},
+  };
+  for (const auto& test : parameter_cases) {
+    const auto actual = SkAiStripTrackingParameters(test.input);
+    if (actual != test.expected) {
+      std::wcerr << L"FAIL: URL cleanup for " << test.input
+                 << L" expected " << test.expected
+                 << L" but was " << actual << L"\\n";
+      return 1;
+    }
+  }
+
   std::cout << "Sk/Ai site tracking protection tests: "
             << (sizeof(cases) / sizeof(cases[0])) << " passed\n";
   return 0;
