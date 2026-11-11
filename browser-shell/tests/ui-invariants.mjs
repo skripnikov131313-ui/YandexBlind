@@ -880,7 +880,7 @@ assert.match(source, /securityAnalysisRequestId = "";[\s\S]*?securityAnalysisPen
 
 assert.match(clientSource, /void RecordNavigationRisk\(/, "Main-frame navigation must receive deterministic risk heuristics.");
 assert.match(securitySource, /source == L"https" && target == L"http"/, "HTTPS-to-HTTP redirects must be classified as risks.");
-assert.match(clientSource, /В адресе присутствуют встроенные учётные данные/, "Credential-bearing navigation URLs must be recorded.");
+assert.match(securitySource, /В адресе присутствуют встроенные учётные данные/, "Credential-bearing navigation URLs must be recorded.");
 assert.match(clientSource, /target_host\.rfind\(L"xn--"/, "Punycode hostnames must be flagged for review.");
 assert.match(clientSource, /SkAiSecurityEventType::suspicious_navigation/, "Navigation risk must enter the native security journal.");
 
