@@ -1352,6 +1352,26 @@ void SkAiSendSecurityEvents() {
       frame->GetURL(), 0);
 }
 
+void SkAiNotifySecurityWarning(const std::wstring& summary,
+                              const std::wstring& evidence) {
+  if (g_close_requested || !g_ui_client || !g_ui_client->GetBrowser()) return;
+  const auto encode = [](const std::wstring& value) {
+    auto item = CefValue::Create();
+    item->SetString(value);
+    return CefWriteJSON(item, JSON_WRITER_DEFAULT).ToWString();
+  };
+  const auto summary_json = encode(summary);
+  const auto evidence_json = encode(evidence);
+  if (summary_json.empty() || evidence_json.empty()) return;
+  const auto frame = g_ui_client->GetBrowser()->GetMainFrame();
+  if (!frame) return;
+  frame->ExecuteJavaScript(
+      L"window.skaiNative&&window.skaiNative.securityWarning&&"
+      L"window.skaiNative.securityWarning(" + summary_json + L"," +
+          evidence_json + L");",
+      frame->GetURL(), 0);
+}
+
 std::uint64_t SkAiRequestSitePermission(
     int tab_id, const std::wstring& requesting_origin,
     std::uint32_t requested_permissions,
