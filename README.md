@@ -32,6 +32,8 @@ GitHub Actions downloads the upstream Chromium-Gost archive, verifies its SHA-25
 - The local model server listens on 127.0.0.1 only and is stopped by the launcher when the browser closes.
 - The AI panel sends prompt text and supported attached text files to the local inference server only. It does not send them to a cloud LLM.
 - The browser launcher disables several Chromium background reporting/sync components. This is not a guarantee of zero network traffic or anonymity.
+- The start-page extension loads a static Declarative Net Request ruleset that blocks selected third-party analytics, session-replay, advertising and fingerprinting endpoints (including Google Analytics, Hotjar, Microsoft Clarity, FullStory, Mouseflow, Mixpanel, Amplitude, PostHog and FingerprintJS). The rules target third-party requests and selected resource types; they do not inspect page content or guarantee that every tracker is blocked.
+- Third-party cookies and site storage are separate from network-request blocking. This build does not yet promise complete identifier reset or first-party tracking prevention. Some websites may lose analytics-backed widgets or embedded features when known tracker endpoints are blocked.
 - Search providers and websites receive ordinary network requests, including the user's IP address and request metadata needed to serve pages.
 - Certificate validation and browser security protections remain enabled. Do not install untrusted root certificates or bypass TLS validation.
 
