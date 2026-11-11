@@ -55,6 +55,7 @@
   let localAiSequence = 0;
   let sharedPageContext = null;
   let pageContextPending = false;
+  let securityEvents = [];
 
   const systemTheme = window.matchMedia("(prefers-color-scheme: light)");
   function applyTheme() {
@@ -1189,11 +1190,13 @@
     view.hidden = false;
     pageSections.forEach(section => { section.hidden = true; });
     $("#internalViewTitle").textContent =
-      type === "bookmarks" ? "Закладки" : type === "history" ? "История" : "Загрузки";
+      type === "bookmarks" ? "Закладки" : type === "history" ? "История" :
+      type === "security" ? "Центр безопасности" : type === "settings" ? "Настройки" : "Загрузки";
     $("#internalViewDescription").textContent =
       type === "bookmarks" ? "Сохранённые страницы в вашем профиле" :
       type === "history" ? "Недавно посещённые страницы · хранится локально" :
       type === "settings" ? "Настройте браузер и параметры приватности" :
+      type === "security" ? "События защиты, зафиксированные нативными механизмами браузера" :
       "Файлы, полученные через браузер · папка Загрузки/SkAi";
     const folderTools = $("#bookmarkFolderTools");
     if (folderTools) {
@@ -1228,6 +1231,50 @@
       renderSettingsContent(list);
       return;
     }
+    if (type === "security") {
+      $("#internalViewEmpty").hidden = securityEvents.length > 0;
+      $("#internalViewEmpty").textContent = securityEvents.length
+        ? "Нет событий по выбранному запросу." : "Событий пока нет. Браузер будет показывать здесь блокировки трекеров, запросы разрешений, перенаправления и загрузки.";
+      const query = ($("#internalViewSearch")?.value || "").trim().toLocaleLowerCase("ru-RU");
+      const filtered = securityEvents.filter(event =>
+        [event.origin, event.summary, event.evidence].join(" ").toLocaleLowerCase("ru-RU").includes(query));
+      $("#internalViewEmpty").hidden = filtered.length > 0;
+      filtered.slice().reverse().forEach(event => {
+        const row = document.createElement("article");
+        row.className = "library-row security-event-row";
+        const content = document.createElement("div");
+        content.className = "library-open";
+        const title = document.createElement("b");
+        const detail = document.createElement("small");
+        const labels = ["Блокировка трекера","Запрос разрешения","Разрешение выдано","Разрешение отклонено","Начало загрузки","Загрузка завершена","Загрузка прервана","Перенаправление","Подозрительная навигация"];
+        const severity = ["Информация","Низкий","Средний","Высокий","Критический"];
+        title.textContent = event.summary || labels[event.type] || "Событие защиты";
+        detail.textContent = (event.origin || "Источник не указан") + " · " +
+          (severity[event.severity] || "Неизвестный риск") + " · " +
+          (event.timestamp ? new Date(event.timestamp).toLocaleString() : "Время неизвестно") +
+          (event.evidence ? " · " + event.evidence : "");
+        row.dataset.severity = String(event.severity || 0);
+        content.append(title, detail);
+        row.append(content);
+        filteredList.append(row);
+      });
+      const footer = $("#internalViewFooter");
+      footer.replaceChildren();
+      const refresh = document.createElement("button");
+      refresh.className = "library-clear";
+      refresh.type = "button";
+      refresh.textContent = "Обновить";
+      refresh.addEventListener("click", () => window.skaiNative?.getSecurityEvents());
+      const clear = document.createElement("button");
+      clear.className = "library-clear";
+      clear.type = "button";
+      clear.textContent = "Очистить журнал";
+      clear.addEventListener("click", () => window.skaiNative?.clearSecurityEvents());
+      footer.append(refresh, clear);
+      window.skaiNative?.getSecurityEvents();
+      return;
+    }
+    const filteredList = list;
     const allItems = type === "bookmarks" ? bookmarks :
       type === "history" ? historyItems : downloads;
     const searchInput = $("#internalViewSearch");
@@ -1421,6 +1468,7 @@
   }
   $("#bookmarkButton")?.addEventListener("click", toggleBookmark);
   $("#historyNav")?.addEventListener("click", () => openInternalView("history"));
+  $("#securityNav")?.addEventListener("click", () => openInternalView("security"));
   $("#settingsNav")?.addEventListener("click", () => openInternalView("settings"));
   $("#downloadsNav")?.addEventListener("click", () => openInternalView("downloads"));
   $("#downloadsButton")?.addEventListener("click", () => openInternalView("downloads"));
@@ -1491,6 +1539,10 @@
   syncBookmarkButton();
 
   window.skaiNative = window.skaiNative || {};
+  window.skaiNative.securityEventsUpdated = items => {
+    securityEvents = Array.isArray(items) ? items.filter(item => item && typeof item === "object") : [];
+    if (internalViewType === "security") renderSecurityEventRows();
+  };
   window.skaiNative.addressChanged = url => {
     $("#addressInput").value = url;
     syncBookmarkButton();
