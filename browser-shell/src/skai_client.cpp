@@ -156,6 +156,8 @@ bool SkAiClient::OnBeforeBrowse(
     CefRefPtr<CefRequest> request, bool /*user_gesture*/,
     bool /*is_redirect*/) {
   if (!frame || !request) return false;
+  // Do not replay POST/form navigations as GET when removing attribution keys.
+  if (request->GetMethod() != "GET") return false;
   const auto original_url = request->GetURL().ToWString();
   const auto sanitized_url = SkAiStripTrackingParameters(original_url);
   if (sanitized_url == original_url) return false;
