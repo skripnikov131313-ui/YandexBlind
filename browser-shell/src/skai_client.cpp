@@ -151,6 +151,21 @@ CefRefPtr<CefResourceRequestHandler> SkAiCreateTrackingResourceHandler() {
   return new SkAiTrackingResourceHandler();
 }
 
+bool SkAiClient::OnBeforeBrowse(
+    CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> frame,
+    CefRefPtr<CefRequest> request, bool /*user_gesture*/,
+    bool /*is_redirect*/) {
+  if (!frame || !request) return false;
+  const auto original_url = request->GetURL().ToWString();
+  const auto sanitized_url = SkAiStripTrackingParameters(original_url);
+  if (sanitized_url == original_url) return false;
+
+  // Reload only when a known attribution identifier was removed. The clean
+  // URL no longer matches a tracking key, so this does not recurse.
+  frame->LoadURL(sanitized_url);
+  return true;
+}
+
 CefRefPtr<CefResourceRequestHandler> SkAiClient::GetResourceRequestHandler(
     CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> frame,
     CefRefPtr<CefRequest> /*request*/, bool is_navigation, bool is_download,
