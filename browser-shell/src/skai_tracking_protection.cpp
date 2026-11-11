@@ -240,39 +240,3 @@ std::wstring SkAiStripTrackingParameters(const std::wstring& url) {
   }
   return result;
 }
-
-
-bool SkAiShouldBlockTrackingCookie(const std::wstring& raw_name) {
-  std::wstring name = raw_name;
-  std::transform(name.begin(), name.end(), name.begin(),
-                 [](wchar_t value) {
-                   return static_cast<wchar_t>(std::towlower(value));
-                 });
-
-  static constexpr std::array<std::wstring_view, 34> kExactNames = {
-      L"_ga", L"_gid", L"_gat", L"_gac", L"_fbp", L"_fbc",
-      L"ide", L"test_cookie", L"muid", L"anonchk", L"mr",
-      L"srm_b", L"clid", L"__gads", L"__gpi", L"__eoi",
-      L"hubspotutk", L"amplitude_id", L"optimizelyenduserid",
-      L"fs_uid", L"fs_lua", L"rl_anonymous_id", L"rl_user_id",
-      L"cto_bundle", L"uid2", L"__utmz", L"__utma", L"__utmb",
-      L"__utmc", L"__utmt", L"__utmv", L"ajs_user_id",
-      L"ajs_anonymous_id", L"mp_optout"
-  };
-  for (const auto exact : kExactNames) {
-    if (name == exact) return true;
-  }
-
-  static constexpr std::array<std::wstring_view, 16> kPrefixes = {
-      L"_ga_", L"_gac_", L"_gcl_", L"_hj", L"_clck", L"_clsk", L"_uet",
-      L"_ttp", L"_pin_unauth", L"_pinterest_ct", L"_rdt_uuid",
-      L"_scid", L"_sctr", L"ajs_", L"mp_", L"ph_"
-  };
-  for (const auto prefix : kPrefixes) {
-    if (name.size() >= prefix.size() &&
-        name.compare(0, prefix.size(), prefix) == 0) {
-      return true;
-    }
-  }
-  return false;
-}
