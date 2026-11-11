@@ -88,7 +88,7 @@ class SkAiClient final : public CefClient,
   bool closing_ = false;
   bool close_sent_ = false;
   unsigned int main_frame_redirect_count_ = 0;
-  bool redirect_chain_warning_recorded_ = false;
+  unsigned int redirect_chain_last_reported_threshold_ = 0;
   CefRefPtr<CefBrowser> browser_;
   IMPLEMENT_REFCOUNTING(SkAiClient);
 };
