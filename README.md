@@ -13,13 +13,11 @@ Yandex Blind is a Windows 11 x64 browser distribution built around Chromium-Gost
 - Single Windows installer; no separate Ollama window or user-managed terminal.
 
 ## Hardware target
-
 The default model is selected for basic Windows 11 laptops with 8 GB RAM and no discrete GPU. It runs on CPU. Performance depends heavily on CPU generation and available memory; keep other memory-heavy apps closed on 8 GB systems. The small model is suitable for everyday short text tasks, summaries, rewriting and basic document assistance. It is not a substitute for a larger model for complex reasoning or long documents.
 
 The assistant currently accepts text files up to 300 KB and truncates the local context before sending it to the model. DOCX and PDF extraction are not yet implemented.
 
 ## Build
-
 GitHub Actions downloads the upstream Chromium-Gost archive, verifies its SHA-256, downloads the official llama.cpp Windows CPU runtime, downloads the Qwen GGUF model and verifies the model SHA-256, then packages all components with Inno Setup.
 
 - Chromium-Gost release: https://github.com/deemru/Chromium-Gost/releases/tag/156.0.8078.88
@@ -32,8 +30,6 @@ GitHub Actions downloads the upstream Chromium-Gost archive, verifies its SHA-25
 - The local model server listens on 127.0.0.1 only and is stopped by the launcher when the browser closes.
 - The AI panel sends prompt text and supported attached text files to the local inference server only. It does not send them to a cloud LLM.
 - The browser launcher disables several Chromium background reporting/sync components. This is not a guarantee of zero network traffic or anonymity.
-- The start-page extension loads a static Declarative Net Request ruleset that blocks selected third-party analytics, session-replay, advertising and fingerprinting endpoints (including Google Analytics, Hotjar, Microsoft Clarity, FullStory, Mouseflow, Mixpanel, Amplitude, PostHog and FingerprintJS). The rules target third-party requests and selected resource types; they do not inspect page content or guarantee that every tracker is blocked.
-- Third-party cookies and site storage are separate from network-request blocking. This build does not yet promise complete identifier reset or first-party tracking prevention. Some websites may lose analytics-backed widgets or embedded features when known tracker endpoints are blocked.
 - Search providers and websites receive ordinary network requests, including the user's IP address and request metadata needed to serve pages.
 - Certificate validation and browser security protections remain enabled. Do not install untrusted root certificates or bypass TLS validation.
 
@@ -44,7 +40,6 @@ Chromium-Gost provides ГОСТ TLS through its upstream msspi integration. This
 ## Third-party components
 
 Chromium-Gost/Chromium, llama.cpp and Qwen are third-party components. Their upstream notices and licenses apply. Qwen3.5-2B-GGUF is published under Apache-2.0; see the model repository for full terms.
-
 
 ## Assistant mode switch
 
