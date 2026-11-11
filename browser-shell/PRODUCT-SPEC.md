@@ -82,6 +82,7 @@ The mode selector belongs next to the assistant composer.
 - [~] Local UI assets are bundled; no font/CDN is required.
 - [~] Native CEF request filtering blocks a curated list of known third-party ad, analytics, session-replay and fingerprinting endpoints on subresource requests; top-level navigation and downloads are preserved. List coverage and compatibility testing remain open. The URL matching logic has dedicated native C++ unit tests in Windows CI.
 - [~] Chromium per-profile cookie controls are configured to block third-party cookies while retaining first-party cookies. Runtime verification and per-site exceptions remain open.
+- [~] Known marketing/click-attribution IDs are stripped from HTTP(S) GET navigation URLs while functional parameters, fragments and POST navigations are preserved. First-party JavaScript fingerprinting and site `localStorage`/IndexedDB identifiers are not neutralized.
 - [~] Per-origin permission decisions are stored in the local profile; the settings UI lists remembered allow/deny choices and supports revocation. Unremembered requests are denied unless the user explicitly allows them.
 - [~] Standard Chromium certificate validation and sandbox are retained in the intended build configuration; this still requires Windows runtime verification.
 - [ ] Verify Chromium Safe Browsing and security services in the packaged runtime.
