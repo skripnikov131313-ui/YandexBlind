@@ -863,7 +863,7 @@ const securityHtml = readFileSync(
   "utf8"
 );
 assert.match(securityHtml, /id="securityNav"/);
-assert.match(securityUi, /window\\.skaiNative\\?\\.getSecurityEvents\\(\\)/);
+assert.ok(securityUi.includes("window.skaiNative?.getSecurityEvents()"));
 assert.match(securityUi, /securityEventsUpdated/);
 assert.match(securityUi, /Центр безопасности/);
 assert.match(securityUi, /Очистить журнал/);
