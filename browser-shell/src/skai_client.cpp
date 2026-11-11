@@ -45,6 +45,8 @@ class SkAiPrivacyCookieFilter final : public CefCookieAccessFilter {
 
 class SkAiTrackingResourceHandler final : public CefResourceRequestHandler {
  public:
+  explicit SkAiTrackingResourceHandler(bool block_tracking_requests = true)
+      : block_tracking_requests_(block_tracking_requests) {}
   CefRefPtr<CefCookieAccessFilter> GetCookieAccessFilter(
       CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> /*frame*/,
       CefRefPtr<CefRequest> /*request*/) override {
@@ -55,7 +57,7 @@ class SkAiTrackingResourceHandler final : public CefResourceRequestHandler {
       CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> /*frame*/,
       CefRefPtr<CefRequest> request,
       CefRefPtr<CefCallback> /*callback*/) override {
-    if (request && SkAiShouldBlockTrackingRequest(
+    if (block_tracking_requests_ && request && SkAiShouldBlockTrackingRequest(
                        request->GetURL().ToWString())) {
       return RV_CANCEL;
     }
@@ -63,6 +65,7 @@ class SkAiTrackingResourceHandler final : public CefResourceRequestHandler {
   }
 
  private:
+  bool block_tracking_requests_ = true;
   IMPLEMENT_REFCOUNTING(SkAiTrackingResourceHandler);
 };
 
@@ -184,10 +187,11 @@ CefRefPtr<CefResourceRequestHandler> SkAiClient::GetResourceRequestHandler(
     CefRefPtr<CefRequest> /*request*/, bool is_navigation, bool is_download,
     const CefString& /*request_initiator*/,
     bool& /*disable_default_handling*/) {
-  // Never filter top-level navigation or explicit downloads. Subframe
-  // navigations and all other subresources still pass through the tracker list.
-  if (is_download || (is_navigation && frame && frame->IsMain())) {
-    return nullptr;
+  // Downloads are preserved. Main-frame navigations keep working, but still
+  // receive the cookie filter; tracker URL cancellation applies to subresources.
+  if (is_download) return nullptr;
+  if (is_navigation && frame && frame->IsMain()) {
+    return new SkAiTrackingResourceHandler(false);
   }
   return SkAiCreateTrackingResourceHandler();
 }
