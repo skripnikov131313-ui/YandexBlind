@@ -91,6 +91,24 @@ int main() {
     return 1;
   }
 
+  const auto shortRedirectChain = SkAiClassifyRedirectChainRisk(7);
+  if (shortRedirectChain.detected) {
+    std::cerr << "Short redirect chains must not be flagged\n";
+    return 1;
+  }
+  const auto longRedirectChain = SkAiClassifyRedirectChainRisk(8);
+  if (!longRedirectChain.detected ||
+      longRedirectChain.severity != SkAiSecuritySeverity::medium) {
+    std::cerr << "Eight redirects must produce a medium advisory signal\n";
+    return 1;
+  }
+  const auto extremeRedirectChain = SkAiClassifyRedirectChainRisk(16);
+  if (!extremeRedirectChain.detected ||
+      extremeRedirectChain.severity != SkAiSecuritySeverity::high) {
+    std::cerr << "Sixteen redirects must produce a high advisory signal\n";
+    return 1;
+  }
+
   std::cout << "Sk/Ai security journal tests: passed\n";
   return 0;
 }
