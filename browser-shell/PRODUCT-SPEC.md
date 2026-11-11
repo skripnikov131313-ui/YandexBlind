@@ -89,7 +89,7 @@ The mode selector belongs next to the assistant composer.
 - [ ] Verify Chromium Safe Browsing and security services in the packaged runtime.
 - [~] History can be searched, individual entries removed and all history cleared. Download metadata persists, completed files reopen only from the managed Downloads/SkAi directory; cookie/cache/site-data controls remain open.
 - [~] Cloud placeholder sends nothing; production Cloud must require explicit consent.
-- [ ] Active fingerprinting surface review: canvas/WebGL, font enumeration, User-Agent Client Hints, device/sensor APIs and storage partitioning. No blanket API spoofing is enabled because it can break sites and increase browser uniqueness.
+- [~] Chromium native Fingerprinting Protection Filter enabled in regular browsing for third-party fingerprinting resources; CNAME alias checks enabled. Direct Canvas/WebGL readback, font enumeration, JS User-Agent Client Hints, device/sensor APIs and storage partitioning still need separate compatibility review. No blanket API spoofing is enabled.
 - [ ] Security review and network-traffic audit.
 
 ## 6. Appearance and interaction

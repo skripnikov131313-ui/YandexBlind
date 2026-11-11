@@ -654,4 +654,33 @@ assert.match(
   "Filtered navigation URLs must be sent without the removed tracking identifiers."
 );
 
+const appSource = readFileSync(
+  new URL("../src/skai_app.cpp", import.meta.url),
+  "utf8"
+);
+const appHeader = readFileSync(
+  new URL("../src/skai_app.h", import.meta.url),
+  "utf8"
+);
+assert.match(
+  appHeader,
+  /OnBeforeCommandLineProcessing/,
+  "The CEF app must enable browser-wide fingerprinting protections before initialization."
+);
+assert.match(
+  appSource,
+  /EnableFingerprintingProtectionFilter:activation_level\/enabled\/enable_only_if_3pc_blocked\/true/,
+  "Chromium's fingerprinting resource filter must be enabled only with third-party cookies blocked."
+);
+assert.match(
+  appSource,
+  /UseCnameAliasesForFingerprintingProtectionFilter/,
+  "Chromium's fingerprinting filter must also check CNAME aliases."
+);
+assert.match(
+  appSource,
+  /AppendSwitchWithValue\("enable-features"/,
+  "Fingerprinting protection feature switches must be applied to CEF processes."
+);
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");

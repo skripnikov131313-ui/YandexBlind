@@ -1,6 +1,7 @@
 #include "skai_app.h"
 
 #include "include/cef_browser.h"
+#include "include/cef_command_line.h"
 #include "include/cef_frame.h"
 #include "include/cef_process_message.h"
 #include "include/cef_v8.h"
@@ -10,6 +11,7 @@
 #include <cwctype>
 #include <limits>
 #include <string>
+#include <sstream>
 
 namespace {
 class SkAiV8Bridge final : public CefV8Handler {
@@ -215,6 +217,47 @@ bool IsTrustedSkAiUiFrame(CefRefPtr<CefFrame> frame) {
 }
 
 }  // namespace
+
+void SkAiApp::OnBeforeCommandLineProcessing(
+    const CefString& /*process_type*/,
+    CefRefPtr<CefCommandLine> command_line) {
+  if (!command_line) return;
+
+  // Chromium's Fingerprinting Protection Filter blocks known fingerprinting
+  // resources in third-party contexts. Keep it enabled in browser and renderer
+  // processes, and only activate it when third-party cookies are blocked.
+  // CNAME alias checks catch trackers hidden behind first-party DNS aliases.
+  std::string features =
+      command_line->GetSwitchValue("enable-features").ToString();
+  const auto has_feature = [&features](const std::string& feature_name) {
+    std::istringstream stream(features);
+    std::string token;
+    while (std::getline(stream, token, ',')) {
+      const std::size_t params = token.find(':');
+      if (token.substr(0, params) == feature_name) return true;
+    }
+    return false;
+  };
+  const auto append_feature = [&features, &has_feature](
+                                  const std::string& name,
+                                  const std::string& value) {
+    if (has_feature(name)) return;
+    if (!features.empty()) features.push_back(',');
+    features += value;
+  };
+
+  append_feature(
+      "EnableFingerprintingProtectionFilter",
+      "EnableFingerprintingProtectionFilter:activation_level/enabled/"
+      "enable_only_if_3pc_blocked/true");
+  append_feature(
+      "UseCnameAliasesForFingerprintingProtectionFilter",
+      "UseCnameAliasesForFingerprintingProtectionFilter");
+
+  if (!features.empty()) {
+    command_line->AppendSwitchWithValue("enable-features", features);
+  }
+}
 
 void SkAiApp::OnContextCreated(CefRefPtr<CefBrowser>,
                                CefRefPtr<CefFrame> frame,
