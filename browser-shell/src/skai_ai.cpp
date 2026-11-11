@@ -611,8 +611,8 @@ bool EnsureServer(unsigned short& port, std::wstring& api_key,
 
   SYSTEM_INFO system_info{};
   GetSystemInfo(&system_info);
-  const unsigned int processor_count =
-      std::max(2u, system_info.dwNumberOfProcessors);
+  const unsigned int processor_count = std::max(
+      2u, static_cast<unsigned int>(system_info.dwNumberOfProcessors));
   const unsigned int threads = std::min(6u, processor_count > 1
                                                ? processor_count - 1
                                                : 1u);
