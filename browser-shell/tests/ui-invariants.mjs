@@ -831,3 +831,25 @@ assert.match(nativeWindowSource, /SkAiProfileRequestContextHandler[\s\S]*?GetRes
 assert.match(clientSource, /CefRefPtr<CefResourceRequestHandler> SkAiCreateTrackingResourceHandler\(\)/, "Browser and profile request handlers must share one tracker filter.");
 
 process.stdout.write("Sk/Ai UI invariants: OK\n");
+
+
+const securitySource = readFileSync(
+  new URL("../src/skai_security.cpp", import.meta.url),
+  "utf8"
+);
+const securityHeader = readFileSync(
+  new URL("../src/skai_security.h", import.meta.url),
+  "utf8"
+);
+assert.match(securityHeader, /enum class SkAiSecurityEventType/);
+assert.match(securityHeader, /enum class SkAiSecuritySeverity/);
+assert.match(securitySource, /kMaxEvents = 200/);
+assert.match(securitySource, /kMaxEvidence = 512/);
+assert.match(securitySource, /SkAiClearSecurityEvents/);
+assert.match(clientSource, /SkAiSecurityEventType::tracker_blocked/);
+assert.match(clientSource, /SkAiSecurityEventType::permission_requested/);
+assert.match(clientSource, /SkAiSecurityEventType::download_started/);
+assert.match(clientSource, /SkAiSecurityEventType::download_completed/);
+assert.match(clientSource, /SkAiSecurityEventType::navigation_redirect/);
+assert.match(cmakeSource, /src\\/skai_security\\.cpp/);
+assert.match(cmakeSource, /skai_security_journal_tests/);
