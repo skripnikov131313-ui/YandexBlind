@@ -175,7 +175,7 @@ bool IsTrackingParameter(std::wstring_view raw_key) {
       L"msclkid", L"ttclid", L"twclid", L"li_fat_id",
       L"mc_cid", L"mc_eid", L"igshid", L"yclid", L"ysclid",
       L"_ga", L"_gl", L"_gid", L"_gac", L"_fbp", L"_fbc",
-      L"srsltid", L"epik", L"irclickid", L" ScCid", L"oly_anon_id",
+      L"srsltid", L"epik", L"irclickid", L"sc_cid", L"oly_anon_id",
       L"oly_enc_id"
   };
   const auto key = NormalizeTrackingKey(raw_key);
@@ -219,10 +219,11 @@ std::wstring SkAiStripTrackingParameters(const std::wstring& url) {
   if (!removed) return url;
 
   std::wstring result = url.substr(0, query_start);
+  bool first = true;
   for (const auto pair : kept) {
-    if (result.back() != L'?') result.push_back(L'&');
-    else if (!kept.empty() && &pair == nullptr) {}
+    result.push_back(first ? L'?' : L'&');
     result.append(pair);
+    first = false;
   }
   if (fragment_start != std::wstring::npos) {
     result.append(url.substr(fragment_start));
