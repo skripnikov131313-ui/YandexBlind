@@ -86,6 +86,17 @@ const clientSource = readFileSync(
   new URL("../src/skai_client.cpp", import.meta.url),
   "utf8"
 );
+assert.match(
+  clientSource,
+  /OnBeforeBrowse[\\s\\S]*?frame->IsMain\\(\\)[\\s\\S]*?GetMethod\\(\\) != "GET"[\\s\\S]*?SkAiStripTrackingParameters/,
+  "Tracking query cleanup must be limited to top-level GET navigations and preserve form POSTs."
+);
+assert.match(
+  clientSource,
+  /SkAiShouldBlockTrackingRequest/,
+  "Known tracker hosts must be filtered in native CEF resource requests."
+);
+
 const clientHeaderSource = readFileSync(
   new URL("../src/skai_client.h", import.meta.url),
   "utf8"
