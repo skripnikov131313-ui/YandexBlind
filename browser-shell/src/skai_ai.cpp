@@ -37,7 +37,7 @@ constexpr wchar_t kModelUrlPath[] =
 constexpr wchar_t kModelFileName[] = L"qwen3.5-2b-Q4_K_M.gguf";
 constexpr char kModelSha256[] =
     "9a3d0aa6c920f096441139b6a254542da855223fdad06855ea00c6c087fd713d";
-constexpr std::uint64_t kModelExpectedBytes = 1406600000ULL;
+constexpr std::uint64_t kModelExpectedBytes = 1312164352ULL;
 constexpr std::uint64_t kModelMaximumBytes = 1500000000ULL;
 constexpr std::size_t kMaxRequestBytes = 256 * 1024;
 constexpr std::size_t kMaxResponseBytes = 2 * 1024 * 1024;
@@ -423,7 +423,7 @@ bool DownloadModel(CefRefPtr<CefBrowser> browser) {
         last_percent = percent;
         NotifyStatus(browser, L"downloading", percent,
                      L"Загружено " + std::to_wstring(total / (1024 * 1024)) +
-                         L" МБ из примерно 1342 МБ");
+                         L" МБ из примерно 1251 МиБ");
       }
     } while (bytes_read > 0);
 
