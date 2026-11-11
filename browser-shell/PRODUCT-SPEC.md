@@ -99,7 +99,7 @@ The mode selector belongs next to the assistant composer.
 - [ ] Quiet Mist and Deep Space fully implemented as selectable themes.
 - [~] Native DPI-aware main window and content bounds; real multi-monitor tests pending.
 - [ ] Reduced-motion and full keyboard/accessibility audit.
-- [ ] Final logo slash animation and motion polish.
+- [~] One-shot slash-to-Ai logo reveal is implemented in CSS; final motion polish and Windows runtime review remain open.
 - [ ] Review responsive behavior at supported Windows window sizes.
 
 ## 7. Windows integration and delivery
