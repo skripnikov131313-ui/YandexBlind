@@ -1232,6 +1232,7 @@
       return;
     }
     if (type === "security") {
+      $("#internalViewSearch").placeholder = "Поиск по источнику и событию";
       $("#internalViewEmpty").hidden = securityEvents.length > 0;
       $("#internalViewEmpty").textContent = securityEvents.length
         ? "Нет событий по выбранному запросу." : "Событий пока нет. Браузер будет показывать здесь блокировки трекеров, запросы разрешений, перенаправления и загрузки.";
