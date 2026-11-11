@@ -27,7 +27,7 @@ class SkAiPrivacyCookieFilter final : public CefCookieAccessFilter {
   bool CanSendCookie(CefRefPtr<CefBrowser> /*browser*/,
                      CefRefPtr<CefFrame> /*frame*/,
                      CefRefPtr<CefRequest> /*request*/,
-                     const CefCookie& cookie) override {
+                     const CefCookie& /*cookie*/) override {
     return false;  // Never attach real site cookies to HTTP requests.
   }
 
