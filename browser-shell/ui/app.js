@@ -286,6 +286,11 @@
   });
   window.skaiNative.pageContextReceived = result => {
     pageContextPending = false;
+    if (!aiSecurityAnalysisEnabled) {
+      sharedPageContext = null;
+      renderSharedPageContext();
+      return;
+    }
     if (!result || result.ok !== true) {
       renderSharedPageContext();
       notify(String(result?.error || "Не удалось передать текст страницы"));
