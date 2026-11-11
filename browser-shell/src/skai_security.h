@@ -37,6 +37,9 @@ SkAiNavigationRisk SkAiClassifyNavigationRisk(
     const std::wstring& target_host, bool has_embedded_credentials,
     bool is_redirect);
 
+// Advisory heuristic for unusually long main-frame redirect chains.
+SkAiNavigationRisk SkAiClassifyRedirectChainRisk(unsigned int redirect_count);
+
 struct SkAiSecurityEvent {
   std::uint64_t id = 0;
   std::int64_t timestamp_unix_ms = 0;
