@@ -7,7 +7,7 @@
 
 #include <cerrno>
 #include <climits>
-#include <cstdint>
+#include <stdint.h>
 #include <cwchar>
 #include <sstream>
 #include <string>
@@ -17,7 +17,7 @@
 #include <knownfolders.h>
 
 namespace {
-bool TryParseDownloadId(const CefString& input, std::std::uint32_t& download_id) {
+bool TryParseDownloadId(const CefString& input, std::uint32_t& download_id) {
   const std::wstring value = input.ToWString();
   if (value.empty()) return false;
   wchar_t* end = nullptr;
@@ -31,7 +31,7 @@ bool TryParseDownloadId(const CefString& input, std::std::uint32_t& download_id)
   return true;
 }
 
-bool TryParsePermissionId(const CefString& input, std::uint64_t& permission_id) {
+bool TryParsePermissionId(const CefString& input, uint64_t& permission_id) {
   const std::wstring value = input.ToWString();
   if (value.empty()) return false;
   wchar_t* end = nullptr;
