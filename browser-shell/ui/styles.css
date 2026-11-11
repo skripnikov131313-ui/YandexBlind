@@ -174,3 +174,36 @@ body[data-theme=light] .shared-page-context{background:rgba(39,178,145,.09)}
 body[data-theme=light] .shared-page-copy b{color:#147b6c}
 body[data-theme=light] .shared-page-copy small{color:#566b82}
 #sharePage:disabled{opacity:.55;cursor:wait}
+
+
+/* Brand reveal: the slash is the origin point from which Ai resolves. */
+.hero-logo span,
+.brand-mark span {
+  transform-origin: 50% 85%;
+  animation: skai-slash-origin 720ms cubic-bezier(.2,.75,.25,1) both;
+}
+.hero-logo b,
+.brand-mark b {
+  display: inline-block;
+  transform-origin: left center;
+  opacity: 0;
+  animation: skai-ai-reveal 680ms cubic-bezier(.18,.78,.22,1) 170ms forwards;
+}
+@keyframes skai-slash-origin {
+  0% { filter: brightness(.85); text-shadow: none; }
+  48% { filter: brightness(1.3); text-shadow: 0 0 18px rgba(112,190,255,.7); }
+  100% { filter: brightness(1); text-shadow: none; }
+}
+@keyframes skai-ai-reveal {
+  0% { opacity: 0; transform: translateX(-.28em) scale(.92); filter: blur(5px); }
+  72% { opacity: 1; transform: translateX(.025em) scale(1.015); filter: blur(0); }
+  100% { opacity: 1; transform: translateX(0) scale(1); filter: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-logo span, .brand-mark span, .hero-logo b, .brand-mark b {
+    animation: none !important;
+    opacity: 1;
+    transform: none;
+    filter: none;
+  }
+}
