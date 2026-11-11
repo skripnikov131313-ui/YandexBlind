@@ -102,3 +102,8 @@ The trusted browser chrome can request the native process-local security journal
 ## Security Center — local AI event analysis
 
 The Security Center can submit an explicit, bounded snapshot of at most 30 recent native journal records to the local Qwen runtime. The snapshot contains only event type, severity, origin, short summary, bounded evidence and timestamp; it excludes full URLs, query strings, cookies, page text, credentials, local paths and download contents. The UI requires AI security analysis to be enabled and the local model to be ready. The request uses a dedicated system instruction that marks every event field as untrusted data and prohibits policy changes or privileged actions. Results are labelled advisory. Native CEF enforcement remains deterministic and never waits for or consumes model output. No cloud fallback exists. This is user-triggered analysis, not continuous inference.
+
+
+### Deterministic navigation risk signals
+
+Before the browser follows a main-frame GET navigation, the native client checks a small set of high-signal URL properties: credentials embedded in the URL, an HTTPS-to-HTTP redirect downgrade, and an IDN hostname represented with punycode. These conditions create advisory journal entries only; they do not automatically block navigation. Ordinary cross-domain redirects are not treated as suspicious by themselves. The check does not resolve domains, infer brand impersonation, or claim that a destination is malicious.
