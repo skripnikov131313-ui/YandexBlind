@@ -353,4 +353,45 @@ assert.match(
   "Bookmark import must restrict URLs to HTTP and HTTPS."
 );
 
+assert.match(
+  bridgeSource,
+  /void SkAiApp::OnContextCreated/,
+  "The native API must be installed through the supported CEF V8 context callback."
+);
+assert.doesNotMatch(
+  bridgeSource,
+  /CefRegisterExtension/,
+  "CEF 154 removed the legacy V8 extension registration API."
+);
+assert.match(
+  bridgeSource,
+  /IsTrustedSkAiUiFrame/,
+  "Only the local Sk/Ai UI may receive native bridge functions."
+);
+assert.match(
+  bridgeSource,
+  /frame->IsMain\(\)/,
+  "Native bridge functions must not be injected into site subframes."
+);
+assert.match(
+  browserWindowSource,
+  /CefRect\(g_content_bounds\.left/,
+  "Native tab child-window bounds must use the current CefRect API."
+);
+assert.match(
+  browserWindowSource,
+  /CefRect\(client_rect\.left/,
+  "The root UI browser must use the current CefRect API."
+);
+assert.match(
+  nativeWindowSource,
+  /context_settings\.persist_user_preferences = true/,
+  "Persistent browser preferences must be configured on each request context."
+);
+assert.doesNotMatch(
+  readFileSync(new URL("../src/main.cpp", import.meta.url), "utf8"),
+  /settings\.persist_user_preferences/,
+  "CEF 154 profile preference persistence must not use the removed global setting."
+);
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");
