@@ -347,7 +347,7 @@ bool SaveSitePermissionDecisions() {
 std::wstring DescribePermissionRequest(std::uint32_t permissions,
                                             bool media_request) {
   std::vector<std::wstring> labels;
-  const auto add = [&labels](std::uint32_t bit, const wchar_t* label) {
+  const auto add = [&labels, permissions](std::uint32_t bit, const wchar_t* label) {
     if ((permissions & bit) != 0) labels.emplace_back(label);
   };
 
@@ -807,7 +807,11 @@ void SkAiCreateTab(const std::wstring& url, bool activate) {
   g_tabs.emplace(id, tab);
 
   CefWindowInfo window_info;
-  window_info.SetAsChild(g_window, g_content_bounds);
+  window_info.SetAsChild(
+      g_window,
+      CefRect(g_content_bounds.left, g_content_bounds.top,
+              g_content_bounds.right - g_content_bounds.left,
+              g_content_bounds.bottom - g_content_bounds.top));
   CefBrowserSettings browser_settings;
 
   ++g_pending_browser_creates;
@@ -1453,7 +1457,11 @@ HWND SkAiCreateMainWindow(HINSTANCE instance, int show_command) {
   CefWindowInfo window_info;
   RECT client_rect{};
   GetClientRect(g_window, &client_rect);
-  window_info.SetAsChild(g_window, client_rect);
+  window_info.SetAsChild(
+      g_window,
+      CefRect(client_rect.left, client_rect.top,
+              client_rect.right - client_rect.left,
+              client_rect.bottom - client_rect.top));
   CefBrowserSettings browser_settings;
 
   ++g_pending_browser_creates;
