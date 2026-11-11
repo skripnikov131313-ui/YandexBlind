@@ -399,8 +399,13 @@ assert.match(
 );
 assert.match(
   nativeWindowSource,
-  /context_settings\.persist_user_preferences = true/,
-  "Persistent browser preferences must be configured on each request context."
+  /CefString\(&context_settings\.cache_path\)/,
+  "Each browser profile must use a persistent non-empty CEF cache path."
+);
+assert.doesNotMatch(
+  nativeWindowSource,
+  /persist_user_preferences/,
+  "CEF 154 request-context settings no longer expose persist_user_preferences."
 );
 assert.doesNotMatch(
   readFileSync(new URL("../src/main.cpp", import.meta.url), "utf8"),

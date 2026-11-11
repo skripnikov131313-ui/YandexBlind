@@ -43,12 +43,10 @@ int RunSkAi(HINSTANCE instance, int show_command, void* sandbox_info) {
     std::error_code filesystem_error;
     std::filesystem::create_directories(profile / L"Cache", filesystem_error);
     if (!filesystem_error) {
-      // root_cache_path is shared by every named RequestContext. Each profile
-      // cache_path must be a child of this root directory.
+      // root_cache_path contains every named profile cache directory.
+      // Individual request contexts receive explicit child cache_path values.
+      // Keep the global cache_path empty so profile contexts remain isolated.
       CefString(&settings.root_cache_path) = app_data.wstring();
-      // Individual browser profiles receive explicit CefRequestContextSettings.
-      // Leave the global cache path empty so the named default context can
-      // persist its own preferences rather than sharing a global context.
     }
     CoTaskMemFree(local);
   }

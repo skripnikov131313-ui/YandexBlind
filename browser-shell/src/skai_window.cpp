@@ -145,7 +145,6 @@ CefRefPtr<CefRequestContext> GetOrCreateProfileContext(
   CefRequestContextSettings context_settings;
   CefString(&context_settings.cache_path) = (directory / L"Cache").wstring();
   context_settings.persist_session_cookies = true;
-  context_settings.persist_user_preferences = true;
   auto context = CefRequestContext::CreateContext(context_settings, nullptr);
   if (context) g_profile_contexts.emplace(name, context);
   return context;
