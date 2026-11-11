@@ -1,9 +1,16 @@
 name: Sk/Ai Native Shell
 
 on:
+  push:
+    branches:
+      - feature/skai-site-privacy
+    paths:
+      - "browser-shell/**"
+      - ".github/workflows/native-shell-windows.yml"
   pull_request:
     branches:
       - main
+      - feature/skai-native-shell
     paths:
       - "browser-shell/**"
       - ".github/workflows/native-shell-windows.yml"
