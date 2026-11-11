@@ -107,7 +107,7 @@ The mode selector belongs next to the assistant composer.
 - [~] Windows x64 GitHub Actions workflow includes build, runtime-file checks and native-window smoke test.
 - [ ] Successful Windows x64 CI run and downloadable artifact.
 - [ ] Real Windows 11 runtime smoke test across multiple tabs and popup lifecycle.
-- [ ] Per-user installer without mandatory elevation.
+- [~] PowerShell per-user installer and uninstaller scripts, with Start menu shortcut and preservation of browser user data. Packaging and Windows execution validation remain pending.
 - [ ] Start menu shortcut, optional file associations and clean uninstall.
 - [ ] Update channel and signed packages.
 - [ ] Opt-in crash diagnostics; no silent telemetry.

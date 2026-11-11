@@ -61,6 +61,25 @@ jobs:
           node --check browser-shell/ui/assistant.js
           node browser-shell/tests/ui-invariants.mjs
 
+      - name: Validate per-user installer scripts
+        shell: pwsh
+        run: |
+          $scripts = @(
+            "installer/Install-SkAi.ps1",
+            "installer/Uninstall-SkAi.ps1"
+          )
+          foreach ($path in $scripts) {
+            $tokens = $null
+            $parseErrors = $null
+            [void][System.Management.Automation.Language.Parser]::ParseFile(
+              (Join-Path $PWD $path), [ref]$tokens, [ref]$parseErrors
+            )
+            if ($parseErrors.Count -gt 0) {
+              $parseErrors | ForEach-Object { Write-Error $_.Message }
+              throw "PowerShell syntax validation failed: $path"
+            }
+          }
+
       - name: Configure native shell
         shell: pwsh
         run: |
@@ -234,10 +253,28 @@ jobs:
             }
           }
 
-      - name: Upload Windows x64 runtime
+      - name: Assemble per-user Windows package
+        shell: pwsh
+        run: |
+          $release = Join-Path $PWD "build/skai/bin/Release"
+          $packageRoot = Join-Path $PWD "dist/SkAi"
+          New-Item -ItemType Directory -Force -Path $packageRoot | Out-Null
+          Copy-Item -Path (Join-Path $release "*") -Destination $packageRoot -Recurse -Force
+          Copy-Item -Path "installer/Install-SkAi.ps1" -Destination $packageRoot -Force
+          Copy-Item -Path "installer/Uninstall-SkAi.ps1" -Destination $packageRoot -Force
+          Copy-Item -Path "installer/README.md" -Destination $packageRoot -Force
+          Set-Content -Path (Join-Path $packageRoot "VERSION.txt") -Value "0.3.0" -Encoding ascii
+          $zip = Join-Path $PWD "dist/SkAi-win-x64.zip"
+          Compress-Archive -Path (Join-Path $packageRoot "*") -DestinationPath $zip -CompressionLevel Optimal -Force
+          if (!(Test-Path $zip)) { throw "Per-user Windows package archive was not created." }
+          Get-Item $zip | Select-Object FullName, Length
+
+      - name: Upload Windows x64 package
         uses: actions/upload-artifact@v4
         with:
-          name: skai-win-x64-runtime
-          path: build/skai/bin/Release/
+          name: skai-win-x64-package
+          path: |
+            build/skai/bin/Release/
+            dist/SkAi-win-x64.zip
           if-no-files-found: error
           retention-days: 14

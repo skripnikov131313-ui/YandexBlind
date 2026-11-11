@@ -50,3 +50,8 @@ A green CI run and an actual Windows 11 test are required before calling the bro
 ## Product boundaries
 
 The existing extension-based branch is retained as a separate prototype/reference. It is not the runtime or UI shell for this native CEF branch.
+
+
+## Per-user installation
+
+The release package includes PowerShell install/uninstall scripts. Installation is scoped to the current Windows user under `%LOCALAPPDATA%/Programs/SkAi`; no administrator elevation is requested. The installer adds a Start menu shortcut and a per-user Installed Apps record. Uninstall removes only program files and shortcuts and deliberately preserves browser data and downloaded models under `%LOCALAPPDATA%/SkAi`. The Windows CI assembles a ZIP package after the runtime smoke test.
