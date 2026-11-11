@@ -468,11 +468,11 @@ void InstallSitePrivacyCompatibility(CefRefPtr<CefV8Context> context) {
 })();
 )SKAI_PRIVACY";
 
-  if (!context || !context->Enter()) return;
+  if (!context) return;
   CefRefPtr<CefV8Value> result;
   CefRefPtr<CefV8Exception> exception;
+  // OnContextCreated already runs inside this frame's V8 context.
   context->Eval(kShim, "skai://site-privacy-compat", 1, result, exception);
-  context->Exit();
 }
 }  // namespace
 
