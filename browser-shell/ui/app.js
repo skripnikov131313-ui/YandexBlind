@@ -1069,7 +1069,7 @@
     const privacyGroup = group("Приватность", "Текущий статус функций нативной версии браузера.");
     const privacyNote = document.createElement("div");
     privacyNote.className = "settings-note";
-    privacyNote.textContent = "Sk/Ai не добавляет собственную аналитику, запись сессий или собственные идентификаторы. Для сайтов включена фильтрация известных сторонних рекламных, аналитических, session-replay и fingerprinting-доменов; обычная навигация и загрузки сохраняются. Из GET-ссылок удаляются известные рекламные метки и click-ID (utm_*, gclid, fbclid и другие), функциональные параметры и POST-формы не переписываются. Chromium блокирует сторонние cookies, сохраняя first-party cookies и входы в аккаунты. Это не устраняет fingerprinting собственным JavaScript сайта и не очищает localStorage или IndexedDB.";
+    privacyNote.textContent = "Sk/Ai не содержит собственной аналитики, записи сессий или рекламных идентификаторов. В веб-вкладках все реальные cookies блокируются и при отправке, и при сохранении; document.cookie работает через локальную временную имитацию, которая не отправляет cookie серверу. Хранилища сайтов (localStorage, IndexedDB и Service Worker) работают в памяти и очищаются при закрытии браузера. Известные рекламные, аналитические, session-replay, fingerprinting и CMP-узлы блокируются; рекламные API получают локальный пустой ответ, согласие TCF всегда отклонено, GPC/DNT включены. sendBeacon отключён, распространённые first-party telemetry URL для fetch/XHR получают локальный пустой ответ. Ограничение: нестандартная телеметрия, замаскированная под обычные API-запросы, может пройти; сервер всё равно видит IP и сетевые метаданные. Сайты, которым нужна настоящая серверная cookie-сессия, могут не авторизоваться.";
     privacyGroup.append(privacyNote);
 
     const sitePermissionGroup = group("Разрешения сайтов", "Решения, которые вы отметили как запомненные. Их можно отозвать в любой момент.");
@@ -1086,7 +1086,7 @@
     sitePermissionGroup.append(refreshPermissions);
     renderSavedSitePermissions();
 
-    const profileGroup = group("Профили браузера", "Каждый профиль использует отдельное хранилище Chromium: cookies, cache, localStorage и данные сайтов.");
+    const profileGroup = group("Профили браузера", "У каждого профиля отдельные настройки, закладки, история и сессия. Данные сайтов живут только в памяти и очищаются после закрытия браузера.");
     const profileSelect = select(
       knownProfiles.map(profile => ({
         value: profile.name,
