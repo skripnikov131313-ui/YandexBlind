@@ -136,8 +136,18 @@ assert.match(
 );
 assert.match(
   bridgeSource,
-  /skaiNative\.sendLocalAi=function\(requestId,request\)\{aiAction\("send",String\(requestId\),String\(request\)\)\}/,
+  /"sendLocalAi",\s*"sendLocalAi"[^\]]*\]/,
   "The renderer bridge must expose the native local chat action."
+);
+assert.match(
+  bridgeSource,
+  /CefV8Value::CreateFunction\(function, bridge\)/,
+  "CEF 154 must bind native APIs directly to the trusted V8 context."
+);
+assert.match(
+  bridgeSource,
+  /values->SetString\(1, "send"\)/,
+  "The native V8 bridge must route local chat to the browser process."
 );
 assert.match(
   aiHeaderSource,
