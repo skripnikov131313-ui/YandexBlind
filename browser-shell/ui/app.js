@@ -42,7 +42,10 @@
   let modeKey = profileStorageKey("skai.assistant.mode.v1");
   let conversation = [];
   try { conversation = JSON.parse(localStorage.getItem(conversationKey) || "[]"); } catch (_) { conversation = []; }
-  try { mode = localStorage.getItem(modeKey) || "local"; } catch (_) {}
+  try {
+    const savedMode = localStorage.getItem(modeKey) || "local";
+    mode = ["local", "cloud", "search"].includes(savedMode) ? savedMode : "local";
+  } catch (_) {}
   let localAiState = "checking";
   let localAiDetail = "Проверяем локальную модель…";
   let localAiBusy = false;
@@ -163,7 +166,9 @@
     if (note) {
       note.textContent = localMode
         ? localAiDetail
-        : "Облачная модель не подключена · передача отключена";
+        : mode === "search"
+          ? "Интернет-поиск через " + providers[providerIndex].name + " · результаты в новой вкладке"
+          : "Облачная модель не подключена · передача отключена";
     }
     if (button) {
       button.hidden = !localMode || localAiState === "ready";
@@ -189,8 +194,9 @@
     renderLocalAiStatus();
     const badge = $(".local-badge");
     if (badge) {
-      badge.textContent = mode === "local" ? "LOCAL" : "CLOUD";
+      badge.textContent = mode === "local" ? "LOCAL" : mode === "search" ? "SEARCH" : "CLOUD";
       badge.classList.toggle("cloud-badge", mode === "cloud");
+      badge.classList.toggle("search-badge", mode === "search");
     }
     if (persist) {
       try { localStorage.setItem(modeKey, mode); } catch (_) {}
@@ -201,7 +207,9 @@
   $$(".mode-option").forEach(button => button.addEventListener("click", () => {
     mode = button.dataset.mode;
     applyAssistantMode(true);
-    notify(mode === "local" ? "Выбран локальный ИИ" : "Выбрано облако. Передача данных пока отключена.");
+    notify(mode === "local" ? "Выбран локальный ИИ"
+      : mode === "search" ? "Интернет-поиск через " + providers[providerIndex].name
+      : "Выбрано облако. Передача данных пока отключена.");
   }));
 
   function persistConversation() {
@@ -259,7 +267,7 @@
       renderConversation();
     }
     if (event.key === modeKey) {
-      mode = event.newValue === "cloud" ? "cloud" : "local";
+      mode = ["local", "cloud", "search"].includes(event.newValue) ? event.newValue : "local";
       applyAssistantMode();
     }
   });
@@ -299,6 +307,16 @@
 
     if (mode === "cloud") {
       addMessage("assistant", "Облачный провайдер пока не подключён. Данные и контекст не отправлены.");
+      return;
+    }
+    if (mode === "search") {
+      const provider = providers[providerIndex];
+      if (!window.skaiNative?.newTab) {
+        addMessage("assistant", "Не удалось открыть поиск: нативный контроллер вкладок недоступен.");
+        return;
+      }
+      window.skaiNative.newTab(provider.url(prompt));
+      addMessage("assistant", "Открыл " + provider.name + " в новой вкладке. Диалог Sk/Ai и его контекст сохранены.");
       return;
     }
     if (localAiState !== "ready") {

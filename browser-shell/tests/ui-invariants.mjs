@@ -413,4 +413,20 @@ assert.doesNotMatch(
   "CEF 154 profile preference persistence must not use the removed global setting."
 );
 
+const floatingHtmlSource = readFileSync(
+  new URL("../ui/assistant.html", import.meta.url),
+  "utf8"
+);
+assert.match(htmlSource, /data-mode="search"/, "The docked assistant must expose Internet Search mode.");
+assert.match(floatingHtmlSource, /data-mode="search"/, "The floating assistant must expose Internet Search mode.");
+assert.match(source, /mode === "search"/, "The docked assistant must route Internet Search separately from AI.");
+assert.match(source, /window\.skaiNative\.newTab\(provider\.url\(prompt\)\)/, "The docked assistant must open search results in a new tab.");
+assert.match(assistantSource, /mode === "search"/, "The floating assistant must route Internet Search separately from AI.");
+assert.match(assistantSource, /window\.skaiNative\.newTab\(provider\.url\(value\)\)/, "The floating assistant must open search results in a new tab.");
+assert.match(assistantSource, /skai\.search\.provider\.v1/, "The floating assistant must use the browser's selected search provider.");
+assert.doesNotMatch(bridgeSource, /IsNumber\(/, "CEF 154 numeric checks must not use the removed IsNumber method.");
+assert.doesNotMatch(clientSource, /std::uint(?:32|64)_t/, "Windows CEF client code must use the global fixed-width typedefs.");
+assert.doesNotMatch(nativeWindowSource, /persist_user_preferences/, "CEF 154 request-context settings must not use the removed persistence field.");
+assert.match(aiSource, /--no-webui --jinja/, "Local inference must use the model's embedded Jinja chat template.");
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");

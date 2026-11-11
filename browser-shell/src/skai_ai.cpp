@@ -623,7 +623,7 @@ bool EnsureServer(unsigned short& port, std::wstring& api_key,
       L" --host 127.0.0.1 --port " + std::to_wstring(port) +
       L" --alias Qwen3.5-2B --ctx-size 4096 --threads " + std::to_wstring(threads) +
       L" --threads-batch " + std::to_wstring(threads) +
-      L" --parallel 1 --n-gpu-layers 0 --no-webui --api-key \"" +
+      L" --parallel 1 --n-gpu-layers 0 --no-webui --jinja --api-key \"" +
       api_key + L"\"";
 
   STARTUPINFOW startup{};
@@ -765,8 +765,13 @@ bool PostChatRequest(unsigned short port, const std::wstring& api_key,
     }
     std::string response;
     std::array<char, 64 * 1024> buffer{};
-    DWORD available = 0;
-    while (WinHttpQueryDataAvailable(request, &available) && available > 0) {
+    while (true) {
+      DWORD available = 0;
+      if (!WinHttpQueryDataAvailable(request, &available)) {
+        error_message = L"Не удалось прочитать ответ локальной модели.";
+        goto cleanup;
+      }
+      if (available == 0) break;
       if (response.size() + available > kMaxResponseBytes) {
         error_message = L"Ответ локальной модели превышает допустимый размер.";
         goto cleanup;
@@ -779,7 +784,6 @@ bool PostChatRequest(unsigned short port, const std::wstring& api_key,
         goto cleanup;
       }
       response.append(buffer.data(), read);
-      available = 0;
     }
 
     if (status < 200 || status >= 300) {

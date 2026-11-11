@@ -7,6 +7,20 @@
  const conversationKey = "skai.conversation.v1." + activeProfile;
  const modeKey = "skai.assistant.mode.v1." + activeProfile;
  const chat = $("#chat");
+ const searchProviders = [
+  { name: "Яндекс", url: q => "https://yandex.ru/search/?text=" + encodeURIComponent(q) },
+  { name: "Google", url: q => "https://www.google.com/search?q=" + encodeURIComponent(q) },
+  { name: "Bing", url: q => "https://www.bing.com/search?q=" + encodeURIComponent(q) },
+  { name: "DuckDuckGo", url: q => "https://duckduckgo.com/?q=" + encodeURIComponent(q) },
+  { name: "Brave", url: q => "https://search.brave.com/search?q=" + encodeURIComponent(q) },
+  { name: "Startpage", url: q => "https://www.startpage.com/sp/search?query=" + encodeURIComponent(q) }
+ ];
+ function selectedSearchProvider() {
+  let index = 0;
+  try { index = Number(localStorage.getItem("skai.search.provider.v1") || 0); } catch (_) {}
+  return Number.isInteger(index) && index >= 0 && index < searchProviders.length
+   ? searchProviders[index] : searchProviders[0];
+ }
 
  let mode = "local";
  let messages = [];
@@ -17,7 +31,8 @@
  let requestSequence = 0;
 
  try {
-  mode = localStorage.getItem(modeKey) === "cloud" ? "cloud" : "local";
+  const savedMode = localStorage.getItem(modeKey) || "local";
+  mode = ["local", "cloud", "search"].includes(savedMode) ? savedMode : "local";
  } catch (_) {}
  try {
   const saved = JSON.parse(localStorage.getItem(conversationKey) || "[]");
@@ -51,7 +66,9 @@
   if (note) {
    note.textContent = mode === "cloud"
     ? "Облачный провайдер не подключён · передача отключена"
-    : modelDetail;
+    : mode === "search"
+      ? "Интернет-поиск через " + selectedSearchProvider().name + " · результаты в новой вкладке"
+      : modelDetail;
   }
   if (install) {
    install.hidden = mode !== "local" || modelState === "ready";
@@ -73,7 +90,7 @@
   }
  }
  function setMode(value, persist = true) {
-  mode = value === "cloud" ? "cloud" : "local";
+  mode = ["local", "cloud", "search"].includes(value) ? value : "local";
   document.querySelectorAll("[data-mode]").forEach(button => {
    button.classList.toggle("active", button.dataset.mode === mode);
   });
@@ -114,6 +131,16 @@
 
   if (mode === "cloud") {
    addMessage("assistant", "Облачный провайдер пока не подключён. Запрос и контекст не отправлены.");
+   return;
+  }
+  if (mode === "search") {
+   const provider = selectedSearchProvider();
+   if (!window.skaiNative?.newTab) {
+    addMessage("assistant", "Не удалось открыть поиск: нативный контроллер вкладок недоступен.");
+    return;
+   }
+   window.skaiNative.newTab(provider.url(value));
+   addMessage("assistant", "Открыл " + provider.name + " в новой вкладке. Диалог Sk/Ai и его контекст сохранены.");
    return;
   }
   if (modelState !== "ready") {
@@ -192,6 +219,7 @@
    render();
   }
   if (event.key === modeKey) setMode(event.newValue, false);
+  if (event.key === "skai.search.provider.v1" && mode === "search") renderStatus();
  });
 
  window.skaiNative?.aiStatus();

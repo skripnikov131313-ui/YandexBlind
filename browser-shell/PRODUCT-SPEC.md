@@ -72,7 +72,7 @@ The mode selector belongs next to the assistant composer.
 - [ ] No silent fallback from Local to Cloud.
 
 ### Internet Search
-- [ ] A distinct assistant mode that searches the web and returns source links.
+- [~] A distinct Internet Search mode opens the selected search provider in a new browser tab while preserving the assistant conversation in both docked and floating panels. In-panel source extraction and citations are not implemented.
 - [ ] Preserve chat context when switching among Local, Cloud and Internet Search.
 
 ## 5. Privacy and security
