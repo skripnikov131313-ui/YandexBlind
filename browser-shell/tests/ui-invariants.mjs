@@ -569,4 +569,58 @@ assert.match(
   /CefPostTask\(TID_UI, new PageTextSnapshotTask/,
   "CEF page text must be marshalled to the UI thread before validation."
 );
+const privacySource = readFileSync(
+  new URL("../src/skai_privacy.cpp", import.meta.url),
+  "utf8"
+);
+const privacyHeader = readFileSync(
+  new URL("../src/skai_privacy.h", import.meta.url),
+  "utf8"
+);
+assert.match(
+  nativeWindowSource,
+  /SkAiCreatePrivacyRequestContextHandler\(\)/,
+  "Every persistent browser profile must receive the privacy request-context handler."
+);
+assert.match(
+  privacySource,
+  /profile\.cookie_controls_mode/,
+  "Third-party cookie blocking must use Chromium's native cookie-controls preference."
+);
+assert.match(
+  privacySource,
+  /value->SetInt\(1\)/,
+  "Chromium's kBlockThirdParty cookie mode must be selected."
+);
+assert.match(
+  privacySource,
+  /Sec-GPC/,
+  "Website requests must carry the Global Privacy Control signal."
+);
+assert.match(
+  privacySource,
+  /RV_CANCEL/,
+  "Known tracker requests must be cancelled before network loading."
+);
+assert.match(
+  privacySource,
+  /google-analytics\.com/,
+  "The filter must include common analytics collection domains."
+);
+assert.match(
+  privacySource,
+  /fullstory\.com/,
+  "The filter must include session-replay and user-interaction tracking domains."
+);
+assert.match(
+  privacySource,
+  /IsCrossSite\(resource_host, initiator_host\)/,
+  "Generic pixel/beacon paths must be limited to cross-site requests."
+);
+assert.match(
+  privacyHeader,
+  /SkAiCreatePrivacyRequestContextHandler/,
+  "Privacy filtering must be attached to CEF request contexts, not injected into site scripts."
+);
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");
