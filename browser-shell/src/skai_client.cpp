@@ -110,6 +110,8 @@ void RecordNavigationRisk(const std::wstring& from_url,
         SkAiSecurityEventType::suspicious_navigation, risk.severity,
         SecurityOrigin(to_url), L"Обнаружен признак риска при навигации",
         risk.evidence);
+    SkAiNotifySecurityWarning(L"Проверьте адрес сайта", risk.evidence);
+    SkAiSendSecurityEvents();
   }
 }
 
@@ -592,6 +594,9 @@ bool SkAiClient::OnBeforeBrowse(
           SecurityOrigin(original_url),
           L"Обнаружена необычно длинная цепочка перенаправлений",
           chain_risk.evidence);
+      SkAiNotifySecurityWarning(
+          L"Необычная цепочка перенаправлений", chain_risk.evidence);
+      SkAiSendSecurityEvents();
       redirect_chain_last_reported_threshold_ = warning_threshold;
     }
   }
