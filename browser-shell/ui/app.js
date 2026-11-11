@@ -532,6 +532,84 @@
   $("#printPage")?.addEventListener("click", () => window.skaiNative?.browserAction("print"));
   updateZoomLabel();
 
+  function zoomByKeyboard(direction) {
+    window.skaiNative?.browserAction(direction);
+    if (direction === "zoomIn") {
+      zoomPercent = Math.min(300, Math.round(zoomPercent * 1.2 / 5) * 5);
+    } else if (direction === "zoomOut") {
+      zoomPercent = Math.max(30, Math.round(zoomPercent / 1.2 / 5) * 5);
+    } else {
+      zoomPercent = 100;
+    }
+    updateZoomLabel();
+  }
+
+  document.addEventListener("keydown", event => {
+    const key = event.key.toLowerCase();
+    const command = event.ctrlKey || event.metaKey;
+
+    if (command) {
+      if (key === "l") {
+        event.preventDefault();
+        const address = $("#addressInput");
+        address?.focus();
+        address?.select();
+      } else if (key === "t") {
+        event.preventDefault();
+        createTab("about:blank");
+      } else if (key === "w") {
+        event.preventDefault();
+        const active = $(".tab.active");
+        const close = active && $(".tab-close", active);
+        if (close) close.click();
+      } else if (key === "r") {
+        event.preventDefault();
+        window.skaiNative?.reload();
+      } else if (key === "f") {
+        event.preventDefault();
+        openFindBar();
+      } else if (key === "h") {
+        event.preventDefault();
+        openInternalView("history");
+      } else if (key === "j") {
+        event.preventDefault();
+        openInternalView("downloads");
+      } else if (key === "d") {
+        event.preventDefault();
+        toggleBookmark();
+      } else if (key === "0") {
+        event.preventDefault();
+        zoomByKeyboard("zoomReset");
+      } else if (key === "+" || key === "=") {
+        event.preventDefault();
+        zoomByKeyboard("zoomIn");
+      } else if (key === "-") {
+        event.preventDefault();
+        zoomByKeyboard("zoomOut");
+      } else if (/^[1-9]$/.test(key)) {
+        event.preventDefault();
+        const tabs = $$(".tab");
+        const index = key === "9" ? tabs.length - 1 : Number(key) - 1;
+        if (tabs[index]) activateTab(tabs[index]);
+      }
+      return;
+    }
+
+    if (event.altKey && key === "arrowleft") {
+      event.preventDefault();
+      window.skaiNative?.back();
+    } else if (event.altKey && key === "arrowright") {
+      event.preventDefault();
+      window.skaiNative?.forward();
+    } else if (key === "f5") {
+      event.preventDefault();
+      window.skaiNative?.reload();
+    } else if (key === "escape" && findBar && !findBar.hidden) {
+      event.preventDefault();
+      closeFindBar();
+    }
+  });
+
   $("#themeButton")?.addEventListener("click", cycleTheme);
   let bookmarkKey = profileStorageKey("skai.bookmarks.v1");
   let bookmarkFoldersKey = profileStorageKey("skai.bookmark.folders.v1");

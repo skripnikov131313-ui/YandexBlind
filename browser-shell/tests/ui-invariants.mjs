@@ -522,4 +522,14 @@ assert.doesNotMatch(
   /sharedPageContext = null/,
   "Successful or failed AI replies must not discard page context needed for follow-up questions."
 );
+
+assert.match(source, /document\.addEventListener\("keydown"/, "The browser shell must register global keyboard shortcuts.");
+assert.match(source, /key === "l"[\s\S]*?address\?\.select\(\)/, "Ctrl+L must focus and select the address bar.");
+assert.match(source, /key === "t"[\s\S]*?createTab\("about:blank"\)/, "Ctrl+T must open a new native tab.");
+assert.match(source, /key === "w"[\s\S]*?close\.click\(\)/, "Ctrl+W must close the active tab.");
+assert.match(source, /key === "f"[\s\S]*?openFindBar\(\)/, "Ctrl+F must open find-in-page.");
+assert.match(source, /key === "h"[\s\S]*?openInternalView\("history"\)/, "Ctrl+H must open history.");
+assert.match(source, /key === "j"[\s\S]*?openInternalView\("downloads"\)/, "Ctrl+J must open downloads.");
+assert.match(source, /key === "d"[\s\S]*?toggleBookmark\(\)/, "Ctrl+D must toggle the current bookmark.");
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");
