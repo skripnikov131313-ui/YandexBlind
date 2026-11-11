@@ -110,6 +110,16 @@ assert.match(
 );
 assert.match(
   aiSource,
+  /resolve\/19bb3a8fe3d2976d563e3c61e69c75e61806f2bc\//,
+  "The Qwen GGUF download must use an immutable Hugging Face file revision."
+);
+assert.match(
+  workflowSource,
+  /GGUF revision: 19bb3a8fe3d2976d563e3c61e69c75e61806f2bc/,
+  "The packaged model metadata must identify the immutable GGUF source revision."
+);
+assert.match(
+  aiSource,
   /9a3d0aa6c920f096441139b6a254542da855223fdad06855ea00c6c087fd713d/,
   "The verified model SHA-256 must remain pinned."
 );

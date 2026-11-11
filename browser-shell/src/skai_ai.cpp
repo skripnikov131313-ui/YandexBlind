@@ -33,7 +33,7 @@
 namespace {
 constexpr wchar_t kModelUrlHost[] = L"huggingface.co";
 constexpr wchar_t kModelUrlPath[] =
-    L"/gguf/Qwen3.5-2B-GGUF/resolve/main/qwen3.5-2b-Q4_K_M.gguf";
+    L"/gguf/Qwen3.5-2B-GGUF/resolve/19bb3a8fe3d2976d563e3c61e69c75e61806f2bc/qwen3.5-2b-Q4_K_M.gguf";
 constexpr wchar_t kModelFileName[] = L"qwen3.5-2b-Q4_K_M.gguf";
 constexpr char kModelSha256[] =
     "9a3d0aa6c920f096441139b6a254542da855223fdad06855ea00c6c087fd713d";
