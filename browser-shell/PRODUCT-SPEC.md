@@ -91,6 +91,7 @@ The mode selector belongs next to the assistant composer.
 - [ ] Verify Chromium Safe Browsing and security services in the packaged runtime.
 - [~] History can be searched, individual entries removed and all history cleared. Download metadata persists, completed files reopen only from the managed Downloads/SkAi directory; cookie/cache/site-data controls remain open.
 - [~] Cloud placeholder sends nothing; production Cloud must require explicit consent.
+- [~] Security Center can explicitly submit the latest 30 bounded native security events to local Qwen for an advisory explanation. The AI setting is enforced, no cloud route exists, event fields are treated as untrusted data, and native policy remains authoritative; Windows runtime and adversarial prompt-injection tests remain open.
 - [ ] Security review and network-traffic audit.
 
 ## 6. Appearance and interaction
