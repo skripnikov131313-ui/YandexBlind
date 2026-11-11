@@ -189,7 +189,7 @@ CefRefPtr<CefResourceRequestHandler> SkAiClient::GetResourceRequestHandler(
     bool& /*disable_default_handling*/) {
   // Downloads are preserved. Main-frame navigations keep working, but still
   // receive the cookie filter; tracker URL cancellation applies to subresources.
-  if (is_download) return nullptr;
+  if (is_download) return new SkAiTrackingResourceHandler(false);
   if (is_navigation && frame && frame->IsMain()) {
     return new SkAiTrackingResourceHandler(false);
   }
