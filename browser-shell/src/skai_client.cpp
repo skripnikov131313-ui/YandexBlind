@@ -17,7 +17,7 @@
 #include <knownfolders.h>
 
 namespace {
-bool TryParseDownloadId(const CefString& input, std::uint32_t& download_id) {
+bool TryParseDownloadId(const CefString& input, uint32_t& download_id) {
   const std::wstring value = input.ToWString();
   if (value.empty()) return false;
   wchar_t* end = nullptr;
@@ -27,7 +27,7 @@ bool TryParseDownloadId(const CefString& input, std::uint32_t& download_id) {
       parsed > UINT_MAX) {
     return false;
   }
-  download_id = static_cast<std::uint32_t>(parsed);
+  download_id = static_cast<uint32_t>(parsed);
   return true;
 }
 
@@ -40,7 +40,7 @@ bool TryParsePermissionId(const CefString& input, uint64_t& permission_id) {
   if (errno == ERANGE || end == value.c_str() || *end != L'\0') {
     return false;
   }
-  permission_id = static_cast<std::uint64_t>(parsed);
+  permission_id = static_cast<uint64_t>(parsed);
   return true;
 }
 
@@ -200,7 +200,7 @@ bool SkAiClient::OnProcessMessageReceived(
 
   if (category == "download") {
     if (args->GetSize() < 3) return true;
-    std::uint32_t download_id = 0;
+    uint32_t download_id = 0;
     if (TryParseDownloadId(args->GetString(2), download_id)) {
       SkAiDownloadAction(download_id, action.ToWString());
     }
@@ -244,7 +244,7 @@ bool SkAiClient::OnProcessMessageReceived(
 
   if (category == "permission") {
     if (args->GetSize() < 4) return true;
-    std::uint64_t request_id = 0;
+    uint64_t request_id = 0;
     if (TryParsePermissionId(args->GetString(2), request_id)) {
       SkAiResolvePermission(request_id, action == "allow", args->GetBool(3));
     }
