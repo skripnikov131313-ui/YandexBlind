@@ -619,4 +619,15 @@ assert.match(nativeWindowSource, /value->SetInt\(1\)/, "Chromium must block thir
 assert.match(source, /Sk\/Ai не добавляет собственную аналитику/, "The browser's own UI must remain free of analytics and telemetry.");
 assert.doesNotMatch(source, /(google-analytics|hotjar|fullstory|clarity\.ms|fingerprintjs)/, "The browser UI must not load third-party analytics or fingerprinting SDKs.");
 
+assert.match(
+  cmakeSource,
+  /add_executable\(skai_tracking_protection_tests/,
+  "The native tracker filter must have a compiled C++ unit-test target."
+);
+assert.match(
+  workflowSource,
+  /ctest --test-dir build\/skai -C Release --output-on-failure/,
+  "Windows CI must execute the native site tracker URL tests."
+);
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");

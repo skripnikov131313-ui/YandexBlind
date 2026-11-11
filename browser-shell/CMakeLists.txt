@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.24)
 project(SkAiBrowser VERSION 0.3.0 LANGUAGES CXX)
 
+include(CTest)
+
 if(NOT WIN32)
   message(FATAL_ERROR "Sk/Ai native shell targets Windows x64.")
 endif()
@@ -73,6 +75,16 @@ target_link_libraries(SkAi PRIVATE
 )
 
 target_compile_options(SkAi PRIVATE /W4 /permissive-)
+
+if(BUILD_TESTING)
+  add_executable(skai_tracking_protection_tests
+    tests/tracking_protection_tests.cpp
+    src/skai_tracking_protection.cpp
+  )
+  target_compile_features(skai_tracking_protection_tests PRIVATE cxx_std_20)
+  add_test(NAME skai_tracking_protection COMMAND skai_tracking_protection_tests)
+endif()
+
 set_target_properties(SkAi PROPERTIES
   PREFIX ""
   OUTPUT_NAME "SkAi"
