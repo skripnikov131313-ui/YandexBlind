@@ -22,7 +22,8 @@
 - The local IAB TCF compatibility response is denial, not acceptance. Represented purposes are false; Global Privacy Control is exposed where supported.
 - A site's consent banner must not be auto-accepted or have an affirmative consent cookie fabricated.
 - Third-party cookies are blocked in Chromium.
-- First-party cookies currently remain available for site sessions. This is a known privacy gap: a first-party cookie may still be an identifier. A later cookie policy must distinguish session-critical state from analytics/advertising state, use ephemeral storage where possible, and expose any site exception to the user.
+- A CEF cookie access filter blocks known advertising/analytics cookie names when cookies are saved from responses or sent with requests, including top-level navigations.
+- First-party cookies not matched by the known tracker-name list currently remain available for site sessions. This is a known privacy gap: first-party identifiers can use arbitrary names. A later cookie policy must distinguish session-critical state from analytics/advertising state, use ephemeral storage where possible, and expose any site exception to the user.
 - A JavaScript-only fake cookie jar is not equivalent to a server session. It cannot authenticate a user or satisfy a server-side session requirement when the server expects a real cookie on an HTTP request.
 
 ## Telemetry and tracking
