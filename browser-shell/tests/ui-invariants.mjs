@@ -594,4 +594,129 @@ assert.match(
   /CefPostTask\(TID_UI, new PageTextSnapshotTask/,
   "CEF page text must be marshalled to the UI thread before validation."
 );
+const privacySource = readFileSync(
+  new URL("../src/skai_privacy.cpp", import.meta.url),
+  "utf8"
+);
+const privacyHeader = readFileSync(
+  new URL("../src/skai_privacy.h", import.meta.url),
+  "utf8"
+);
+assert.match(
+  nativeWindowSource,
+  /SkAiCreatePrivacyRequestContextHandler\(\)/,
+  "Every persistent browser profile must receive the privacy request-context handler."
+);
+assert.match(
+  privacySource,
+  /profile\.cookie_controls_mode/,
+  "Third-party cookie blocking must use Chromium's native cookie-controls preference."
+);
+assert.match(
+  privacySource,
+  /value->SetInt\(1\)/,
+  "Chromium's kBlockThirdParty cookie mode must be selected."
+);
+assert.match(
+  privacySource,
+  /Sec-GPC/,
+  "Website requests must carry the Global Privacy Control signal."
+);
+assert.match(
+  privacySource,
+  /RV_CANCEL/,
+  "Known tracker requests must be cancelled before network loading."
+);
+assert.match(
+  privacySource,
+  /google-analytics\.com/,
+  "The filter must include common analytics collection domains."
+);
+assert.match(
+  privacySource,
+  /fullstory\.com/,
+  "The filter must include session-replay and user-interaction tracking domains."
+);
+assert.match(
+  privacySource,
+  /IsCrossSite\(resource_host, initiator_host\)/,
+  "Generic pixel/beacon paths must be limited to cross-site requests."
+);
+assert.match(
+  privacyHeader,
+  /SkAiCreatePrivacyRequestContextHandler/,
+  "Privacy filtering must be attached to CEF request contexts, not injected into site scripts."
+);
+
+assert.match(
+  privacySource,
+  /sec-ch-ua-full-version-list/,
+  "High-entropy UA Client Hints must be filtered for cross-site requests."
+);
+assert.match(
+  privacySource,
+  /IsCrossSite\(resource_host, initiator_host\)[\s\S]*?RemoveCrossSiteHighEntropyClientHints/,
+  "Client Hint filtering must be restricted to cross-site requests."
+);
+assert.match(
+  privacySource,
+  /StripCrossSiteNavigationIdentifiers/,
+  "Cross-site top-level navigations must remove known click-tracking identifiers."
+);
+assert.match(
+  privacySource,
+  /gclid[\s\S]*?fbclid[\s\S]*?msclkid[\s\S]*?ttclid/,
+  "Common Google, Meta, Microsoft and TikTok click IDs must be filtered."
+);
+assert.match(
+  privacySource,
+  /request->GetResourceType\(\) != RT_MAIN_FRAME/,
+  "Tracking query identifiers must only be stripped from main-frame navigations."
+);
+assert.match(
+  privacySource,
+  /request->SetURL\(rewritten_url\)/,
+  "Filtered navigation URLs must be sent without the removed tracking identifiers."
+);
+
+const appSource = readFileSync(
+  new URL("../src/skai_app.cpp", import.meta.url),
+  "utf8"
+);
+const appHeader = readFileSync(
+  new URL("../src/skai_app.h", import.meta.url),
+  "utf8"
+);
+assert.match(
+  appHeader,
+  /OnBeforeCommandLineProcessing/,
+  "The CEF app must enable browser-wide fingerprinting protections before initialization."
+);
+assert.match(
+  appSource,
+  /EnableFingerprintingProtectionFilter:activation_level\/enabled\/[\s\S]*?enable_only_if_3pc_blocked\/true/,
+  "Chromium's fingerprinting resource filter must be enabled only with third-party cookies blocked."
+);
+assert.match(
+  appSource,
+  /UseCnameAliasesForFingerprintingProtectionFilter/,
+  "Chromium's fingerprinting filter must also check CNAME aliases."
+);
+assert.match(
+  appSource,
+  /AppendSwitchWithValue\("enable-features"/,
+  "Fingerprinting protection feature switches must be applied to CEF processes."
+);
+assert.match(
+  appSource,
+  /if \(!process_type\.empty\(\) \|\| !command_line\) return;/,
+  "Feature switches must only be modified in the browser process."
+);
+
+assert.match(
+  privacySource,
+  /request_initiator\.empty\(\)\) return false;[\s\S]*?if \(!IsCrossSite\(resource_host, initiator_host\)\) return false;[\s\S]*?if \(IsKnownTrackerHost\(resource_host\)\) return true;/,
+  "Known tracker domains must be blocked only for cross-site requests, not direct user navigation."
+);
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");
