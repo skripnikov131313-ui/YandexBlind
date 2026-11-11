@@ -52,7 +52,7 @@ class SkAiTrackingResourceHandler final : public CefResourceRequestHandler {
       CefRefPtr<CefRequest> /*request*/) override {
     return new SkAiPrivacyCookieFilter();
   }
- public:
+
   ReturnValue OnBeforeResourceLoad(
       CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> /*frame*/,
       CefRefPtr<CefRequest> request,
