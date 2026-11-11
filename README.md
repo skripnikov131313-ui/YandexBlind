@@ -20,7 +20,7 @@ The native shell is still under development. Source implementation, successful W
 - Soft Aurora visual language: dark graphite/navy, indigo-violet and mint/teal accents, with a coordinated light theme.
 - 8 GB RAM target and CPU-only local AI.
 - No project analytics SDK or telemetry endpoint.
-- Local AI planned around Qwen 3.5 2B GGUF Q4_K_M and llama.cpp. It is not connected in the native shell yet.
+- Local Qwen 3.5 2B GGUF Q4_K_M and llama.cpp CPU runtime are integrated in native source and packaging workflow; successful Windows inference and 8 GB memory profiling are still pending.
 - Cloud AI remains a safe placeholder. No prompt, page content or file is transmitted.
 - Standard public PKI/TLS and Chromium security. Russian GOST TLS and CryptoPro CSP are explicitly out of scope.
 
