@@ -853,3 +853,18 @@ assert.match(clientSource, /SkAiSecurityEventType::download_completed/);
 assert.match(clientSource, /SkAiSecurityEventType::navigation_redirect/);
 assert.ok(cmakeSource.includes("src/skai_security.cpp"));
 assert.match(cmakeSource, /skai_security_journal_tests/);
+
+const securityUi = readFileSync(
+  new URL("../ui/app.js", import.meta.url),
+  "utf8"
+);
+const securityHtml = readFileSync(
+  new URL("../ui/index.html", import.meta.url),
+  "utf8"
+);
+assert.match(securityHtml, /id="securityNav"/);
+assert.match(securityUi, /window\\.skaiNative\\?\\.getSecurityEvents\\(\\)/);
+assert.match(securityUi, /securityEventsUpdated/);
+assert.match(securityUi, /Центр безопасности/);
+assert.match(securityUi, /Очистить журнал/);
+assert.match(securityUi, /ИИ-анализ безопасности/);
