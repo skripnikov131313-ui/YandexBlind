@@ -322,6 +322,12 @@ bool SkAiClient::OnProcessMessageReceived(
     return true;
   }
 
+  if (category == "securityEvents") {
+    if (action == "list") SkAiSendSecurityEvents();
+    else if (action == "clear") SkAiClearSecurityEvents();
+    return true;
+  }
+
   if (category == "permissionsList") {
     SkAiSendSitePermissionList();
     return true;
