@@ -430,7 +430,7 @@
   $("#findPrevious")?.addEventListener("click", () => requestFind("findPrevious"));
   $("#findClose")?.addEventListener("click", closeFindBar);
   $("#zoomIn")?.addEventListener("click", () => {
-    window.skaiNative?.browserAction("zoomIn");
+    if (window.skaiNative?.browserAction) window.skaiNative.browserAction("zoomIn");
     zoomPercent = Math.min(300, Math.round(zoomPercent * 1.2 / 5) * 5);
     updateZoomLabel();
   });
