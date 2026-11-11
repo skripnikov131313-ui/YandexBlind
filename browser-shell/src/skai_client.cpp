@@ -479,6 +479,19 @@ void SkAiClient::OnDownloadUpdated(
   SkAiNotifyDownloadState(download_item, callback);
 }
 
+bool SkAiClient::OnBeforeBrowse(
+    CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> frame,
+    CefRefPtr<CefRequest> request, bool /*user_gesture*/,
+    bool /*is_redirect*/) {
+  if (!frame || !frame->IsMain() || !request) return false;
+  const auto original_url = request->GetURL().ToWString();
+  const auto cleaned_url = SkAiStripTrackingParameters(original_url);
+  if (cleaned_url != original_url) {
+    request->SetURL(cleaned_url);
+  }
+  return false;
+}
+
 bool SkAiClient::OnRequestMediaAccessPermission(
     CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> /*frame*/,
     const CefString& requesting_origin, uint32_t requested_permissions,
