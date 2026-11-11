@@ -514,7 +514,7 @@ assert.doesNotMatch(
 
 assert.match(
   source,
-  /function loadProfileData\([\s\S]*?sharedPageContext = null/,
+  /function loadProfileData\(name\)[\s\S]*?sharedPageContext = null/,
   "Ephemeral page context must be cleared when the browser profile changes."
 );
 assert.doesNotMatch(

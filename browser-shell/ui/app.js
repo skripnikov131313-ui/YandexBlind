@@ -312,9 +312,6 @@
     if (!id || id !== localAiPendingId) return;
     localAiBusy = false;
     localAiPendingId = "";
-    sharedPageContext = null;
-    pageContextPending = false;
-    renderSharedPageContext();
     const sendButton = $("#sendPrompt");
     if (sendButton) sendButton.disabled = false;
     const pendingIndex = conversation.findIndex(item =>
@@ -647,6 +644,9 @@
       ? String(name) : "default";
     localAiBusy = false;
     localAiPendingId = "";
+    sharedPageContext = null;
+    pageContextPending = false;
+    renderSharedPageContext();
     const sendButton = $("#sendPrompt");
     if (sendButton) sendButton.disabled = false;
     activeProfileName = normalized;
