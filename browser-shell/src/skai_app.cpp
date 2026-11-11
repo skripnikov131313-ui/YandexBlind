@@ -219,9 +219,12 @@ bool IsTrustedSkAiUiFrame(CefRefPtr<CefFrame> frame) {
 }  // namespace
 
 void SkAiApp::OnBeforeCommandLineProcessing(
-    const CefString& /*process_type*/,
+    const CefString& process_type,
     CefRefPtr<CefCommandLine> command_line) {
-  if (!command_line) return;
+  // Set browser feature flags once. Chromium's ContentBrowserClient propagates
+  // enabled features to child processes; CEF warns against modifying arbitrary
+  // renderer command lines in this callback.
+  if (!process_type.empty() || !command_line) return;
 
   // Chromium's Fingerprinting Protection Filter blocks known fingerprinting
   // resources in third-party contexts. Keep it enabled in browser and renderer
