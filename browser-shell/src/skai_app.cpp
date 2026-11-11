@@ -379,6 +379,7 @@ void InstallSitePrivacyCompatibility(CefRefPtr<CefV8Context> context) {
         return visible.join("; ");
       },
       set(rawValue) {
+        syncLocalCookieStore();
         const parts = String(rawValue).split(";");
         const pair = parts.shift() || "";
         const equals = pair.indexOf("=");
