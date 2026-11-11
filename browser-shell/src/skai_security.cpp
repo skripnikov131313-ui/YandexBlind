@@ -4,6 +4,7 @@
 #include <chrono>
 #include <mutex>
 #include <utility>
+#include <cwctype>
 #include <deque>
 
 namespace {
@@ -23,7 +24,50 @@ std::wstring Bounded(std::wstring value, std::size_t maximum) {
   }
   return value;
 }
+bool HasPunycodeLabel(const std::wstring& host) {
+  std::size_t start = 0;
+  while (start < host.size()) {
+    const auto end = host.find(L'.', start);
+    const auto length = (end == std::wstring::npos ? host.size() : end) - start;
+    if (length > 4 && host.compare(start, 4, L"xn--") == 0) return true;
+    if (end == std::wstring::npos) break;
+    start = end + 1;
+  }
+  return false;
+}
 }  // namespace
+
+SkAiNavigationRisk SkAiClassifyNavigationRisk(
+    const std::wstring& source_scheme, const std::wstring& target_scheme,
+    const std::wstring& target_host, bool has_embedded_credentials,
+    bool is_redirect) {
+  SkAiNavigationRisk result;
+  std::wstring source = source_scheme;
+  std::wstring target = target_scheme;
+  std::wstring host = target_host;
+  std::transform(source.begin(), source.end(), source.begin(),
+                 [](wchar_t ch) { return static_cast<wchar_t>(std::towlower(ch)); });
+  std::transform(target.begin(), target.end(), target.begin(),
+                 [](wchar_t ch) { return static_cast<wchar_t>(std::towlower(ch)); });
+  std::transform(host.begin(), host.end(), host.begin(),
+                 [](wchar_t ch) { return static_cast<wchar_t>(std::towlower(ch)); });
+
+  if ((target != L"http" && target != L"https") || host.empty()) return result;
+  if (has_embedded_credentials) {
+    result.detected = true;
+    result.severity = SkAiSecuritySeverity::high;
+    result.evidence = L"В адресе присутствуют встроенные учётные данные";
+  } else if (is_redirect && source == L"https" && target == L"http") {
+    result.detected = true;
+    result.severity = SkAiSecuritySeverity::high;
+    result.evidence = L"Перенаправление понижает защищённое HTTPS-соединение до HTTP";
+  } else if (HasPunycodeLabel(host)) {
+    result.detected = true;
+    result.severity = SkAiSecuritySeverity::medium;
+    result.evidence = L"Домен содержит IDN punycode; проверьте отображаемое имя";
+  }
+  return result;
+}
 
 std::uint64_t SkAiRecordSecurityEvent(
     SkAiSecurityEventType type, SkAiSecuritySeverity severity,
