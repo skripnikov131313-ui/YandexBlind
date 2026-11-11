@@ -1123,7 +1123,13 @@
         sharedPageContext = null;
         pageContextPending = false;
         renderSharedPageContext();
+        // A request already handed to the local runtime cannot be recalled,
+        // but its result is invalidated and will not be shown in the UI.
+        securityAnalysisRequestId = "";
+        securityAnalysisPending = false;
+        securityAnalysisResult = "";
       }
+      if (internalViewType === "security") renderInternalView("security");
       renderLocalAiStatus();
       notify(aiSecurityAnalysisEnabled
         ? "ИИ-анализ страниц включён"
