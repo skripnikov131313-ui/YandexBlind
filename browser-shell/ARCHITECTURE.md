@@ -9,11 +9,11 @@
 - Assistant: docked in the main UI; detach creates a separate native CEF popup with Windows topmost behavior. The popup can be closed to redock.
 - Local AI: native C++ module downloads Qwen 3.5 2B Q4_K_M GGUF to `%LOCALAPPDATA%/SkAi/Models`, verifies the pinned SHA-256, and starts a separately packaged llama.cpp v0.9.0 CPU server on `127.0.0.1` with an ephemeral API key. The docked and floating assistant send OpenAI-compatible chat requests through the CEF-to-native bridge. Windows build and inference tests are still pending.
 - Cloud AI: placeholder only; no provider is connected and no prompts/page content are sent.
-- Persistence: browser profile is located under `%LOCALAPPDATA%/SkAi/Profiles/Default`. Bookmarks and bookmark folders, history, download metadata, last-open HTTP(S) tabs and assistant conversation state are stored in the UI CEF profile. Remembered per-origin permission decisions are stored in `permissions.json` in the same profile and atomically replaced on updates. Cross-session behavior still requires Windows runtime validation.
+- Persistence: browser profile is located under `%LOCALAPPDATA%/SkAi/Profiles/default`. Bookmarks and bookmark folders, history, download metadata, last-open HTTP(S) tabs and assistant conversation state are stored in the UI CEF profile. Remembered per-origin permission decisions are stored in `permissions.json` in the same profile and atomically replaced on updates. Cross-session behavior still requires Windows runtime validation.
 
 ## CEF version and sandbox
 
-The build pins CEF `154.0.34+g14c5a08+chromium-154.0.8037.98`.
+The build pins CEF `154.0.34+g14c5a08+chromium-154.0.8037.98`. The legacy `CefRegisterExtension` API is removed in CEF 154, so the native bridge is installed through `CefRenderProcessHandler::OnContextCreated` and `CefV8Value::CreateFunction`. The bridge is exposed only in the main frames of the packaged `ui/index.html` and `ui/assistant.html` pages; ordinary web pages and their subframes do not receive native functions.
 
 CEF 138+ Windows client builds use the bootstrap architecture. Sk/Ai is built as `SkAi.dll`; the matching `bootstrap.exe` is copied as `SkAi.exe`. The bootstrap calls the exported `RunWinMain` entry point and supplies the sandbox handle. The client passes that handle to `CefExecuteProcess` and `CefInitialize` and rejects startup if the handle is missing. The build does not silently disable the Chromium sandbox.
 
