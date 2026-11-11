@@ -68,6 +68,7 @@ int main() {
   }
 
   std::cout << "Sk/Ai site tracking protection tests: "
-            << (sizeof(cases) / sizeof(cases[0]) +\n                sizeof(parameter_cases) / sizeof(parameter_cases[0])) << " passed\n";
+            << (sizeof(cases) / sizeof(cases[0]) +
+                sizeof(parameter_cases) / sizeof(parameter_cases[0])) << " passed\n";
   return 0;
 }
