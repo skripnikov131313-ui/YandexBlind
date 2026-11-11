@@ -465,6 +465,11 @@ assert.match(
   /profile_ != g_active_profile \|\| current_url != url_/,
   "A delayed page-text response must be discarded after profile or navigation changes."
 );
+assert.match(
+  nativeWindowSource,
+  /source_tab_id_ != g_active_tab_id/,
+  "A delayed page-text response must be discarded after the active tab changes."
+);
 
 assert.match(
   nativeWindowSource,

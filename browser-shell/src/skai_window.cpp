@@ -22,6 +22,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <utility>
 #include <shellapi.h>
 #include <shlobj.h>
 #include <knownfolders.h>
@@ -166,6 +167,7 @@ class PageTextSnapshotTask final : public CefTask {
  public:
   PageTextSnapshotTask(CefRefPtr<CefBrowser> ui_browser,
                        CefRefPtr<CefFrame> source_frame,
+                       int source_tab_id,
                        std::wstring profile,
                        std::wstring title,
                        std::wstring url,
@@ -173,6 +175,7 @@ class PageTextSnapshotTask final : public CefTask {
                        std::wstring error)
       : ui_browser_(ui_browser),
         source_frame_(source_frame),
+        source_tab_id_(source_tab_id),
         profile_(std::move(profile)),
         title_(std::move(title)),
         url_(std::move(url)),
@@ -182,7 +185,8 @@ class PageTextSnapshotTask final : public CefTask {
   void Execute() override {
     const std::wstring current_url =
         source_frame_ ? source_frame_->GetURL().ToWString() : L"";
-    if (profile_ != g_active_profile || current_url != url_) {
+    if (source_tab_id_ != g_active_tab_id ||
+        profile_ != g_active_profile || current_url != url_) {
       ExecutePageContextNotification(
           ui_browser_, false, title_, url_, L"",
           L"Профиль или страница изменились во время чтения. Повторите передачу.");
@@ -199,6 +203,7 @@ class PageTextSnapshotTask final : public CefTask {
  private:
   CefRefPtr<CefBrowser> ui_browser_;
   CefRefPtr<CefFrame> source_frame_;
+  int source_tab_id_;
   std::wstring profile_;
   std::wstring title_;
   std::wstring url_;
@@ -211,11 +216,13 @@ class PageTextVisitor final : public CefStringVisitor {
  public:
   PageTextVisitor(CefRefPtr<CefBrowser> ui_browser,
                   CefRefPtr<CefFrame> source_frame,
+                  int source_tab_id,
                   std::wstring title,
                   std::wstring url,
                   std::wstring profile)
       : ui_browser_(ui_browser),
         source_frame_(source_frame),
+        source_tab_id_(source_tab_id),
         title_(std::move(title)),
         url_(std::move(url)),
         profile_(std::move(profile)) {}
@@ -231,7 +238,7 @@ class PageTextVisitor final : public CefStringVisitor {
     const bool has_text =
         text.find_first_not_of(L" \t\r\n") != std::wstring::npos;
     CefPostTask(TID_UI, new PageTextSnapshotTask(
-        ui_browser_, source_frame_, profile_, title_, url_,
+        ui_browser_, source_frame_, source_tab_id_, profile_, title_, url_,
         has_text ? std::move(text) : L"",
         has_text ? L"" : L"На странице не найден доступный текст."));
   }
@@ -239,6 +246,7 @@ class PageTextVisitor final : public CefStringVisitor {
  private:
   CefRefPtr<CefBrowser> ui_browser_;
   CefRefPtr<CefFrame> source_frame_;
+  int source_tab_id_;
   std::wstring title_;
   std::wstring url_;
   std::wstring profile_;
@@ -1103,7 +1111,7 @@ void SkAiShareCurrentPage(CefRefPtr<CefBrowser> ui_browser) {
 
   const std::wstring title =
       it->second.title.empty() ? url : it->second.title;
-  frame->GetText(new PageTextVisitor(ui_browser, frame, title, url, g_active_profile));
+  frame->GetText(new PageTextVisitor(ui_browser, frame, g_active_tab_id, title, url, g_active_profile));
 }
 
 void SkAiBrowserAction(const std::wstring& action,
