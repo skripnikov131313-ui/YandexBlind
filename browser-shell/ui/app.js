@@ -330,10 +330,10 @@
   window.skaiNative.localAiResult = (requestId, text, isError) => {
     const id = String(requestId || "");
     if (id.startsWith("security-")) {
+      if (id !== securityAnalysisRequestId) return;
       localAiBusy = false;
       const sendButton = $("#sendPrompt");
       if (sendButton) sendButton.disabled = false;
-      if (id !== securityAnalysisRequestId) return;
       securityAnalysisPending = false;
       securityAnalysisRequestId = "";
       if (aiSecurityAnalysisEnabled) {
@@ -689,6 +689,9 @@
       ? String(name) : "default";
     localAiBusy = false;
     localAiPendingId = "";
+    securityAnalysisRequestId = "";
+    securityAnalysisPending = false;
+    securityAnalysisResult = "";
     sharedPageContext = null;
     pageContextPending = false;
     renderSharedPageContext();
