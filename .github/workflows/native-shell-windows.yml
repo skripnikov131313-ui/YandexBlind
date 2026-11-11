@@ -20,7 +20,7 @@ on:
 
 concurrency:
   group: skai-native-shell-${{ github.head_ref || github.ref }}
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 jobs:
   windows-x64:
