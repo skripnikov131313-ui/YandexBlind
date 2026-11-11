@@ -78,3 +78,10 @@ All web-derived content is tainted as untrusted data. Prompt instructions embedd
 The AI analysis request schema should be narrow and versioned. It may include canonical URL/origin, redirect chain, Chromium certificate-validation outcome, permission request type, download source/name/MIME/size, and a bounded excerpt selected for analysis. It must not include all tabs, full history, cookies, credentials, local files or profile databases by default. Analysis stays on the loopback local runtime. Cloud analysis remains disabled until a provider is implemented with a per-transfer data preview and explicit consent.
 
 The first implementation milestone is to build a native security controller and a versioned security-event model, connect deterministic CEF enforcement events to it, and expose read-only structured evidence to the local AI. Do not wire AI output directly into CEF request handlers or permission decisions.
+
+
+## Bundled model and protection preference
+
+The release package carries the pinned Qwen3.5-2B Q4_K_M GGUF file in `runtime/llama/`. CI fetches the immutable upstream revision and verifies both the 1,406,600,000-byte size and pinned SHA-256 before packaging. `GetModelPath()` prefers this bundled asset, then falls back to the existing per-user model directory for compatibility. The UI queries model status at startup, not only when Settings is opened.
+
+The Settings → Protection preference `skai.security.ai-analysis.v1` defaults to enabled. It gates user-requested page-context transfer into local inference and clears pending/staged page context when disabled. It is deliberately separate from native network enforcement: turning off AI analysis must not change tracking-request blocking, cookie handling, permission mediation or download policy. This is currently an on-demand page-analysis toggle, not a claim that continuous AI threat monitoring has shipped.
