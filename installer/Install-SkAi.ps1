@@ -15,6 +15,11 @@ if ([string]::Equals($sourceRoot, $installFull, [System.StringComparison]::Ordin
 $startMenuFolder = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\SkAi"
 $desktopShortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "SkAi.lnk"
 $registryPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\SkAi"
+$desktopShortcutCreated = $false
+if (Test-Path -LiteralPath $registryPath) {
+    $previousMarker = (Get-ItemProperty -Path $registryPath -Name "SkAiDesktopShortcutCreated" -ErrorAction SilentlyContinue).SkAiDesktopShortcutCreated
+    $desktopShortcutCreated = ($previousMarker -eq 1)
+}
 $requiredFiles = @(
     "SkAi.exe", "SkAi.dll", "libcef.dll", "chrome_elf.dll",
     "icudtl.dat", "resources.pak", "ui\index.html",
@@ -54,12 +59,19 @@ $startMenuLink.Description = "Sk/Ai Browser"
 $startMenuLink.Save()
 
 if ($DesktopShortcut) {
+    if (Test-Path -LiteralPath $desktopShortcutPath) {
+        $previousMarker = (Get-ItemProperty -Path $registryPath -Name "SkAiDesktopShortcutCreated" -ErrorAction SilentlyContinue).SkAiDesktopShortcutCreated
+        if ($previousMarker -ne 1) {
+            throw "A desktop item named SkAi.lnk already exists and is not owned by this installer. It was not overwritten."
+        }
+    }
     $desktopLink = $wsh.CreateShortcut($desktopShortcutPath)
     $desktopLink.TargetPath = $exePath
     $desktopLink.WorkingDirectory = $installRoot
     $desktopLink.IconLocation = "$exePath,0"
     $desktopLink.Description = "Sk/Ai Browser"
     $desktopLink.Save()
+    $desktopShortcutCreated = $true
 }
 
 New-Item -Path $registryPath -Force | Out-Null
@@ -72,6 +84,7 @@ Set-ItemProperty -Path $registryPath -Name "Publisher" -Value "Sk/Ai"
 Set-ItemProperty -Path $registryPath -Name "InstallLocation" -Value $installRoot
 Set-ItemProperty -Path $registryPath -Name "DisplayIcon" -Value $exePath
 Set-ItemProperty -Path $registryPath -Name "UninstallString" -Value $uninstallCommand
+Set-ItemProperty -Path $registryPath -Name "SkAiDesktopShortcutCreated" -Type DWord -Value ([int]$desktopShortcutCreated)
 Set-ItemProperty -Path $registryPath -Name "NoModify" -Type DWord -Value 1
 Set-ItemProperty -Path $registryPath -Name "NoRepair" -Type DWord -Value 1
 
