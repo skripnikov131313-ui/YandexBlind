@@ -507,6 +507,10 @@ void SkAiClient::OnLoadingStateChange(
     CefRefPtr<CefBrowser> browser, bool is_loading, bool can_go_back,
     bool can_go_forward) {
   if (!ui_browser_) {
+    if (!is_loading) {
+      main_frame_redirect_count_ = 0;
+      redirect_chain_warning_recorded_ = false;
+    }
     if (!is_loading && browser && browser->GetMainFrame()) {
       SkAiNotifyTabState(tab_id_, L"",
                          browser->GetMainFrame()->GetURL().ToWString(), false);
@@ -571,6 +575,22 @@ bool SkAiClient::OnBeforeBrowse(
     return false;
   }
   const auto original_url = request->GetURL().ToWString();
+  if (!is_redirect) {
+    main_frame_redirect_count_ = 0;
+    redirect_chain_warning_recorded_ = false;
+  } else {
+    ++main_frame_redirect_count_;
+    const auto chain_risk =
+        SkAiClassifyRedirectChainRisk(main_frame_redirect_count_);
+    if (chain_risk.detected && !redirect_chain_warning_recorded_) {
+      SkAiRecordSecurityEvent(
+          SkAiSecurityEventType::suspicious_navigation, chain_risk.severity,
+          SecurityOrigin(original_url),
+          L"Обнаружена необычно длинная цепочка перенаправлений",
+          chain_risk.evidence);
+      redirect_chain_warning_recorded_ = true;
+    }
+  }
   RecordNavigationRisk(frame->GetURL().ToWString(), original_url, is_redirect);
   if (is_redirect) {
     SkAiRecordSecurityEvent(
