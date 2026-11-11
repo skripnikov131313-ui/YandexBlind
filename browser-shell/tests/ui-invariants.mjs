@@ -697,6 +697,21 @@ assert.match(
 );
 assert.match(
   assistantSource,
+  /skai\.security\.ai-analysis\.v1/,
+  "The floating assistant must read the shared AI security-analysis preference."
+);
+assert.match(
+  assistantSource,
+  /event\.key === "skai\.security\.ai-analysis\.v1"/,
+  "The floating assistant must react immediately when the Protection setting changes."
+);
+assert.match(
+  assistantSource,
+  /if \(!aiSecurityAnalysisEnabled\)[\s\S]*?sharedPageContext = null/,
+  "The floating assistant must discard page context when AI analysis is disabled."
+);
+assert.match(
+  assistantSource,
   /sharedPageContext\.text/,
   "The floating assistant must attach ephemeral page context to local requests."
 );
