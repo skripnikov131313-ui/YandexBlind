@@ -29,7 +29,8 @@
 
 ## Telemetry and tracking
 
-- Known third-party ad, analytics, session-replay and fingerprinting endpoints are blocked in native CEF request handling.
+- Known third-party ad, analytics, session-replay, fingerprinting and consent-management endpoints are blocked in native CEF request handling.
+- `navigator.sendBeacon` is suppressed. Common first-party telemetry paths (`analytics`, `telemetry`, `collect`, `beacon`, `pixel`) are intercepted for fetch/XHR and receive local empty success responses. Arbitrary first-party API calls cannot be reliably classified as telemetry without risking application functionality; this remains a documented gap.
 - Known marketing/click-attribution query parameters are removed from top-level HTTP(S) GET navigations; POST/form bodies and functional query parameters are not rewritten.
 - No blanket URL-path heuristic may block generic endpoints such as `/events` or `/collect` without evidence that the endpoint is telemetry; those names are also used by legitimate application APIs.
 - First-party telemetry, storage-based identifiers, service-worker behavior and advanced JavaScript fingerprinting remain areas for further implementation and testing.
