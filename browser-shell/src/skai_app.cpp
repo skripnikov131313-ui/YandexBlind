@@ -258,10 +258,228 @@ bool IsTrustedSkAiUiFrame(CefRefPtr<CefFrame> frame) {
 
 }  // namespace
 
+namespace {
+bool IsHttpPageFrame(CefRefPtr<CefFrame> frame) {
+  if (!frame) return false;
+  CefURLParts parts;
+  if (!CefParseURL(frame->GetURL(), parts)) return false;
+  std::wstring scheme = CefString(&parts.scheme).ToWString();
+  std::transform(scheme.begin(), scheme.end(), scheme.begin(),
+                 [](wchar_t ch) { return static_cast<wchar_t>(std::towlower(ch)); });
+  return scheme == L"http" || scheme == L"https";
+}
+
+void InstallSitePrivacyCompatibility(CefRefPtr<CefV8Context> context) {
+  // This shim provides local compatibility only. It never downloads an ad,
+  // fires an impression/click beacon or claims that consent was granted.
+  static constexpr char kShim[] = R"SKAI_PRIVACY(
+(() => {
+  if (window.__skaiPrivacyCompat) return;
+  const state = Object.freeze({
+    ads: "suppressed",
+    adSlotResult: "empty",
+    consent: "denied",
+    telemetry: "blocked-by-browser-policy"
+  });
+  try {
+    Object.defineProperty(window, "__skaiPrivacyCompat", {
+      value: state, configurable: false, enumerable: false, writable: false
+    });
+  } catch (_) {}
+
+  try {
+    Object.defineProperty(Navigator.prototype, "globalPrivacyControl", {
+      configurable: true, get: () => true
+    });
+  } catch (_) {}
+
+  // IAB TCF compatibility reports denial, never fabricated consent.
+  const deniedPurposes = Object.create(null);
+  for (let id = 1; id <= 24; id++) deniedPurposes[id] = false;
+  const deniedVendors = Object.create(null);
+  const tcData = {
+    gdprApplies: true,
+    cmpLoaded: true,
+    cmpStatus: "loaded",
+    displayStatus: "hidden",
+    eventStatus: "tcloaded",
+    listenerId: 1,
+    tcString: "",
+    tcfPolicyVersion: 4,
+    purpose: { consents: deniedPurposes, legitimateInterests: deniedPurposes },
+    vendor: { consents: deniedVendors, legitimateInterests: deniedVendors },
+    specialFeatureOptins: Object.create(null)
+  };
+  if (typeof window.__tcfapi !== "function") {
+    const listeners = new Map();
+    window.__tcfapi = (command, version, callback, parameter) => {
+      if (typeof callback !== "function") return;
+      if (command === "ping") {
+        callback({
+          gdprApplies: true, cmpLoaded: true, cmpStatus: "loaded",
+          displayStatus: "hidden", apiVersion: "2.2", cmpId: 0,
+          cmpVersion: 0, gvlVersion: 0, tcfPolicyVersion: 4
+        }, true);
+      } else if (command === "getTCData" || command === "getData") {
+        callback({ ...tcData, listenerId: parameter || 1 }, true);
+      } else if (command === "addEventListener") {
+        const id = listeners.size + 1;
+        listeners.set(id, callback);
+        callback({ ...tcData, listenerId: id }, true);
+      } else if (command === "removeEventListener") {
+        callback(listeners.delete(parameter), true);
+      } else {
+        callback(null, false);
+      }
+    };
+  }
+
+  // GPT surface: slots can be registered, but all render results are empty.
+  // No ad network request, creative, click or impression is generated.
+  const existing = window.googletag && typeof window.googletag === "object"
+    ? window.googletag : {};
+  const slots = [];
+  const listeners = new Map();
+  const service = {
+    addEventListener(name, fn) {
+      if (typeof fn === "function") {
+        const group = listeners.get(name) || [];
+        group.push(fn);
+        listeners.set(name, group);
+      }
+      return service;
+    },
+    removeEventListener(name, fn) {
+      listeners.set(name, (listeners.get(name) || []).filter(item => item !== fn));
+      return true;
+    },
+    getSlots: () => slots.slice(),
+    setTargeting: () => service,
+    clearTargeting: () => service,
+    enableSingleRequest: () => service,
+    collapseEmptyDivs: () => service,
+    disableInitialLoad: () => service,
+    refresh(targets) {
+      const selected = Array.isArray(targets) ? targets : slots;
+      for (const slot of selected) emitEmpty(slot);
+    }
+  };
+  function emitEmpty(slot) {
+    const event = {
+      slot, isEmpty: true, size: null, advertiserId: null,
+      campaignId: null, creativeId: null, lineItemId: null,
+      serviceName: "publisher_ads", sourceAgnosticCreativeId: null,
+      sourceAgnosticLineItemId: null
+    };
+    for (const fn of listeners.get("slotRenderEnded") || []) {
+      try { fn(event); } catch (_) {}
+    }
+  }
+  function makeSlot(path, sizes, id) {
+    const slot = {
+      getAdUnitPath: () => path || "",
+      getSlotElementId: () => id || "",
+      getSlotId: () => ({ getId: () => path || "", getName: () => path || "" }),
+      addService: () => slot,
+      setTargeting: () => slot,
+      clearTargeting: () => slot,
+      setCollapseEmptyDiv: () => slot,
+      defineSizeMapping: () => slot,
+      setCategoryExclusion: () => slot,
+      setClickUrl: () => slot,
+      getTargeting: () => [],
+      getSizes: () => sizes || [],
+      getResponseInformation: () => null
+    };
+    slots.push(slot);
+    return slot;
+  }
+  existing.cmd = Array.isArray(existing.cmd) ? existing.cmd : [];
+  const queued = existing.cmd.slice();
+  existing.cmd.length = 0;
+  existing.cmd.push = function(command) {
+    if (typeof command === "function") {
+      try { command(); } catch (_) {}
+    }
+    return 0;
+  };
+  existing.defineSlot = (path, sizes, id) => makeSlot(path, sizes, id);
+  existing.defineOutOfPageSlot = (path, id) => makeSlot(path, [], id);
+  existing.defineSizeMapping = () => ({ addSize: () => ({ build: () => [] }) });
+  existing.pubads = () => service;
+  existing.companionAds = () => service;
+  existing.content = () => service;
+  existing.display = slotOrId => {
+    const slot = typeof slotOrId === "string"
+      ? slots.find(item => item.getSlotElementId() === slotOrId) : slotOrId;
+    if (slot) queueMicrotask(() => emitEmpty(slot));
+  };
+  existing.enableServices = () => true;
+  existing.destroySlots = targets => {
+    const remove = Array.isArray(targets) ? targets : slots.slice();
+    for (const slot of remove) {
+      const index = slots.indexOf(slot);
+      if (index >= 0) slots.splice(index, 1);
+    }
+    return true;
+  };
+  window.googletag = existing;
+  for (const command of queued) {
+    if (typeof command === "function") {
+      try { command(); } catch (_) {}
+    }
+  }
+
+  // AdSense-compatible queue: accepting a push must not fetch or render ads.
+  if (!Array.isArray(window.adsbygoogle)) window.adsbygoogle = [];
+  const adsQueue = window.adsbygoogle;
+  adsQueue.push = function() { return adsQueue.length; };
+
+  // Hide common ad creatives and frames without hiding the surrounding page.
+  const css = [
+    "ins.adsbygoogle",
+    "iframe[id^='google_ads_iframe']",
+    "iframe[src*='doubleclick.net']",
+    "iframe[src*='googlesyndication.com']",
+    "[data-ad-client]",
+    "[data-ad-slot]",
+    "[aria-label='advertisement']",
+    "[aria-label='Advertisement']"
+  ].join(",") + "{display:none!important;visibility:hidden!important;pointer-events:none!important}";
+  const installStyle = () => {
+    const root = document.documentElement || document.head;
+    if (!root || document.getElementById("__skai_privacy_style")) return;
+    const style = document.createElement("style");
+    style.id = "__skai_privacy_style";
+    style.textContent = css;
+    (document.head || root).appendChild(style);
+  };
+  installStyle();
+  try {
+    new MutationObserver(installStyle).observe(document, {
+      childList: true, subtree: true
+    });
+  } catch (_) {}
+})();
+)SKAI_PRIVACY";
+
+  if (!context || !context->Enter()) return;
+  CefRefPtr<CefV8Value> result;
+  CefRefPtr<CefV8Exception> exception;
+  context->Eval(kShim, "skai://site-privacy-compat", 1, result, exception);
+  context->Exit();
+}
+}  // namespace
+
 void SkAiApp::OnContextCreated(CefRefPtr<CefBrowser>,
                                CefRefPtr<CefFrame> frame,
                                CefRefPtr<CefV8Context> context) {
-  if (!IsTrustedSkAiUiFrame(frame) || !context) return;
+  if (!context || !frame) return;
+
+  if (!IsTrustedSkAiUiFrame(frame)) {
+    if (IsHttpPageFrame(frame)) InstallSitePrivacyCompatibility(context);
+    return;
+  }
 
   const auto global = context->GetGlobal();
   if (!global) return;
