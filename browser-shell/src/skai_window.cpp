@@ -1411,6 +1411,14 @@ void SkAiResolvePermission(std::uint64_t request_id, bool allow, bool remember) 
   }
 
   PendingPermission request = it->second;
+  SkAiRecordSecurityEvent(
+      allow ? SkAiSecurityEventType::permission_allowed
+            : SkAiSecurityEventType::permission_denied,
+      allow ? SkAiSecuritySeverity::medium : SkAiSecuritySeverity::low,
+      request.origin,
+      allow ? L"Пользователь разрешил доступ сайту"
+            : L"Пользователь запретил доступ сайту",
+      request.description);
   g_pending_permissions.erase(it);
   if (remember && !request.permission_key.empty()) {
     g_site_permission_decisions[request.permission_key] = allow;
