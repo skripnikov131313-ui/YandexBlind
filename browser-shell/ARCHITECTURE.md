@@ -97,3 +97,8 @@ The journal is a foundation for the Security Center, not yet the complete user-f
 ## Security Center UI event feed
 
 The trusted browser chrome can request the native process-local security journal through the CEF V8 bridge. The Security Center renders event type, severity, timestamp, source origin and bounded evidence; it supports filtering, refresh and clearing the in-memory journal. The feed is read-only and does not expose page content, cookies, full URLs or local file contents. Events currently include tracker blocks, main-frame redirects, permission requests and user permission decisions, and download lifecycle transitions. AI interpretation of the feed is not yet wired; this interface currently displays deterministic native event records only.
+
+
+## Security Center — local AI event analysis
+
+The Security Center can submit an explicit, bounded snapshot of at most 30 recent native journal records to the local Qwen runtime. The snapshot contains only event type, severity, origin, short summary, bounded evidence and timestamp; it excludes full URLs, query strings, cookies, page text, credentials, local paths and download contents. The UI requires AI security analysis to be enabled and the local model to be ready. The request uses a dedicated system instruction that marks every event field as untrusted data and prohibits policy changes or privileged actions. Results are labelled advisory. Native CEF enforcement remains deterministic and never waits for or consumes model output. No cloud fallback exists. This is user-triggered analysis, not continuous inference.
