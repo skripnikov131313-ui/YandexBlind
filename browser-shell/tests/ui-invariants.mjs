@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { Script } from "node:vm";
 
 const source = readFileSync(
   new URL("../ui/app.js", import.meta.url),
@@ -219,6 +220,14 @@ assert.doesNotMatch(
   sitePrivacySource,
   /sendBeacon\s*\(/,
   "The compatibility shim must not emit telemetry beacons."
+);
+const privacyShimMatch = sitePrivacySource.match(
+  /static constexpr char kShim\[\] = R"SKAI_PRIVACY\(([\s\S]*?)\)SKAI_PRIVACY";/
+);
+assert.ok(privacyShimMatch, "The site privacy shim must be embedded in the native renderer.");
+assert.doesNotThrow(
+  () => new Script(privacyShimMatch[1], { filename: "skai-site-privacy-compat.js" }),
+  "The embedded site privacy shim must be valid JavaScript."
 );
 
 const clientHeaderSource = readFileSync(
