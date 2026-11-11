@@ -184,6 +184,10 @@ class SkAiV8Bridge final : public CefV8Handler {
       frame->SendProcessMessage(PID_BROWSER, message);
       return true;
     }
+    if (name == "getSecurityEvents" || name == "clearSecurityEvents") {
+      send("securityEvents", name == "getSecurityEvents" ? L"list" : L"clear");
+      return true;
+    }
     if (name == "aiStatus" || name == "installLocalModel") {
       send("ai", name == "aiStatus" ? L"status" : L"install");
       return true;
