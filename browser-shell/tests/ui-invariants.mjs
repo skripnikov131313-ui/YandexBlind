@@ -121,6 +121,11 @@ assert.match(
   /is_navigation && frame && frame->IsMain\(\)[\s\S]*?new SkAiTrackingResourceHandler\(false\)/,
   "Top-level navigations must retain the cookie filter without blocking navigation."
 );
+assert.match(
+  clientSource,
+  /if \(is_download\) return new SkAiTrackingResourceHandler\(false\)/,
+  "Explicit downloads must retain cookie filtering."
+);
 
 const sitePrivacySource = readFileSync(
   new URL("../src/skai_app.cpp", import.meta.url),
