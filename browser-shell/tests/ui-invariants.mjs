@@ -88,8 +88,13 @@ const clientSource = readFileSync(
 );
 assert.match(
   clientSource,
-  /OnBeforeBrowse[\\s\\S]*?frame->IsMain\\(\\)[\\s\\S]*?GetMethod\\(\\) != "GET"[\\s\\S]*?SkAiStripTrackingParameters[\\s\\S]*?frame->LoadURL/,
+  /bool SkAiClient::OnBeforeBrowse[\\s\\S]*?frame->IsMain\\(\\)[\\s\\S]*?GetMethod\\(\\) != "GET"[\\s\\S]*?SkAiStripTrackingParameters[\\s\\S]*?request->SetURL\\(cleaned_url\\)/,
   "Tracking query cleanup must be limited to top-level GET navigations and preserve form POSTs."
+);
+assert.equal(
+  (clientSource.match(/bool SkAiClient::OnBeforeBrowse\\s*\\(/g) || []).length,
+  1,
+  "The native client must define the navigation callback exactly once."
 );
 assert.match(
   clientSource,
