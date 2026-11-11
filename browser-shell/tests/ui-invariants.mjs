@@ -875,3 +875,5 @@ assert.match(source, /function analyzeSecurityEvents\(\)/, "Security Center must
 assert.match(source, /securityEvents\.slice\(-30\)/, "Security analysis must be bounded to the latest 30 events.");
 assert.match(source, /недоверенными данными/, "Security analysis must treat event fields as untrusted input.");
 assert.match(source, /Анализировать локально/, "Security Center must expose an explicit local analysis control.");
+
+assert.match(source, /securityAnalysisRequestId = "";[\s\S]*?securityAnalysisPending = false;[\s\S]*?securityAnalysisResult = ""/, "Disabling AI analysis must invalidate pending Security Center results.");
