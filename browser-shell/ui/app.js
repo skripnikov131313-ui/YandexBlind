@@ -329,12 +329,18 @@
   };
   window.skaiNative.localAiResult = (requestId, text, isError) => {
     const id = String(requestId || "");
-    if (id && id === securityAnalysisRequestId) {
+    if (id.startsWith("security-")) {
+      localAiBusy = false;
+      const sendButton = $("#sendPrompt");
+      if (sendButton) sendButton.disabled = false;
+      if (id !== securityAnalysisRequestId) return;
       securityAnalysisPending = false;
       securityAnalysisRequestId = "";
-      securityAnalysisResult = String(text || (isError ? "Локальный анализ не выполнен." : ""));
-      if (internalViewType === "security") renderInternalView("security");
-      if (isError) notify(securityAnalysisResult);
+      if (aiSecurityAnalysisEnabled) {
+        securityAnalysisResult = String(text || (isError ? "Локальный анализ не выполнен." : ""));
+        if (internalViewType === "security") renderInternalView("security");
+        if (isError) notify(securityAnalysisResult);
+      }
       return;
     }
     if (!id || id !== localAiPendingId) return;
@@ -1125,7 +1131,6 @@
         renderSharedPageContext();
         // A request already handed to the local runtime cannot be recalled,
         // but its result is invalidated and will not be shown in the UI.
-        securityAnalysisRequestId = "";
         securityAnalysisPending = false;
         securityAnalysisResult = "";
       }
@@ -1229,6 +1234,9 @@
     securityAnalysisRequestId = requestId;
     securityAnalysisPending = true;
     securityAnalysisResult = "";
+    localAiBusy = true;
+    const sendButton = $("#sendPrompt");
+    if (sendButton) sendButton.disabled = true;
     if (internalViewType === "security") renderInternalView("security");
     const payload = {
       model: "Qwen3.5-2B",
@@ -1249,6 +1257,8 @@
     if (!window.skaiNative?.sendLocalAi) {
       securityAnalysisPending = false;
       securityAnalysisRequestId = "";
+      localAiBusy = false;
+      if (sendButton) sendButton.disabled = false;
       securityAnalysisResult = "Нативный модуль локального ИИ не подключён.";
       renderInternalView("security");
       return;
