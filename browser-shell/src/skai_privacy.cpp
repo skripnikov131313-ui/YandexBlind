@@ -194,6 +194,105 @@ bool IsTrackingEndpointPath(const std::string& path) {
   return false;
 }
 
+bool IsHighEntropyClientHint(const std::string& header_name) {
+  static const char* const blocked_headers[] = {
+      "sec-ch-ua-full-version",
+      "sec-ch-ua-full-version-list",
+      "sec-ch-ua-platform-version",
+      "sec-ch-ua-arch",
+      "sec-ch-ua-bitness",
+      "sec-ch-ua-model",
+      "sec-ch-ua-wow64",
+      "sec-ch-ua-form-factors",
+  };
+  for (const char* name : blocked_headers) {
+    if (header_name == name) return true;
+  }
+  return false;
+}
+
+void RemoveCrossSiteHighEntropyClientHints(CefRefPtr<CefRequest> request) {
+  if (!request) return;
+  CefRequest::HeaderMap original;
+  request->GetHeaderMap(original);
+  CefRequest::HeaderMap filtered;
+  bool changed = false;
+  for (const auto& header : original) {
+    if (IsHighEntropyClientHint(LowerAscii(header.first.ToString()))) {
+      changed = true;
+      continue;
+    }
+    filtered.insert(header);
+  }
+  if (changed) request->SetHeaderMap(filtered);
+}
+
+bool IsTrackingQueryParameter(const std::string& raw_key) {
+  const std::string key = LowerAscii(raw_key);
+  if (key.rfind("utm_", 0) == 0) return true;
+
+  static const char* const identifiers[] = {
+      "gclid", "dclid", "gbraid", "wbraid", "gad_source",
+      "gad_campaignid", "fbclid", "msclkid", "ttclid", "twclid",
+      "yclid", "ymclid", "ysclid", "igshid", "epik", "srsltid",
+      "li_fat_id", "mc_cid", "mc_eid", "vero_id", "oly_anon_id",
+      "oly_enc_id", "rb_clickid", "irclickid", "sccid",
+      "wickedid", "_gl", "_ga", "_gac",
+  };
+  for (const char* identifier : identifiers) {
+    if (key == identifier) return true;
+  }
+  return false;
+}
+
+bool StripCrossSiteNavigationIdentifiers(CefRefPtr<CefRequest> request,
+                                         const std::string& initiator_host) {
+  if (!request || request->GetResourceType() != RT_MAIN_FRAME ||
+      LowerAscii(request->GetMethod().ToString()) != "get") {
+    return false;
+  }
+
+  CefURLParts parts;
+  if (!CefParseURL(request->GetURL(), parts)) return false;
+
+  const std::string target_host = LowerAscii(parts.host.ToString());
+  if (target_host.empty() || !IsCrossSite(target_host, initiator_host)) {
+    return false;
+  }
+
+  const std::string query = parts.query.ToString();
+  if (query.empty()) return false;
+
+  std::string filtered_query;
+  bool removed = false;
+  std::size_t start = 0;
+  while (start <= query.size()) {
+    const std::size_t separator = query.find('&', start);
+    const std::size_t end =
+        separator == std::string::npos ? query.size() : separator;
+    const std::string parameter = query.substr(start, end - start);
+    const std::size_t equals = parameter.find('=');
+    const std::string key = parameter.substr(0, equals);
+
+    if (!parameter.empty() && IsTrackingQueryParameter(key)) {
+      removed = true;
+    } else if (!parameter.empty()) {
+      if (!filtered_query.empty()) filtered_query.push_back('&');
+      filtered_query += parameter;
+    }
+
+    if (separator == std::string::npos) break;
+    start = separator + 1;
+  }
+
+  if (!removed) return false;
+  CefString(&parts.query) = filtered_query;
+  CefString rewritten_url;
+  if (!CefCreateURL(parts, rewritten_url)) return false;
+  request->SetURL(rewritten_url);
+  return true;
+}
+
 bool ShouldBlockTrackerRequest(const CefString& request_url,
                                const CefString& request_initiator) {
   std::string resource_host;
@@ -219,8 +318,10 @@ bool ShouldBlockTrackerRequest(const CefString& request_url,
 class SkAiPrivacyResourceRequestHandler final
     : public CefResourceRequestHandler {
  public:
-  explicit SkAiPrivacyResourceRequestHandler(bool block_request)
-      : block_request_(block_request) {}
+  SkAiPrivacyResourceRequestHandler(bool block_request,
+                                    const CefString& request_initiator)
+      : block_request_(block_request),
+        request_initiator_(request_initiator) {}
 
   ReturnValue OnBeforeResourceLoad(
       CefRefPtr<CefBrowser> /*browser*/,
@@ -229,19 +330,34 @@ class SkAiPrivacyResourceRequestHandler final
       CefRefPtr<CefCallback> /*callback*/) override {
     if (!request) return RV_CANCEL;
 
+    if (block_request_) return RV_CANCEL;
+
     // Global Privacy Control is a browser-level opt-out signal. It does not
     // replace request blocking and does not grant sites permission to track.
-    std::string host;
-    std::string path;
-    if (ParseHttpUrl(request->GetURL(), host, path)) {
+    std::string resource_host;
+    std::string resource_path;
+    if (ParseHttpUrl(request->GetURL(), resource_host, resource_path)) {
       request->SetHeaderByName("Sec-GPC", "1", true);
     }
 
-    return block_request_ ? RV_CANCEL : RV_CONTINUE;
+    // Only strip high-entropy UA Client Hints on cross-site requests. Keep the
+    // reduced User-Agent and low-entropy hints used by normal feature detection.
+    if (!resource_host.empty() && !request_initiator_.empty()) {
+      std::string initiator_host;
+      std::string initiator_path;
+      if (ParseHttpUrl(request_initiator_, initiator_host, initiator_path) &&
+          IsCrossSite(resource_host, initiator_host)) {
+        RemoveCrossSiteHighEntropyClientHints(request);
+        StripCrossSiteNavigationIdentifiers(request, initiator_host);
+      }
+    }
+
+    return RV_CONTINUE;
   }
 
  private:
   const bool block_request_;
+  const CefString request_initiator_;
   IMPLEMENT_REFCOUNTING(SkAiPrivacyResourceRequestHandler);
 };
 
@@ -281,7 +397,7 @@ class SkAiPrivacyRequestContextHandler final
         request->GetURL(), request_initiator);
 
     // Return a handler for all requests so Sec-GPC is applied consistently.
-    return new SkAiPrivacyResourceRequestHandler(block);
+    return new SkAiPrivacyResourceRequestHandler(block, request_initiator);
   }
 
  private:

@@ -83,6 +83,7 @@ The mode selector belongs next to the assistant composer.
 - [~] CEF request-context filter blocks curated third-party analytics, advertising, session-replay and pixel domains; generic tracking paths are filtered only on cross-site requests. A larger maintained list, CNAME-cloaking detection and runtime compatibility validation remain open.
 - [~] Chromium third-party cookies are blocked per profile through `profile.cookie_controls_mode`; first-party cookies remain enabled for normal sign-in. Windows runtime verification and site exceptions remain open.
 - [~] `Sec-GPC: 1` is sent to websites as a global privacy opt-out signal; it is advisory and does not itself block tracking.
+- [~] Cross-site requests omit high-entropy UA Client Hint headers; cross-site main-frame GET navigations remove common advertising click IDs and `utm_*` attribution parameters. Runtime compatibility validation remains open.
 - [~] Per-origin permission decisions are stored in the local profile; the settings UI lists remembered allow/deny choices and supports revocation. Unremembered requests are denied unless the user explicitly allows them.
 - [~] Standard Chromium certificate validation and sandbox are retained in the intended build configuration; this still requires Windows runtime verification.
 - [ ] Verify Chromium Safe Browsing and security services in the packaged runtime.

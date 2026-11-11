@@ -623,4 +623,35 @@ assert.match(
   "Privacy filtering must be attached to CEF request contexts, not injected into site scripts."
 );
 
+assert.match(
+  privacySource,
+  /sec-ch-ua-full-version-list/,
+  "High-entropy UA Client Hints must be filtered for cross-site requests."
+);
+assert.match(
+  privacySource,
+  /IsCrossSite\(resource_host, initiator_host\)[\s\S]*?RemoveCrossSiteHighEntropyClientHints/,
+  "Client Hint filtering must be restricted to cross-site requests."
+);
+assert.match(
+  privacySource,
+  /StripCrossSiteNavigationIdentifiers/,
+  "Cross-site top-level navigations must remove known click-tracking identifiers."
+);
+assert.match(
+  privacySource,
+  /gclid[\s\S]*?fbclid[\s\S]*?msclkid[\s\S]*?ttclid/,
+  "Common Google, Meta, Microsoft and TikTok click IDs must be filtered."
+);
+assert.match(
+  privacySource,
+  /request->GetResourceType\(\) != RT_MAIN_FRAME/,
+  "Tracking query identifiers must only be stripped from main-frame navigations."
+);
+assert.match(
+  privacySource,
+  /request->SetURL\(rewritten_url\)/,
+  "Filtered navigation URLs must be sent without the removed tracking identifiers."
+);
+
 process.stdout.write("Sk/Ai UI invariants: OK\n");
