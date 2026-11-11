@@ -101,6 +101,26 @@ assert.match(
   /SkAiShouldBlockTrackingRequest/,
   "Known tracker hosts must be filtered in native CEF resource requests."
 );
+assert.match(
+  clientSource,
+  /class SkAiPrivacyCookieFilter/,
+  "CEF requests must use a cookie access filter."
+);
+assert.match(
+  clientSource,
+  /CanSendCookie[\s\S]*?SkAiShouldBlockTrackingCookie/,
+  "Known tracker cookies must be blocked before being sent."
+);
+assert.match(
+  clientSource,
+  /CanSaveCookie[\s\S]*?SkAiShouldBlockTrackingCookie/,
+  "Known tracker cookies must be blocked before being persisted."
+);
+assert.match(
+  clientSource,
+  /is_navigation && frame && frame->IsMain\(\)[\s\S]*?new SkAiTrackingResourceHandler\(false\)/,
+  "Top-level navigations must retain the cookie filter without blocking navigation."
+);
 
 const sitePrivacySource = readFileSync(
   new URL("../src/skai_app.cpp", import.meta.url),
