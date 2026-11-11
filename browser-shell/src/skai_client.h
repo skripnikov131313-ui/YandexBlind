@@ -44,9 +44,6 @@ class SkAiClient final : public CefClient,
       CefRefPtr<CefRequest> request, bool is_navigation, bool is_download,
       const CefString& request_initiator,
       bool& disable_default_handling) override;
-  bool OnBeforeBrowse(CefRefPtr<CefBrowser> browser,
-      CefRefPtr<CefFrame> frame, CefRefPtr<CefRequest> request,
-      bool user_gesture, bool is_redirect) override;
   bool OnRequestMediaAccessPermission(CefRefPtr<CefBrowser> browser,
       CefRefPtr<CefFrame> frame, const CefString& requesting_origin,
       uint32_t requested_permissions,
