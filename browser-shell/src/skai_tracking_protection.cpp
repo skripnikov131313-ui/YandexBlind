@@ -8,7 +8,7 @@
 #include <vector>
 
 namespace {
-constexpr std::array<std::wstring_view, 52> kBlockedTrackerDomains = {
+constexpr std::array<std::wstring_view, 61> kBlockedTrackerDomains = {
     L"google-analytics.com",
     L"googletagmanager.com",
     L"googlesyndication.com",
@@ -60,7 +60,17 @@ constexpr std::array<std::wstring_view, 52> kBlockedTrackerDomains = {
     L"fpjs.io",
     L"fpcdn.io",
     L"openfpcdn.io",
-    L"deviceatlas.com"
+    L"deviceatlas.com",
+    // Remote consent-management scripts are replaced by the local TCF-deny shim.
+    L"onetrust.com",
+    L"cookielaw.org",
+    L"consentmanager.net",
+    L"trustarc.com",
+    L"usercentrics.eu",
+    L"quantcast.com",
+    L"sourcepoint.net",
+    L"didomi.io",
+    L"iubenda.com"
 };
 
 bool MatchesDomain(std::wstring_view host, std::wstring_view domain) {
