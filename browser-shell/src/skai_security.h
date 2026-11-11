@@ -25,6 +25,18 @@ enum class SkAiSecurityEventType : std::uint8_t {
   suspicious_navigation = 8
 };
 
+struct SkAiNavigationRisk {
+  bool detected = false;
+  SkAiSecuritySeverity severity = SkAiSecuritySeverity::info;
+  std::wstring evidence;
+};
+
+// Pure classifier: receives parsed URL components and never stores full URLs.
+SkAiNavigationRisk SkAiClassifyNavigationRisk(
+    const std::wstring& source_scheme, const std::wstring& target_scheme,
+    const std::wstring& target_host, bool has_embedded_credentials,
+    bool is_redirect);
+
 struct SkAiSecurityEvent {
   std::uint64_t id = 0;
   std::int64_t timestamp_unix_ms = 0;
