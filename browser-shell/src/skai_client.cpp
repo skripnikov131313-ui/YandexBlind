@@ -83,6 +83,48 @@ class SkAiTrackingResourceHandler final : public CefResourceRequestHandler {
   IMPLEMENT_REFCOUNTING(SkAiTrackingResourceHandler);
 };
 
+void RecordNavigationRisk(const std::wstring& from_url,
+                            const std::wstring& to_url,
+                            bool is_redirect) {
+  CefURLParts target_parts;
+  if (!CefParseURL(to_url, target_parts)) return;
+  const auto target_scheme = CefString(&target_parts.scheme).ToWString();
+  const auto target_host = CefString(&target_parts.host).ToWString();
+  const auto username = CefString(&target_parts.username).ToWString();
+  const auto password = CefString(&target_parts.password).ToWString();
+  if ((target_scheme != L"http" && target_scheme != L"https") ||
+      target_host.empty()) return;
+
+  std::wstring evidence;
+  SkAiSecuritySeverity severity = SkAiSecuritySeverity::medium;
+  if (!username.empty() || !password.empty()) {
+    evidence = L"В адресе присутствуют встроенные учётные данные";
+    severity = SkAiSecuritySeverity::high;
+  } else if (is_redirect) {
+    CefURLParts source_parts;
+    if (CefParseURL(from_url, source_parts)) {
+      const auto source_scheme =
+          CefString(&source_parts.scheme).ToWString();
+      if (source_scheme == L"https" && target_scheme == L"http") {
+        evidence = L"Перенаправление понижает защищённое HTTPS-соединение до HTTP";
+        severity = SkAiSecuritySeverity::high;
+      }
+    }
+  }
+  if (evidence.empty() &&
+      (target_host.rfind(L"xn--", 0) == 0 ||
+       target_host.find(L".xn--") != std::wstring::npos)) {
+    evidence = L"Домен содержит IDN punycode; проверьте отображаемое имя";
+    severity = SkAiSecuritySeverity::medium;
+  }
+  if (!evidence.empty()) {
+    SkAiRecordSecurityEvent(
+        SkAiSecurityEventType::suspicious_navigation, severity,
+        SecurityOrigin(to_url), L"Обнаружен признак риска при навигации",
+        evidence);
+  }
+}
+
 bool TryParseDownloadId(const CefString& input, uint32_t& download_id) {
   const std::wstring value = input.ToWString();
   if (value.empty()) return false;
@@ -541,6 +583,7 @@ bool SkAiClient::OnBeforeBrowse(
     return false;
   }
   const auto original_url = request->GetURL().ToWString();
+  RecordNavigationRisk(frame->GetURL().ToWString(), original_url, is_redirect);
   if (is_redirect) {
     SkAiRecordSecurityEvent(
         SkAiSecurityEventType::navigation_redirect, SkAiSecuritySeverity::info,
