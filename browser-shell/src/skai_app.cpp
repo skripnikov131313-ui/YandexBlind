@@ -302,6 +302,121 @@ void InstallSitePrivacyCompatibility(CefRefPtr<CefV8Context> context) {
     });
   } catch (_) {}
 
+  // Client-side cookie compatibility: JS sees a per-session in-memory jar.
+  // The native CEF cookie filter below blocks every real HTTP cookie.
+  const getLocalCookieStore = () => {
+    let owner = window;
+    try {
+      if (window.top && window.top.location.origin === window.location.origin) {
+        owner = window.top;
+      }
+    } catch (_) {}
+    try {
+      if (!owner.__skaiLocalCookieStore) {
+        Object.defineProperty(owner, "__skaiLocalCookieStore", {
+          value: new Map(), configurable: false, enumerable: false, writable: false
+        });
+      }
+      return owner.__skaiLocalCookieStore;
+    } catch (_) {
+      return new Map();
+    }
+  };
+  const localCookieStore = getLocalCookieStore();
+  const cookiePathMatches = (requestPath, cookiePath) =>
+    requestPath === cookiePath ||
+    requestPath.startsWith(cookiePath.endsWith("/")
+      ? cookiePath : cookiePath + "/");
+  try {
+    Object.defineProperty(Document.prototype, "cookie", {
+      configurable: true,
+      get() {
+        const host = location.hostname.toLowerCase();
+        const path = location.pathname || "/";
+        const securePage = location.protocol === "https:";
+        const now = Date.now();
+        const visible = [];
+        for (const [key, cookie] of localCookieStore.entries()) {
+          if (cookie.expires && cookie.expires <= now) {
+            localCookieStore.delete(key);
+            continue;
+          }
+          const domainMatches = host === cookie.domain ||
+            (!cookie.hostOnly && host.endsWith("." + cookie.domain));
+          if (!domainMatches || (cookie.secure && !securePage) ||
+              !cookiePathMatches(path, cookie.path)) continue;
+          visible.push(cookie.name + "=" + cookie.value);
+        }
+        return visible.join("; ");
+      },
+      set(rawValue) {
+        const parts = String(rawValue).split(";");
+        const pair = parts.shift() || "";
+        const equals = pair.indexOf("=");
+        if (equals <= 0) return;
+        const name = pair.slice(0, equals).trim();
+        const value = pair.slice(equals + 1).trim();
+        if (!/^[!#$%&'*+.^_|~0-9A-Za-z-]+$/.test(name)) return;
+
+        const host = location.hostname.toLowerCase();
+        let domain = host;
+        let hostOnly = true;
+        const pathName = location.pathname || "/";
+        const slash = pathName.lastIndexOf("/");
+        let path = slash <= 0 ? "/" : pathName.slice(0, slash + 1);
+        let expires = 0;
+        let secure = false;
+        let maxAge = null;
+        for (const rawAttribute of parts) {
+          const attribute = rawAttribute.trim();
+          const split = attribute.indexOf("=");
+          const key = (split < 0 ? attribute : attribute.slice(0, split)).toLowerCase();
+          const val = split < 0 ? "" : attribute.slice(split + 1).trim();
+          if (key === "domain") {
+            const candidate = val.replace(/^\./, "").toLowerCase();
+            if (!candidate || (host !== candidate && !host.endsWith("." + candidate))) return;
+            domain = candidate;
+            hostOnly = false;
+          } else if (key === "path" && val.startsWith("/")) {
+            path = val;
+          } else if (key === "expires") {
+            const parsed = Date.parse(val);
+            if (Number.isFinite(parsed)) expires = parsed;
+          } else if (key === "max-age") {
+            const parsed = Number.parseInt(val, 10);
+            if (Number.isFinite(parsed)) maxAge = parsed;
+          } else if (key === "secure") {
+            secure = true;
+          }
+        }
+        if (maxAge !== null) expires = Date.now() + maxAge * 1000;
+        const id = domain + "|" + path + "|" + name;
+        if ((maxAge !== null && maxAge <= 0) || (expires && expires <= Date.now())) {
+          localCookieStore.delete(id);
+          return;
+        }
+        localCookieStore.set(id, { name, value, domain, hostOnly, path, expires, secure });
+      }
+    });
+  } catch (_) {}
+
+  // Suppress obvious first-party telemetry beacons without intercepting
+  // ordinary application fetch/XHR traffic.
+  try {
+    const originalSendBeacon = Navigator.prototype.sendBeacon;
+    const telemetryPath = /(?:^|\/)(?:analytics|telemetry|collect|beacon|pixel)(?:\/|$)/i;
+    Object.defineProperty(Navigator.prototype, "sendBeacon", {
+      configurable: true,
+      value(url, data) {
+        let path = "";
+        try { path = new URL(String(url), location.href).pathname; } catch (_) {}
+        if (telemetryPath.test(path)) return true;
+        return typeof originalSendBeacon === "function"
+          ? originalSendBeacon.call(this, url, data) : false;
+      }
+    });
+  } catch (_) {}
+
   // IAB TCF compatibility reports denial, never fabricated consent.
   const deniedPurposes = Object.create(null);
   for (let id = 1; id <= 24; id++) deniedPurposes[id] = false;
