@@ -1415,9 +1415,16 @@ void SkAiToggleFloatingAssistant() {
   ++g_pending_browser_creates;
   const std::wstring assistant_url =
       UiFile(L"assistant.html") + L"?profile=" + g_active_profile;
+  const auto assistant_context =
+      GetOrCreateProfileContext(g_active_profile, true);
+  if (!assistant_context) {
+    --g_pending_browser_creates;
+    g_assistant_client = nullptr;
+    return;
+  }
   const bool started = CefBrowserHost::CreateBrowser(
       window_info, g_assistant_client, assistant_url,
-      browser_settings, nullptr, nullptr);
+      browser_settings, nullptr, assistant_context);
   if (!started) {
     --g_pending_browser_creates;
     g_assistant_client = nullptr;
@@ -1447,6 +1454,12 @@ HWND SkAiCreateMainWindow(HINSTANCE instance, int show_command) {
     return nullptr;
   }
 
+  const auto ui_context = GetOrCreateProfileContext(L"default", true);
+  if (!ui_context) {
+    DestroyWindow(g_window);
+    g_window = nullptr;
+    return nullptr;
+  }
   g_ui_client = new SkAiClient(g_window, 0, true);
 
   CefWindowInfo window_info;
@@ -1462,7 +1475,7 @@ HWND SkAiCreateMainWindow(HINSTANCE instance, int show_command) {
   ++g_pending_browser_creates;
   const bool started = CefBrowserHost::CreateBrowser(
       window_info, g_ui_client, UiFile(L"index.html"), browser_settings,
-      nullptr, nullptr);
+      nullptr, ui_context);
   if (!started) {
     --g_pending_browser_creates;
     g_ui_client = nullptr;
