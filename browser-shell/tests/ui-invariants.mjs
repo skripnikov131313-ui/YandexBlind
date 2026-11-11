@@ -399,6 +399,21 @@ assert.match(
 );
 assert.match(
   bridgeSource,
+  /CefParseURL\(frame->GetURL\(\), parts\)/,
+  "The native bridge must parse the full CEF frame URL before granting access."
+);
+assert.match(
+  bridgeSource,
+  /decoded_path == trusted_index \|\|[\s\S]*decoded_path == trusted_assistant/,
+  "Only the exact installed Sk/Ai UI document paths may receive native bridge functions."
+);
+assert.doesNotMatch(
+  bridgeSource,
+  /url\.find\(L"\/ui\//,
+  "A substring match must not grant the native bridge to an unrelated file URL."
+);
+assert.match(
+  bridgeSource,
   /frame->IsMain\(\)/,
   "Native bridge functions must not be injected into site subframes."
 );

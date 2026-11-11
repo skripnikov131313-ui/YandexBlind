@@ -3,6 +3,7 @@
 #include "include/cef_browser.h"
 #include "include/cef_frame.h"
 #include "include/cef_process_message.h"
+#include "include/cef_parser.h"
 #include "include/cef_v8.h"
 
 #include <algorithm>
@@ -10,6 +11,8 @@
 #include <cwctype>
 #include <limits>
 #include <string>
+#include <filesystem>
+#include <windows.h>
 
 namespace {
 class SkAiV8Bridge final : public CefV8Handler {
@@ -206,12 +209,51 @@ class SkAiV8Bridge final : public CefV8Handler {
 
 bool IsTrustedSkAiUiFrame(CefRefPtr<CefFrame> frame) {
   if (!frame || !frame->IsMain()) return false;
-  std::wstring url = frame->GetURL().ToWString();
-  std::transform(url.begin(), url.end(), url.begin(),
+
+  CefURLParts parts;
+  if (!CefParseURL(frame->GetURL(), parts)) return false;
+  std::wstring scheme = CefString(&parts.scheme).ToWString();
+  std::wstring host = CefString(&parts.host).ToWString();
+  std::transform(scheme.begin(), scheme.end(), scheme.begin(),
                  [](wchar_t ch) { return static_cast<wchar_t>(std::towlower(ch)); });
-  if (url.rfind(L"file:///", 0) != 0) return false;
-  return url.find(L"/ui/index.html") != std::wstring::npos ||
-         url.find(L"/ui/assistant.html") != std::wstring::npos;
+  if (scheme != L"file" || !host.empty()) return false;
+
+  const auto actual_path = CefURIDecode(
+      CefString(&parts.path), true,
+      static_cast<cef_uri_unescape_rule_t>(UU_NORMAL | UU_PATH_SEPARATORS))
+                               .ToWString();
+
+  wchar_t executable[MAX_PATH]{};
+  const DWORD length = GetModuleFileNameW(nullptr, executable, MAX_PATH);
+  if (length == 0 || length >= MAX_PATH) return false;
+
+  const auto ui_directory =
+      std::filesystem::path(executable).parent_path() / L"ui";
+  std::wstring expected_index =
+      (ui_directory / L"index.html").generic_wstring();
+  std::wstring expected_assistant =
+      (ui_directory / L"assistant.html").generic_wstring();
+  if (expected_index.empty() || expected_assistant.empty()) return false;
+  if (expected_index.front() != L'/') expected_index.insert(expected_index.begin(), L'/');
+  if (expected_assistant.front() != L'/') expected_assistant.insert(expected_assistant.begin(), L'/');
+
+  auto normalize = [](std::wstring& value) {
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](wchar_t ch) {
+                     return ch == L'\\'
+                         ? L'/'
+                         : static_cast<wchar_t>(std::towlower(ch));
+                   });
+  };
+  std::wstring trusted_index = expected_index;
+  std::wstring trusted_assistant = expected_assistant;
+  normalize(trusted_index);
+  normalize(trusted_assistant);
+  std::wstring decoded_path = actual_path;
+  normalize(decoded_path);
+
+  return decoded_path == trusted_index ||
+         decoded_path == trusted_assistant;
 }
 
 }  // namespace
