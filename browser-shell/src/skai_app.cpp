@@ -430,6 +430,11 @@ void InstallSitePrivacyCompatibility(CefRefPtr<CefV8Context> context) {
     }
   }
 
+  // Analytics API stubs preserve call-site compatibility without recording or sending events.
+  if (typeof window.dataLayer === "undefined") window.dataLayer = [];
+  if (typeof window.gtag !== "function") window.gtag = function() {};
+  if (typeof window.ga !== "function") window.ga = function() {};
+
   // AdSense-compatible queue: accepting a push must not fetch or render ads.
   if (!Array.isArray(window.adsbygoogle)) window.adsbygoogle = [];
   const adsQueue = window.adsbygoogle;
