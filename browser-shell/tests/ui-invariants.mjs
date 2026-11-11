@@ -102,6 +102,41 @@ assert.match(
   "Known tracker hosts must be filtered in native CEF resource requests."
 );
 
+const sitePrivacySource = readFileSync(
+  new URL("../src/skai_app.cpp", import.meta.url),
+  "utf8"
+);
+assert.match(
+  sitePrivacySource,
+  /void InstallSitePrivacyCompatibility/,
+  "Ordinary web contexts must receive the local compatibility shim."
+);
+assert.match(
+  sitePrivacySource,
+  /IsHttpPageFrame\(frame\) InstallSitePrivacyCompatibility\(context\)/,
+  "The compatibility shim must be restricted to HTTP(S) site frames."
+);
+assert.match(
+  sitePrivacySource,
+  /isEmpty: true/,
+  "The emulated ad slot must explicitly report an empty result, not a served impression."
+);
+assert.match(
+  sitePrivacySource,
+  /consents: deniedPurposes/,
+  "The local TCF response must report denied purposes rather than fabricated consent."
+);
+assert.match(
+  sitePrivacySource,
+  /window\.gtag = function\(\) \{\}/,
+  "Analytics calls must have a local no-op compatibility surface."
+);
+assert.doesNotMatch(
+  sitePrivacySource,
+  /sendBeacon\s*\(/,
+  "The compatibility shim must not emit telemetry beacons."
+);
+
 const clientHeaderSource = readFileSync(
   new URL("../src/skai_client.h", import.meta.url),
   "utf8"
