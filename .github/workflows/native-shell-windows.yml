@@ -293,8 +293,6 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: skai-win-x64-package
-          path: |
-            build/skai/bin/Release/
-            dist/SkAi-win-x64.zip
+          path: dist/SkAi-win-x64.zip
           if-no-files-found: error
           retention-days: 14
