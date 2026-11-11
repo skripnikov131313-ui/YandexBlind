@@ -3,6 +3,7 @@
 #include "skai_window.h"
 #include "skai_ai.h"
 #include "skai_tracking_protection.h"
+#include "skai_security.h"
 #include "include/cef_request_handler.h"
 #include "include/cef_resource_request_handler.h"
 #include "include/cef_request.h"
@@ -22,6 +23,15 @@
 #include <knownfolders.h>
 
 namespace {
+std::wstring SecurityOrigin(const std::wstring& raw_url) {
+  CefURLParts parts;
+  if (!CefParseURL(raw_url, parts)) return L"";
+  const auto scheme = CefString(&parts.scheme).ToWString();
+  const auto host = CefString(&parts.host).ToWString();
+  if ((scheme != L"http" && scheme != L"https") || host.empty()) return L"";
+  return scheme + L"://" + host;
+}
+
 class SkAiPrivacyCookieFilter final : public CefCookieAccessFilter {
  public:
   bool CanSendCookie(CefRefPtr<CefBrowser> /*browser*/,
@@ -57,8 +67,12 @@ class SkAiTrackingResourceHandler final : public CefResourceRequestHandler {
       CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> /*frame*/,
       CefRefPtr<CefRequest> request,
       CefRefPtr<CefCallback> /*callback*/) override {
-    if (block_tracking_requests_ && request && SkAiShouldBlockTrackingRequest(
-                       request->GetURL().ToWString())) {
+    if (block_tracking_requests_ && request &&
+        SkAiShouldBlockTrackingRequest(request->GetURL().ToWString())) {
+      SkAiRecordSecurityEvent(
+          SkAiSecurityEventType::tracker_blocked, SkAiSecuritySeverity::low,
+          SecurityOrigin(request->GetURL().ToWString()),
+          L"Заблокирован запрос известного трекера");
       return RV_CANCEL;
     }
     return RV_CONTINUE;
@@ -471,6 +485,10 @@ bool SkAiClient::OnBeforeDownload(
     return false;
   }
 
+  SkAiRecordSecurityEvent(
+      SkAiSecurityEventType::download_started, SkAiSecuritySeverity::info,
+      SecurityOrigin(download_item->GetURL().ToWString()),
+      L"Начата загрузка файла");
   const auto directory = GetSkAiDownloadsDirectory();
   if (directory.empty()) {
     // Preserve user choice if the standard Downloads folder is unavailable.
@@ -491,18 +509,34 @@ void SkAiClient::OnDownloadUpdated(
   if (!download_item || !download_item->IsValid()) {
     return;
   }
+  if (download_item->IsComplete()) {
+    SkAiRecordSecurityEvent(
+        SkAiSecurityEventType::download_completed, SkAiSecuritySeverity::info,
+        SecurityOrigin(download_item->GetURL().ToWString()),
+        L"Загрузка завершена");
+  } else if (download_item->IsCanceled()) {
+    SkAiRecordSecurityEvent(
+        SkAiSecurityEventType::download_interrupted, SkAiSecuritySeverity::low,
+        SecurityOrigin(download_item->GetURL().ToWString()),
+        L"Загрузка отменена или прервана");
+  }
   SkAiNotifyDownloadState(download_item, callback);
 }
 
 bool SkAiClient::OnBeforeBrowse(
     CefRefPtr<CefBrowser> /*browser*/, CefRefPtr<CefFrame> frame,
     CefRefPtr<CefRequest> request, bool /*user_gesture*/,
-    bool /*is_redirect*/) {
+    bool is_redirect) {
   if (!frame || !frame->IsMain() || !request ||
       request->GetMethod() != "GET") {
     return false;
   }
   const auto original_url = request->GetURL().ToWString();
+  if (is_redirect) {
+    SkAiRecordSecurityEvent(
+        SkAiSecurityEventType::navigation_redirect, SkAiSecuritySeverity::info,
+        SecurityOrigin(original_url), L"Обнаружен переход по перенаправлению");
+  }
   const auto cleaned_url = SkAiStripTrackingParameters(original_url);
   if (cleaned_url != original_url) {
     request->SetURL(cleaned_url);
@@ -518,6 +552,10 @@ bool SkAiClient::OnRequestMediaAccessPermission(
     return false;
   }
 
+  SkAiRecordSecurityEvent(
+      SkAiSecurityEventType::permission_requested, SkAiSecuritySeverity::medium,
+      requesting_origin.ToWString(), L"Сайт запросил доступ к устройству",
+      L"Медиа-разрешение");
   return SkAiRequestSitePermission(tab_id_, requesting_origin.ToWString(),
                                    requested_permissions, true, nullptr,
                                    callback) != 0;
@@ -531,6 +569,9 @@ bool SkAiClient::OnShowPermissionPrompt(
     return false;
   }
 
+  SkAiRecordSecurityEvent(
+      SkAiSecurityEventType::permission_requested, SkAiSecuritySeverity::medium,
+      requesting_origin.ToWString(), L"Сайт запросил разрешение браузера");
   return SkAiRequestSitePermission(tab_id_, requesting_origin.ToWString(),
                                    requested_permissions, false, callback,
                                    nullptr, prompt_id) != 0;
