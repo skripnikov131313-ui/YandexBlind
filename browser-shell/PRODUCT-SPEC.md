@@ -169,3 +169,14 @@ Acceptance gates:
 - Network tests prove local security analysis does not contact cloud endpoints.
 - UI tests prove every security warning identifies evidence and distinguishes an enforced block from an AI advisory.
 - Security Center and assistant remain usable with the model not yet downloaded; enforcement remains fully active.
+
+
+## 11. Bundled AI and user control
+
+- The Windows x64 installer includes the pinned Qwen3.5-2B Q4_K_M model weights under `runtime/llama/`; model absence is a packaging failure, not a first-run user task.
+- CI downloads the exact pinned revision, checks the exact expected byte length and SHA-256, and fails closed if either differs.
+- The native runtime prefers the bundled model. The per-user LocalAppData model path remains a compatibility fallback for older/lightweight builds.
+- On browser startup the assistant checks the local model automatically. The assistant shell and AI controls are present from first launch.
+- Settings → Protection contains an **AI security analysis** switch, enabled by default. Turning it off prevents page text from being attached to local AI requests and clears any page context already staged in the assistant.
+- This switch controls AI page analysis only. It does not disable native tracking protection, cookie policy, request blocking, permission mediation or download controls.
+- The current switch is an on-demand page-analysis control. Continuous event-driven threat analysis and Security Center telemetry remain a separate implementation milestone; do not label them complete until native security events are connected and tested.
