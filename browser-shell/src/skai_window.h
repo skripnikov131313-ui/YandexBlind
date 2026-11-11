@@ -57,6 +57,8 @@ void SkAiCancelPermissionsForTab(int tab_id);
 
 void SkAiSendSitePermissionList();
 void SkAiSendSecurityEvents();
+void SkAiNotifySecurityWarning(const std::wstring& summary,
+                              const std::wstring& evidence);
 void SkAiRevokeSitePermission(const std::wstring& permission_key);
 
 void SkAiSendProfileList();
