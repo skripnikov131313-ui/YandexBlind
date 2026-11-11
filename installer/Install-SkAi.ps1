@@ -4,6 +4,14 @@ param([switch]$DesktopShortcut)
 $ErrorActionPreference = "Stop"
 $sourceRoot = [System.IO.Path]::GetFullPath($PSScriptRoot)
 $installRoot = Join-Path $env:LOCALAPPDATA "Programs\SkAi"
+$sourcePrefix = $sourceRoot.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+$installFull = [System.IO.Path]::GetFullPath($installRoot)
+$installPrefix = $installFull.TrimEnd([System.IO.Path]::DirectorySeparatorChar) + [System.IO.Path]::DirectorySeparatorChar
+if ([string]::Equals($sourceRoot, $installFull, [System.StringComparison]::OrdinalIgnoreCase) -or
+    $installPrefix.StartsWith($sourcePrefix, [System.StringComparison]::OrdinalIgnoreCase) -or
+    $sourcePrefix.StartsWith($installPrefix, [System.StringComparison]::OrdinalIgnoreCase)) {
+    throw "Extract the Sk/Ai package outside the install folder and retry. Source and destination must be separate."
+}
 $startMenuFolder = Join-Path $env:APPDATA "Microsoft\Windows\Start Menu\Programs\SkAi"
 $desktopShortcutPath = Join-Path ([Environment]::GetFolderPath("Desktop")) "SkAi.lnk"
 $registryPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Uninstall\SkAi"

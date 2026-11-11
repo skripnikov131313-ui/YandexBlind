@@ -146,6 +146,13 @@ jobs:
             $runtimeFiles = $server.DirectoryName
           }
           Copy-Item -Path (Join-Path $runtimeFiles "*") -Destination $runtime -Recurse -Force
+
+          $backendFiles = Get-ChildItem $llamaBuild -Filter "ggml-cpu-*.dll" -Recurse -File
+          if (!$backendFiles) { throw "No runtime-dispatched CPU backend DLLs were found anywhere in the llama.cpp build tree." }
+          foreach ($backend in $backendFiles) {
+            Copy-Item -LiteralPath $backend.FullName -Destination (Join-Path $runtime $backend.Name) -Force
+          }
+
           Copy-Item -Path (Join-Path $llamaSource "LICENSE") -Destination (Join-Path $runtime "LICENSE-llama.cpp.txt") -Force
 
           $qwenRevision = "15852e8c16360a2fea060d615a32b45270f8a8fc8"
