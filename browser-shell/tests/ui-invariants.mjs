@@ -126,6 +126,25 @@ assert.match(
   /if \(is_download\) return new SkAiTrackingResourceHandler\(false\)/,
   "Explicit downloads must retain cookie filtering."
 );
+const windowSource = readFileSync(
+  new URL("../src/skai_window.cpp", import.meta.url),
+  "utf8"
+);
+assert.match(
+  windowSource,
+  /GetOrCreateSiteContext[\s\S]*?CefRequestContextSettings context_settings;[\s\S]*?CreateContext\(context_settings, handler\)/,
+  "Web tabs must use their dedicated in-memory request context."
+);
+assert.match(
+  windowSource,
+  /CefString\(&context_settings\.cache_path\) = \(directory \/ L"Cache"\)\.wstring\(\)/,
+  "Only the trusted browser UI profile may set a persistent site-data cache path."
+);
+assert.match(
+  windowSource,
+  /const auto request_context = GetOrCreateSiteContext\(g_active_profile\)/,
+  "Native web tabs must use the ephemeral per-profile context."
+);
 
 const sitePrivacySource = readFileSync(
   new URL("../src/skai_app.cpp", import.meta.url),
