@@ -48,6 +48,49 @@ int main() {
 
   SkAiClearSecurityEvents();
   if (!SkAiGetSecurityEvents().empty()) return 1;
+  const auto normalHttps = SkAiClassifyNavigationRisk(
+      L"https", L"https", L"shop.example", false, false);
+  if (normalHttps.detected) {
+    std::cerr << "Ordinary HTTPS navigation must not be flagged\\n";
+    return 1;
+  }
+  const auto normalHttp = SkAiClassifyNavigationRisk(
+      L"https", L"http", L"legacy.example", false, false);
+  if (normalHttp.detected) {
+    std::cerr << "Direct HTTP navigation is not an HTTPS downgrade redirect\\n";
+    return 1;
+  }
+  const auto downgrade = SkAiClassifyNavigationRisk(
+      L"https", L"http", L"legacy.example", false, true);
+  if (!downgrade.detected || downgrade.severity != SkAiSecuritySeverity::high) {
+    std::cerr << "HTTPS-to-HTTP redirect must be high severity\\n";
+    return 1;
+  }
+  const auto credentials = SkAiClassifyNavigationRisk(
+      L"https", L"https", L"login.example", true, false);
+  if (!credentials.detected || credentials.severity != SkAiSecuritySeverity::high) {
+    std::cerr << "Embedded URL credentials must be high severity\\n";
+    return 1;
+  }
+  const auto punycode = SkAiClassifyNavigationRisk(
+      L"https", L"https", L"shop.XN--P1AI", false, false);
+  if (!punycode.detected || punycode.severity != SkAiSecuritySeverity::medium) {
+    std::cerr << "Punycode labels must be detected case-insensitively\\n";
+    return 1;
+  }
+  const auto invalidScheme = SkAiClassifyNavigationRisk(
+      L"https", L"javascript", L"xn--p1ai", false, true);
+  if (invalidScheme.detected) {
+    std::cerr << "Non-web schemes must not be classified as web navigation risks\\n";
+    return 1;
+  }
+  const auto embeddedLabel = SkAiClassifyNavigationRisk(
+      L"https", L"https", L"xn--p1ai.example", false, false);
+  if (!embeddedLabel.detected) {
+    std::cerr << "Punycode in a hostname label must be detected\\n";
+    return 1;
+  }
+
   std::cout << "Sk/Ai security journal tests: passed\n";
   return 0;
 }
