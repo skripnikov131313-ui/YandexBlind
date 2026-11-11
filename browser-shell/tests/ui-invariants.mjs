@@ -883,3 +883,6 @@ assert.match(clientSource, /source_scheme == L"https" && target_scheme == L"http
 assert.match(clientSource, /В адресе присутствуют встроенные учётные данные/, "Credential-bearing navigation URLs must be recorded.");
 assert.match(clientSource, /target_host\.rfind\(L"xn--"/, "Punycode hostnames must be flagged for review.");
 assert.match(clientSource, /SkAiSecurityEventType::suspicious_navigation/, "Navigation risk must enter the native security journal.");
+
+assert.match(source, /if \(id\.startsWith\("security-"\)\)[\s\S]*?localAiBusy = false/, "Security analysis must release the shared local model lock when its request completes.");
+assert.match(source, /securityAnalysisPending = false;\s*securityAnalysisResult = ""/, "Disabling security analysis must suppress its result without orphaning the in-flight model request.");
