@@ -324,7 +324,10 @@ bool SkAiClient::OnProcessMessageReceived(
 
   if (category == "securityEvents") {
     if (action == "list") SkAiSendSecurityEvents();
-    else if (action == "clear") SkAiClearSecurityEvents();
+    else if (action == "clear") {
+      SkAiClearSecurityEvents();
+      SkAiSendSecurityEvents();
+    }
     return true;
   }
 
