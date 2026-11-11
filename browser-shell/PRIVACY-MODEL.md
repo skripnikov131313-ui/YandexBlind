@@ -5,7 +5,7 @@
 - The browser shell contains no analytics SDK, session recorder, advertising SDK, app-generated tracking identifier or silent crash-report upload.
 - No site receives camera, microphone, geolocation, notification or clipboard permission without an explicit browser decision.
 - No consent API may report that the user granted advertising, analytics or personalization consent unless the user actually made that choice. The compatibility default is denial.
-- No compatibility shim may send an ad impression, click, conversion, analytics or telemetry beacon.
+- No compatibility shim may send an ad impression, click, conversion or telemetry beacon. Obvious first-party telemetry paths passed to `navigator.sendBeacon` are suppressed locally.
 - Local AI remains local. Cloud transfer stays disabled until an explicit provider and a per-transfer consent preview exist.
 - GOST TLS, Russian certificate overrides and CryptoPro CSP remain out of scope.
 
@@ -22,9 +22,10 @@
 - The local IAB TCF compatibility response is denial, not acceptance. Represented purposes are false; Global Privacy Control is exposed where supported.
 - A site's consent banner must not be auto-accepted or have an affirmative consent cookie fabricated.
 - Third-party cookies are blocked in Chromium.
-- A CEF cookie access filter blocks known advertising/analytics cookie names when cookies are saved from responses or sent with requests, including top-level navigations.
-- First-party cookies not matched by the known tracker-name list remain available during the active session for site functionality. Ordinary web tabs use an in-memory CEF request context with an empty cache path, so cookies, localStorage, IndexedDB and service-worker storage are not persisted across browser restarts. First-party identifiers can still be used during a session and can use arbitrary cookie names; a stricter all-cookies-off mode remains open.
-- A JavaScript-only fake cookie jar is not equivalent to a server session. It cannot authenticate a user or satisfy a server-side session requirement when the server expects a real cookie on an HTTP request.
+- A CEF cookie access filter denies every real site cookie on both save and send, including top-level navigations and downloads.
+- A renderer-side `document.cookie` facade provides a per-session in-memory cookie jar for JavaScript compatibility. It does not write to Chromium’s cookie store and never adds a `Cookie` header to network requests.
+- Ordinary web tabs use an in-memory CEF request context with an empty cache path, so localStorage, IndexedDB and service-worker storage are not persisted across browser restarts.
+- A local cookie facade is not a server session. Sites that require a server-issued cookie for authentication or server-side state may fail; there is no way to fake that server-side state without sending a real credential/session cookie.
 
 ## Telemetry and tracking
 
