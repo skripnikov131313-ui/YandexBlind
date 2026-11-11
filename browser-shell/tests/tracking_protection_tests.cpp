@@ -37,7 +37,7 @@ int main() {
     if (actual != test.should_block) {
       std::wcerr << L"FAIL: " << test.url << L" expected "
                  << (test.should_block ? L"blocked" : L"allowed")
-                 << L" but was " << (actual ? L"blocked" : L"allowed")
+                 << L"\n";
                  << L"\n";
       return 1;
     }
