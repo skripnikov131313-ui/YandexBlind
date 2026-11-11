@@ -95,33 +95,21 @@ void RecordNavigationRisk(const std::wstring& from_url,
   if ((target_scheme != L"http" && target_scheme != L"https") ||
       target_host.empty()) return;
 
-  std::wstring evidence;
-  SkAiSecuritySeverity severity = SkAiSecuritySeverity::medium;
-  if (!username.empty() || !password.empty()) {
-    evidence = L"В адресе присутствуют встроенные учётные данные";
-    severity = SkAiSecuritySeverity::high;
-  } else if (is_redirect) {
+  std::wstring source_scheme;
+  if (is_redirect) {
     CefURLParts source_parts;
     if (CefParseURL(from_url, source_parts)) {
-      const auto source_scheme =
-          CefString(&source_parts.scheme).ToWString();
-      if (source_scheme == L"https" && target_scheme == L"http") {
-        evidence = L"Перенаправление понижает защищённое HTTPS-соединение до HTTP";
-        severity = SkAiSecuritySeverity::high;
-      }
+      source_scheme = CefString(&source_parts.scheme).ToWString();
     }
   }
-  if (evidence.empty() &&
-      (target_host.rfind(L"xn--", 0) == 0 ||
-       target_host.find(L".xn--") != std::wstring::npos)) {
-    evidence = L"Домен содержит IDN punycode; проверьте отображаемое имя";
-    severity = SkAiSecuritySeverity::medium;
-  }
-  if (!evidence.empty()) {
+  const auto risk = SkAiClassifyNavigationRisk(
+      source_scheme, target_scheme, target_host,
+      !username.empty() || !password.empty(), is_redirect);
+  if (risk.detected) {
     SkAiRecordSecurityEvent(
-        SkAiSecurityEventType::suspicious_navigation, severity,
+        SkAiSecurityEventType::suspicious_navigation, risk.severity,
         SecurityOrigin(to_url), L"Обнаружен признак риска при навигации",
-        evidence);
+        risk.evidence);
   }
 }
 
